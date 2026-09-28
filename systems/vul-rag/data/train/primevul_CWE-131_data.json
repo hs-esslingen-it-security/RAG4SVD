@@ -1,0 +1,45 @@
+[
+  {
+    "id": 2535,
+    "cve_id": "CVE-2014-3468",
+    "code_before_change": "asn1_get_bit_der (const unsigned char *der, int der_len,\n\t\t  int *ret_len, unsigned char *str, int str_size,\n\t\t  int *bit_len)\n{\n  int len_len, len_byte;\n\n  if (der_len <= 0)\n    return ASN1_GENERIC_ERROR;\n  len_byte = asn1_get_length_der (der, der_len, &len_len) - 1;\n  if (len_byte < 0)\n    return ASN1_DER_ERROR;\n\n  *ret_len = len_byte + len_len + 1;\n  *bit_len = len_byte * 8 - der[len_len];\n\n  if (str_size >= len_byte)\n    memcpy (str, der + len_len + 1, len_byte);\n  else\n    {\n      return ASN1_MEM_ERROR;\n    }\n\n  return ASN1_SUCCESS;\n}",
+    "code_after_change": "asn1_get_bit_der (const unsigned char *der, int der_len,\n\t\t  int *ret_len, unsigned char *str, int str_size,\n\t\t  int *bit_len)\n{\n  int len_len = 0, len_byte;\n\n  if (der_len <= 0)\n    return ASN1_GENERIC_ERROR;\n  len_byte = asn1_get_length_der (der, der_len, &len_len) - 1;\n  if (len_byte < 0)\n    return ASN1_DER_ERROR;\n\n  *ret_len = len_byte + len_len + 1;\n  *bit_len = len_byte * 8 - der[len_len];\n  \n  if (*bit_len <= 0)\n    return ASN1_DER_ERROR;\n\n  if (str_size >= len_byte)\n    memcpy (str, der + len_len + 1, len_byte);\n  else\n    {\n      return ASN1_MEM_ERROR;\n    }\n\n  return ASN1_SUCCESS;\n}",
+    "cwe": [
+      "CWE-131"
+    ],
+    "cve_description": "The asn1_get_bit_der function in GNU Libtasn1 before 3.6 does not properly report an error when a negative bit length is identified, which allows context-dependent attackers to cause out-of-bounds access via crafted ASN.1 data.",
+    "patch": "--- code before\n+++ code after\n@@ -2,7 +2,7 @@\n \t\t  int *ret_len, unsigned char *str, int str_size,\n \t\t  int *bit_len)\n {\n-  int len_len, len_byte;\n+  int len_len = 0, len_byte;\n \n   if (der_len <= 0)\n     return ASN1_GENERIC_ERROR;\n@@ -12,6 +12,9 @@\n \n   *ret_len = len_byte + len_len + 1;\n   *bit_len = len_byte * 8 - der[len_len];\n+  \n+  if (*bit_len <= 0)\n+    return ASN1_DER_ERROR;\n \n   if (str_size >= len_byte)\n     memcpy (str, der + len_len + 1, len_byte);",
+    "function_modified_lines": {
+      "added": [
+        "  int len_len = 0, len_byte;",
+        "  ",
+        "  if (*bit_len <= 0)",
+        "    return ASN1_DER_ERROR;"
+      ],
+      "deleted": [
+        "  int len_len, len_byte;"
+      ]
+    }
+  },
+  {
+    "id": 2768,
+    "cve_id": "CVE-2020-14385",
+    "code_before_change": "xfs_attr_shortform_verify(\n\tstruct xfs_inode\t\t*ip)\n{\n\tstruct xfs_attr_shortform\t*sfp;\n\tstruct xfs_attr_sf_entry\t*sfep;\n\tstruct xfs_attr_sf_entry\t*next_sfep;\n\tchar\t\t\t\t*endp;\n\tstruct xfs_ifork\t\t*ifp;\n\tint\t\t\t\ti;\n\tint64_t\t\t\t\tsize;\n\n\tASSERT(ip->i_afp->if_format == XFS_DINODE_FMT_LOCAL);\n\tifp = XFS_IFORK_PTR(ip, XFS_ATTR_FORK);\n\tsfp = (struct xfs_attr_shortform *)ifp->if_u1.if_data;\n\tsize = ifp->if_bytes;\n\n\t/*\n\t * Give up if the attribute is way too short.\n\t */\n\tif (size < sizeof(struct xfs_attr_sf_hdr))\n\t\treturn __this_address;\n\n\tendp = (char *)sfp + size;\n\n\t/* Check all reported entries */\n\tsfep = &sfp->list[0];\n\tfor (i = 0; i < sfp->hdr.count; i++) {\n\t\t/*\n\t\t * struct xfs_attr_sf_entry has a variable length.\n\t\t * Check the fixed-offset parts of the structure are\n\t\t * within the data buffer.\n\t\t */\n\t\tif (((char *)sfep + sizeof(*sfep)) >= endp)\n\t\t\treturn __this_address;\n\n\t\t/* Don't allow names with known bad length. */\n\t\tif (sfep->namelen == 0)\n\t\t\treturn __this_address;\n\n\t\t/*\n\t\t * Check that the variable-length part of the structure is\n\t\t * within the data buffer.  The next entry starts after the\n\t\t * name component, so nextentry is an acceptable test.\n\t\t */\n\t\tnext_sfep = XFS_ATTR_SF_NEXTENTRY(sfep);\n\t\tif ((char *)next_sfep > endp)\n\t\t\treturn __this_address;\n\n\t\t/*\n\t\t * Check for unknown flags.  Short form doesn't support\n\t\t * the incomplete or local bits, so we can use the namespace\n\t\t * mask here.\n\t\t */\n\t\tif (sfep->flags & ~XFS_ATTR_NSP_ONDISK_MASK)\n\t\t\treturn __this_address;\n\n\t\t/*\n\t\t * Check for invalid namespace combinations.  We only allow\n\t\t * one namespace flag per xattr, so we can just count the\n\t\t * bits (i.e. hweight) here.\n\t\t */\n\t\tif (hweight8(sfep->flags & XFS_ATTR_NSP_ONDISK_MASK) > 1)\n\t\t\treturn __this_address;\n\n\t\tsfep = next_sfep;\n\t}\n\tif ((void *)sfep != (void *)endp)\n\t\treturn __this_address;\n\n\treturn NULL;\n}",
+    "code_after_change": "xfs_attr_shortform_verify(\n\tstruct xfs_inode\t\t*ip)\n{\n\tstruct xfs_attr_shortform\t*sfp;\n\tstruct xfs_attr_sf_entry\t*sfep;\n\tstruct xfs_attr_sf_entry\t*next_sfep;\n\tchar\t\t\t\t*endp;\n\tstruct xfs_ifork\t\t*ifp;\n\tint\t\t\t\ti;\n\tint64_t\t\t\t\tsize;\n\n\tASSERT(ip->i_afp->if_format == XFS_DINODE_FMT_LOCAL);\n\tifp = XFS_IFORK_PTR(ip, XFS_ATTR_FORK);\n\tsfp = (struct xfs_attr_shortform *)ifp->if_u1.if_data;\n\tsize = ifp->if_bytes;\n\n\t/*\n\t * Give up if the attribute is way too short.\n\t */\n\tif (size < sizeof(struct xfs_attr_sf_hdr))\n\t\treturn __this_address;\n\n\tendp = (char *)sfp + size;\n\n\t/* Check all reported entries */\n\tsfep = &sfp->list[0];\n\tfor (i = 0; i < sfp->hdr.count; i++) {\n\t\t/*\n\t\t * struct xfs_attr_sf_entry has a variable length.\n\t\t * Check the fixed-offset parts of the structure are\n\t\t * within the data buffer.\n\t\t * xfs_attr_sf_entry is defined with a 1-byte variable\n\t\t * array at the end, so we must subtract that off.\n\t\t */\n\t\tif (((char *)sfep + sizeof(*sfep) - 1) >= endp)\n\t\t\treturn __this_address;\n\n\t\t/* Don't allow names with known bad length. */\n\t\tif (sfep->namelen == 0)\n\t\t\treturn __this_address;\n\n\t\t/*\n\t\t * Check that the variable-length part of the structure is\n\t\t * within the data buffer.  The next entry starts after the\n\t\t * name component, so nextentry is an acceptable test.\n\t\t */\n\t\tnext_sfep = XFS_ATTR_SF_NEXTENTRY(sfep);\n\t\tif ((char *)next_sfep > endp)\n\t\t\treturn __this_address;\n\n\t\t/*\n\t\t * Check for unknown flags.  Short form doesn't support\n\t\t * the incomplete or local bits, so we can use the namespace\n\t\t * mask here.\n\t\t */\n\t\tif (sfep->flags & ~XFS_ATTR_NSP_ONDISK_MASK)\n\t\t\treturn __this_address;\n\n\t\t/*\n\t\t * Check for invalid namespace combinations.  We only allow\n\t\t * one namespace flag per xattr, so we can just count the\n\t\t * bits (i.e. hweight) here.\n\t\t */\n\t\tif (hweight8(sfep->flags & XFS_ATTR_NSP_ONDISK_MASK) > 1)\n\t\t\treturn __this_address;\n\n\t\tsfep = next_sfep;\n\t}\n\tif ((void *)sfep != (void *)endp)\n\t\treturn __this_address;\n\n\treturn NULL;\n}",
+    "cwe": [
+      "CWE-131"
+    ],
+    "cve_description": "A flaw was found in the Linux kernel before 5.9-rc4. A failure of the file system metadata validator in XFS can cause an inode with a valid, user-creatable extended attribute to be flagged as corrupt. This can lead to the filesystem being shutdown, or otherwise rendered inaccessible until it is remounted, leading to a denial of service. The highest threat from this vulnerability is to system availability.",
+    "patch": "--- code before\n+++ code after\n@@ -29,8 +29,10 @@\n \t\t * struct xfs_attr_sf_entry has a variable length.\n \t\t * Check the fixed-offset parts of the structure are\n \t\t * within the data buffer.\n+\t\t * xfs_attr_sf_entry is defined with a 1-byte variable\n+\t\t * array at the end, so we must subtract that off.\n \t\t */\n-\t\tif (((char *)sfep + sizeof(*sfep)) >= endp)\n+\t\tif (((char *)sfep + sizeof(*sfep) - 1) >= endp)\n \t\t\treturn __this_address;\n \n \t\t/* Don't allow names with known bad length. */",
+    "function_modified_lines": {
+      "added": [
+        "\t\t * xfs_attr_sf_entry is defined with a 1-byte variable",
+        "\t\t * array at the end, so we must subtract that off.",
+        "\t\tif (((char *)sfep + sizeof(*sfep) - 1) >= endp)"
+      ],
+      "deleted": [
+        "\t\tif (((char *)sfep + sizeof(*sfep)) >= endp)"
+      ]
+    }
+  }
+]

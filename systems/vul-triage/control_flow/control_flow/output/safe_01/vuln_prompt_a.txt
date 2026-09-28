@@ -1,0 +1,45 @@
+文件: /Users/vinsontang/Desktop/test/graph_demo/control_flow/test_snippets/safe_01_string_utils.c
+图构建模式: precise_c
+【AST】
+- 函数 safe_copy@L14：保留 9/46 个语义节点；调用=strncpy；分支=1；返回=1。
+- 函数 to_upper@L22：保留 9/48 个语义节点；调用=toupper；分支=2；返回=1。
+- 函数 count_char@L30：保留 11/48 个语义节点；调用=无；分支=3；返回=2。
+- 函数 safe_concat@L40：保留 18/86 个语义节点；调用=malloc, memcpy, strlen；分支=2；返回=3。
+- 函数 reverse_str@L53：保留 12/63 个语义节点；调用=strlen；分支=2；返回=1。
+- 函数 main@L63：保留 16/67 个语义节点；调用=count_char, free, printf, reverse_str；分支=1；返回=1。
+
+【CFG】
+- 函数 safe_copy：保留控制点 5/6；分支节点 1；调用节点 1；线性段折叠 1。
+  - 路径1: Entry -> if (dst == 0 || src == 0 || dst_sz == 0) -> call strncpy(...) -> dst[dst_sz - 1] = ... -> safe_copy EXIT
+- 函数 to_upper：保留控制点 5/8；分支节点 2；调用节点 0；线性段折叠 3。
+  - 路径1: Entry -> if (s == 0) -> DeclList -> for_cond (s[i] != '\0') -> to_upper EXIT
+  - 路径2: Entry -> if (s == 0) -> DeclList -> for_cond (s[i] != '\0') -> [back] for_cond (s[i] != '\0') -> to_upper EXIT
+- 函数 count_char：保留控制点 7/11；分支节点 3；调用节点 0；线性段折叠 3。
+- 函数 safe_concat：保留控制点 9/13；分支节点 2；调用节点 2；线性段折叠 4。
+- 函数 reverse_str：保留控制点 5/11；分支节点 2；调用节点 0；线性段折叠 6。
+  - 路径1: Entry -> if (s == 0) -> decl len = strlen(...) -> for_cond (i < len / 2) -> reverse_str EXIT
+  - 路径2: Entry -> if (s == 0) -> decl len = strlen(...) -> for_cond (i < len / 2) -> [back] for_cond (i < len / 2) -> reverse_str EXIT
+- 函数 main：保留控制点 11/13；分支节点 1；调用节点 7；线性段折叠 2。
+
+【DFG】
+- 函数 safe_copy：边保留 6/6；参数源 3 个；抽取链路 6 条。
+  - 数据链：param: dst -> if(...)
+  - 数据链：param: dst -> call strncpy
+  - 数据链：param: dst_sz -> if(...)
+- 函数 to_upper：边保留 3/3；参数源 1 个；抽取链路 3 条。
+  - 数据链：param: s -> if(...)
+  - 数据链：param: s -> for_cond
+  - 数据链：param: s -> assign None
+- 函数 count_char：边保留 5/5；参数源 2 个；抽取链路 4 条。
+  - 数据链：param: s -> if(...)
+  - 数据链：param: s -> for_cond
+  - 数据链：param: s -> if(...)
+- 函数 safe_concat：边保留 12/15；参数源 2 个；抽取链路 7 条。
+  - 数据链：param: a -> if(...)
+  - 数据链：param: a -> call memcpy
+  - 数据链：param: a -> decl la -> call memcpy
+- 函数 reverse_str：边保留 4/7；参数源 1 个；抽取链路 4 条。
+  - 数据链：param: s -> if(...)
+  - 数据链：param: s -> decl len
+  - 数据链：param: s -> assign None
+- 函数 main：边保留 7/10；参数源 0 个；抽取链路 0 条。

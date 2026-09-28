@@ -1,0 +1,14 @@
+[
+    {
+        "title": "UniswapConfig getters return wrong token config if token config does not exist",
+        "link": "https://github.com/code-423n4/2021-04-basedloans-findings/issues/37",
+        "detail": "# Handle\n\n@cmichelio\n\n\n# Vulnerability details\n\n\n## Vulnerability Details\n\nThe `UniswapConfig.getTokenConfigBySymbolHash` function does not work as `getSymbolHashIndex` returns `0` if there is no config token for that symbol (uninitialized map value), but the outer function implements the non-existence check with `-1`.\n\nThe same issue occurs also for:\n\n- `getTokenConfigByCToken`\n- `getTokenConfigByUnderlying`\n\n## Impact\n\nWhen encountering a non-existent token config, it will always return the token config of the **first index** (index 0) which is a valid token config for a completely different token.\nThis leads to wrong oracle prices for the actual token which could in the worst case be used to borrow more tokens at a lower price or borrow more tokens by having a higher collateral value, essentially allowing undercollateralized loans that cannot be liquidated.\n\n## Recommended Mitigation Steps\n\nFix the non-existence check.\n\n\n",
+        "code": []
+    },
+    {
+        "title": "uint(-1) index for not found",
+        "link": "https://github.com/code-423n4/2021-04-basedloans-findings/issues/24",
+        "detail": "# Handle\n\npaulius.eth\n\n\n# Vulnerability details\n\n## Impact\nfunctions getTokenConfigBySymbolHash, getTokenConfigByCToken and getTokenConfigByUnderlying check returned index against max uint:\n  index != uint(-1)\n-1 should indicate that the index is not found, however, a default value for an uninitialized uint is 0, so it is impossible to get -1. What is even weirder is that 0 will be returned for non-existing configs but 0 is a valid index for the 1st config.\n\n## Recommended Mitigation Steps\nOne of the solutions would be to reserve 0 for a not found index and use it when searching in mappings. Then normal indexes should start from 1. Another solution would be to introduce a new mapping with a boolean value that indicates if this index is initialized or not but this may be a more gas costly way.\n\n",
+        "code": []
+    }
+]

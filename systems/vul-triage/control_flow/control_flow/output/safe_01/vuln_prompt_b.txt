@@ -1,0 +1,76 @@
+文件: /Users/vinsontang/Desktop/test/graph_demo/control_flow/test_snippets/safe_01_string_utils.c
+图构建模式: precise_c
+【AST】
+- 函数 safe_copy@L14：声明0个、赋值4个、分支1个、调用1个。
+  - 调用链要点：strncpy。
+  - 条件/循环：If
+- 函数 to_upper@L22：声明0个、赋值3个、分支2个、调用1个。
+  - 调用链要点：toupper。
+  - 条件/循环：If；For
+- 函数 count_char@L30：声明0个、赋值3个、分支3个、调用0个。
+  - 条件/循环：If；For；If
+- 函数 safe_concat@L40：声明0个、赋值4个、分支2个、调用5个。
+  - 调用链要点：malloc -> memcpy -> strlen。
+  - 条件/循环：If；If
+- 函数 reverse_str@L53：声明0个、赋值3个、分支2个、调用1个。
+  - 调用链要点：strlen。
+  - 条件/循环：If；For
+- 函数 main@L63：声明0个、赋值0个、分支1个、调用9个。
+  - 调用链要点：count_char -> free -> printf -> reverse_str -> safe_concat -> safe_copy -> to_upper。
+  - 条件/循环：If
+
+【CFG】
+- 函数 safe_copy：保留控制点 6/6；分支节点 1；调用节点 1；线性段折叠 0。
+  - 分支/循环节点：if (dst == 0 || src == 0 || dst_sz == 0)@L15
+  - 路径1: Entry -> if (dst == 0 || src == 0 || dst_sz == 0) -> call strncpy(...) -> dst[dst_sz - 1] = ... -> safe_copy EXIT
+- 函数 to_upper：保留控制点 7/8；分支节点 2；调用节点 0；线性段折叠 1。
+  - 分支/循环节点：if (s == 0)@L23；for_cond (s[i] != '\0')@L24
+  - 路径1: Entry -> if (s == 0) -> DeclList -> for_cond (s[i] != '\0') -> to_upper EXIT
+  - 路径2: Entry -> if (s == 0) -> DeclList -> for_cond (s[i] != '\0') -> [back] for_cond (s[i] != '\0') -> to_upper EXIT
+- 函数 count_char：保留控制点 10/11；分支节点 3；调用节点 0；线性段折叠 1。
+  - 分支/循环节点：if (s == 0)@L32；for_cond (s[i] != '\0')@L33；if (s[i] == c)@L34
+- 函数 safe_concat：保留控制点 11/13；分支节点 2；调用节点 2；线性段折叠 2。
+  - 分支/循环节点：if (a == 0 || b == 0)@L41；if (buf == 0)@L45
+- 函数 reverse_str：保留控制点 9/11；分支节点 2；调用节点 0；线性段折叠 2。
+  - 分支/循环节点：if (s == 0)@L54；for_cond (i < len / 2)@L56
+  - 路径1: Entry -> if (s == 0) -> decl len = strlen(...) -> for_cond (i < len / 2) -> reverse_str EXIT
+  - 路径2: Entry -> if (s == 0) -> decl len = strlen(...) -> for_cond (i < len / 2) -> [back] for_cond (i < len / 2) -> reverse_str EXIT
+- 函数 main：保留控制点 12/13；分支节点 1；调用节点 7；线性段折叠 1。
+  - 分支/循环节点：if (joined)@L71
+
+【DFG】
+- 函数 safe_copy：边保留 6/6；参数源 3 个；抽取链路 6 条。
+  - 参数源：param: dst@L14；param: dst_sz@L14；param: src@L14
+  - 数据链：param: dst -> if(...)
+  - 数据链：param: dst -> call strncpy
+  - 数据链：param: dst_sz -> if(...)
+  - 数据链：param: dst_sz -> call strncpy
+  - 数据链：param: src -> if(...)
+  - 数据链：param: src -> call strncpy
+- 函数 to_upper：边保留 3/3；参数源 1 个；抽取链路 3 条。
+  - 参数源：param: s@L22
+  - 数据链：param: s -> if(...)
+  - 数据链：param: s -> for_cond
+  - 数据链：param: s -> assign None
+- 函数 count_char：边保留 5/5；参数源 2 个；抽取链路 4 条。
+  - 参数源：param: s@L30；param: c@L30
+  - 数据链：param: s -> if(...)
+  - 数据链：param: s -> for_cond
+  - 数据链：param: s -> if(...)
+  - 数据链：param: c -> if(...)
+- 函数 safe_concat：边保留 15/15；参数源 2 个；抽取链路 15 条。
+  - 参数源：param: a@L40；param: b@L40
+  - 数据链：param: a -> if(...)
+  - 数据链：param: a -> call memcpy
+  - 数据链：param: a -> decl la -> call memcpy
+  - 数据链：param: a -> decl la -> call memcpy
+  - 数据链：param: a -> decl la -> decl buf -> if(...)
+  - 数据链：param: a -> decl la -> decl buf -> call memcpy
+- 函数 reverse_str：边保留 7/7；参数源 1 个；抽取链路 5 条。
+  - 参数源：param: s@L53
+  - 数据链：param: s -> if(...)
+  - 数据链：param: s -> assign None
+  - 数据链：param: s -> assign None
+  - 数据链：param: s -> decl len -> for_cond
+  - 数据链：param: s -> decl len -> assign None
+- 函数 main：边保留 9/10；参数源 0 个；抽取链路 0 条。

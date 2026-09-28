@@ -1,0 +1,487 @@
+{
+  "mode": "heuristic_c",
+  "language": "c",
+  "detail_level": "B",
+  "filtered_ast": {
+    "level": "B",
+    "typedefs": [
+      {
+        "label": "typedef struct {",
+        "line": 12
+      }
+    ],
+    "functions": [
+      {
+        "func": "global",
+        "line": 1,
+        "node_count_raw": 10,
+        "node_count_kept": 10,
+        "types_kept": [
+          "CallOrDecl",
+          "Stmt"
+        ],
+        "calls": [
+          "gets",
+          "gets"
+        ],
+        "calls_uniq": [
+          "gets"
+        ],
+        "conditions": [],
+        "returns": [],
+        "declarations": [
+          "char username[BUF_SIZE];",
+          "int  privilege;",
+          "} UserInfo;"
+        ],
+        "assignments": [],
+        "constants": []
+      },
+      {
+        "func": "init_user",
+        "line": 17,
+        "node_count_raw": 4,
+        "node_count_kept": 4,
+        "types_kept": [
+          "CallOrDecl",
+          "Stmt"
+        ],
+        "calls": [
+          "memset"
+        ],
+        "calls_uniq": [
+          "memset"
+        ],
+        "conditions": [],
+        "returns": [],
+        "declarations": [
+          "u->privilege = 0;"
+        ],
+        "assignments": [
+          "u->privilege = 0;"
+        ],
+        "constants": []
+      },
+      {
+        "func": "greet",
+        "line": 22,
+        "node_count_raw": 7,
+        "node_count_kept": 7,
+        "types_kept": [
+          "CallOrDecl",
+          "If",
+          "Stmt"
+        ],
+        "calls": [
+          "printf",
+          "printf"
+        ],
+        "calls_uniq": [
+          "printf"
+        ],
+        "conditions": [
+          "if (u->privilege > 0) {"
+        ],
+        "returns": [],
+        "declarations": [],
+        "assignments": [],
+        "constants": []
+      },
+      {
+        "func": "read_username",
+        "line": 31,
+        "node_count_raw": 6,
+        "node_count_kept": 6,
+        "types_kept": [
+          "CallOrDecl",
+          "Stmt"
+        ],
+        "calls": [
+          "printf",
+          "gets",
+          "strcpy"
+        ],
+        "calls_uniq": [
+          "gets",
+          "printf",
+          "strcpy"
+        ],
+        "conditions": [],
+        "returns": [],
+        "declarations": [
+          "char tmp[BUF_SIZE];"
+        ],
+        "assignments": [],
+        "constants": []
+      },
+      {
+        "func": "check_admin",
+        "line": 38,
+        "node_count_raw": 5,
+        "node_count_kept": 5,
+        "types_kept": [
+          "CallOrDecl",
+          "If",
+          "Return",
+          "Stmt"
+        ],
+        "calls": [],
+        "calls_uniq": [],
+        "conditions": [
+          "if (strcmp(name, \"root\") == 0) return 1;",
+          "if (strcmp(name, \"admin\") == 0) return 1;"
+        ],
+        "returns": [
+          "if (strcmp(name, \"root\") == 0) return 1;",
+          "if (strcmp(name, \"admin\") == 0) return 1;",
+          "return 0;"
+        ],
+        "declarations": [],
+        "assignments": [
+          "if (strcmp(name, \"root\") == 0) return 1;",
+          "if (strcmp(name, \"admin\") == 0) return 1;"
+        ],
+        "constants": []
+      },
+      {
+        "func": "process_login",
+        "line": 44,
+        "node_count_raw": 7,
+        "node_count_kept": 7,
+        "types_kept": [
+          "CallOrDecl",
+          "If",
+          "Stmt"
+        ],
+        "calls": [
+          "read_username",
+          "greet"
+        ],
+        "calls_uniq": [
+          "greet",
+          "read_username"
+        ],
+        "conditions": [
+          "if (check_admin(u->username)) {"
+        ],
+        "returns": [],
+        "declarations": [
+          "u->privilege = 1;"
+        ],
+        "assignments": [
+          "u->privilege = 1;"
+        ],
+        "constants": []
+      },
+      {
+        "func": "main",
+        "line": 52,
+        "node_count_raw": 7,
+        "node_count_kept": 7,
+        "types_kept": [
+          "CallOrDecl",
+          "Return",
+          "Stmt"
+        ],
+        "calls": [
+          "init_user",
+          "process_login",
+          "printf"
+        ],
+        "calls_uniq": [
+          "init_user",
+          "printf",
+          "process_login"
+        ],
+        "conditions": [],
+        "returns": [
+          "return 0;"
+        ],
+        "declarations": [
+          "UserInfo user;"
+        ],
+        "assignments": [],
+        "constants": []
+      }
+    ],
+    "collapsed_isomorphic_functions": []
+  },
+  "filtered_cfg": {
+    "global": {
+      "entry": "entry_global",
+      "exit": "exit_global",
+      "node_count_raw": 48,
+      "node_count_kept": 8,
+      "branches": [
+        {
+          "label": "if (u->privilege > 0) {",
+          "line": 23
+        },
+        {
+          "label": "if (strcmp(name, \"root\") == 0) return 1;",
+          "line": 39
+        },
+        {
+          "label": "if (strcmp(name, \"admin\") == 0) return 1;",
+          "line": 40
+        },
+        {
+          "label": "if (check_admin(u->username)) {",
+          "line": 46
+        }
+      ],
+      "calls": [],
+      "merged_linear_segments": 40,
+      "paths": [
+        [
+          [
+            "line_1",
+            ""
+          ],
+          [
+            "line_2",
+            ""
+          ],
+          [
+            "line_3",
+            ""
+          ],
+          [
+            "line_4",
+            ""
+          ],
+          [
+            "line_5",
+            ""
+          ],
+          [
+            "line_12",
+            ""
+          ],
+          [
+            "line_13",
+            ""
+          ],
+          [
+            "line_14",
+            ""
+          ],
+          [
+            "line_15",
+            ""
+          ],
+          [
+            "line_17",
+            ""
+          ],
+          [
+            "line_18",
+            ""
+          ],
+          [
+            "line_19",
+            ""
+          ],
+          [
+            "line_20",
+            ""
+          ],
+          [
+            "line_22",
+            ""
+          ],
+          [
+            "line_23",
+            ""
+          ],
+          [
+            "line_24",
+            ""
+          ],
+          [
+            "line_25",
+            ""
+          ],
+          [
+            "line_26",
+            ""
+          ],
+          [
+            "line_27",
+            ""
+          ],
+          [
+            "line_28",
+            ""
+          ],
+          [
+            "line_30",
+            ""
+          ],
+          [
+            "line_31",
+            ""
+          ],
+          [
+            "line_32",
+            ""
+          ],
+          [
+            "line_33",
+            ""
+          ],
+          [
+            "line_34",
+            ""
+          ],
+          [
+            "line_35",
+            ""
+          ],
+          [
+            "line_36",
+            ""
+          ],
+          [
+            "line_38",
+            ""
+          ],
+          [
+            "line_39",
+            ""
+          ],
+          [
+            "line_40",
+            ""
+          ],
+          [
+            "line_41",
+            ""
+          ],
+          [
+            "line_42",
+            ""
+          ],
+          [
+            "line_44",
+            ""
+          ],
+          [
+            "line_45",
+            ""
+          ],
+          [
+            "line_46",
+            ""
+          ],
+          [
+            "line_47",
+            ""
+          ],
+          [
+            "line_48",
+            ""
+          ],
+          [
+            "line_49",
+            ""
+          ],
+          [
+            "line_50",
+            ""
+          ],
+          [
+            "line_52",
+            ""
+          ],
+          [
+            "line_53",
+            ""
+          ],
+          [
+            "line_54",
+            ""
+          ],
+          [
+            "line_55",
+            ""
+          ],
+          [
+            "line_56",
+            ""
+          ],
+          [
+            "line_57",
+            ""
+          ],
+          [
+            "line_58",
+            ""
+          ],
+          [
+            "exit_global",
+            ""
+          ]
+        ]
+      ]
+    }
+  },
+  "filtered_dfg": {
+    "global": {
+      "node_count_raw": 46,
+      "edge_count_raw": 0,
+      "edge_count_kept": 0,
+      "parameters": [],
+      "edges": [],
+      "chains": [],
+      "node_labels": {
+        "line_1": "/*",
+        "line_2": "* vuln_01_stack_bof.c",
+        "line_3": "* 漏洞类型：栈缓冲区溢出 (Stack Buffer Overflow)",
+        "line_4": "* gets() 不检查长度，攻击者可覆盖返回地址。",
+        "line_5": "*/",
+        "line_12": "typedef struct {",
+        "line_13": "char username[BUF_SIZE];",
+        "line_14": "int  privilege;",
+        "line_15": "} UserInfo;",
+        "line_17": "void init_user(UserInfo *u) {",
+        "line_18": "memset(u->username, 0, BUF_SIZE);",
+        "line_19": "u->privilege = 0;",
+        "line_20": "}",
+        "line_22": "void greet(const UserInfo *u) {",
+        "line_23": "if (u->privilege > 0) {",
+        "line_24": "printf(\"Welcome admin: %s\\n\", u->username);",
+        "line_25": "} else {",
+        "line_26": "printf(\"Hello user: %s\\n\", u->username);",
+        "line_27": "}",
+        "line_28": "}",
+        "line_30": "/* 漏洞：gets() 无边界检查，可溢出覆盖 privilege 字段 */",
+        "line_31": "void read_username(UserInfo *u) {",
+        "line_32": "char tmp[BUF_SIZE];",
+        "line_33": "printf(\"Enter username: \");",
+        "line_34": "gets(tmp);                     /* VULN: unbounded read */",
+        "line_35": "strcpy(u->username, tmp);      /* VULN: no size check */",
+        "line_36": "}",
+        "line_38": "int check_admin(const char *name) {",
+        "line_39": "if (strcmp(name, \"root\") == 0) return 1;",
+        "line_40": "if (strcmp(name, \"admin\") == 0) return 1;",
+        "line_41": "return 0;",
+        "line_42": "}",
+        "line_44": "void process_login(UserInfo *u) {",
+        "line_45": "read_username(u);",
+        "line_46": "if (check_admin(u->username)) {",
+        "line_47": "u->privilege = 1;",
+        "line_48": "}",
+        "line_49": "greet(u);",
+        "line_50": "}",
+        "line_52": "int main(void) {",
+        "line_53": "UserInfo user;",
+        "line_54": "init_user(&user);",
+        "line_55": "process_login(&user);",
+        "line_56": "printf(\"Final privilege level: %d\\n\", user.privilege);",
+        "line_57": "return 0;",
+        "line_58": "}"
+      }
+    }
+  }
+}

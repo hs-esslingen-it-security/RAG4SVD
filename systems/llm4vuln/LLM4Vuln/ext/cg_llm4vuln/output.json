@@ -1,0 +1,6 @@
+{
+  "code": "@Override\n@SuppressWarnings(\"rawtypes\")\npublic Transport compositeConfigure(Transport transport, WireFormat format, Map options) {\n    AmqpTransportFilter amqpTransport \u003d new AmqpTransportFilter(transport, format, brokerService);\n    Map\u003cString, Object\u003e wireFormatOptions \u003d IntrospectionSupport.extractProperties(options, \"wireFormat.\");\n    IntrospectionSupport.setProperties(amqpTransport, options);\n    IntrospectionSupport.setProperties(amqpTransport.getWireFormat(), wireFormatOptions);\n    return super.compositeConfigure(amqpTransport, format, options);\n}",
+  "related": [
+    "@Override\npublic AmqpWireFormat getWireFormat() {\n    return this.wireFormat;\n}"
+  ]
+}

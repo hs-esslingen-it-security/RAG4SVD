@@ -1,0 +1,958 @@
+{
+  "mode": "precise_c",
+  "language": "c",
+  "detail_level": "C",
+  "filtered_ast": {
+    "level": "C",
+    "typedefs": [
+      {
+        "label": "Typedef",
+        "line": 15
+      }
+    ],
+    "functions": [
+      {
+        "func": "log_init",
+        "line": 17,
+        "node_count_raw": 27,
+        "node_count_kept": 18,
+        "types_kept": [
+          "Assignment",
+          "Constant",
+          "Decl",
+          "FuncCall",
+          "FuncDecl",
+          "FuncDef",
+          "ID",
+          "ParamList",
+          "StructRef"
+        ],
+        "calls": [
+          "memset"
+        ],
+        "calls_uniq": [
+          "memset"
+        ],
+        "conditions": [],
+        "returns": [],
+        "declarations": [],
+        "assignments": [
+          "Assign:="
+        ],
+        "constants": [
+          "Const:0",
+          "Const:128"
+        ]
+      },
+      {
+        "func": "log_set_message",
+        "line": 22,
+        "node_count_raw": 34,
+        "node_count_kept": 24,
+        "types_kept": [
+          "ArrayRef",
+          "Assignment",
+          "BinaryOp",
+          "Constant",
+          "Decl",
+          "FuncCall",
+          "FuncDecl",
+          "FuncDef",
+          "ID",
+          "ParamList",
+          "StructRef"
+        ],
+        "calls": [
+          "strncpy"
+        ],
+        "calls_uniq": [
+          "strncpy"
+        ],
+        "conditions": [],
+        "returns": [],
+        "declarations": [],
+        "assignments": [
+          "Assign:="
+        ],
+        "constants": [
+          "Const:'\\0'",
+          "Const:128",
+          "Const:1",
+          "Const:128",
+          "Const:1"
+        ]
+      },
+      {
+        "func": "log_print",
+        "line": 28,
+        "node_count_raw": 28,
+        "node_count_kept": 19,
+        "types_kept": [
+          "Constant",
+          "Decl",
+          "FuncCall",
+          "FuncDecl",
+          "FuncDef",
+          "ID",
+          "ParamList",
+          "StructRef"
+        ],
+        "calls": [
+          "printf",
+          "printf",
+          "printf"
+        ],
+        "calls_uniq": [
+          "printf"
+        ],
+        "conditions": [],
+        "returns": [],
+        "declarations": [],
+        "assignments": [],
+        "constants": [
+          "Const:\"[SEV %d] \"",
+          "Const:\"\\n\""
+        ]
+      },
+      {
+        "func": "log_to_file",
+        "line": 34,
+        "node_count_raw": 48,
+        "node_count_kept": 32,
+        "types_kept": [
+          "Constant",
+          "Decl",
+          "FuncCall",
+          "FuncDecl",
+          "FuncDef",
+          "ID",
+          "If",
+          "ParamList",
+          "Return",
+          "StructRef",
+          "UnaryOp"
+        ],
+        "calls": [
+          "fprintf",
+          "fprintf",
+          "fclose",
+          "fopen"
+        ],
+        "calls_uniq": [
+          "fclose",
+          "fopen",
+          "fprintf"
+        ],
+        "conditions": [
+          "If"
+        ],
+        "returns": [
+          "Return"
+        ],
+        "declarations": [],
+        "assignments": [],
+        "constants": [
+          "Const:\"[SEV %d] \"",
+          "Const:\"%s\\n\"",
+          "Const:\"a\""
+        ]
+      },
+      {
+        "func": "classify_severity",
+        "line": 42,
+        "node_count_raw": 29,
+        "node_count_kept": 21,
+        "types_kept": [
+          "Constant",
+          "Decl",
+          "FuncCall",
+          "FuncDecl",
+          "FuncDef",
+          "ID",
+          "If",
+          "ParamList",
+          "Return"
+        ],
+        "calls": [
+          "strstr",
+          "strstr"
+        ],
+        "calls_uniq": [
+          "strstr"
+        ],
+        "conditions": [
+          "If",
+          "If"
+        ],
+        "returns": [
+          "Return",
+          "Return",
+          "Return"
+        ],
+        "declarations": [],
+        "assignments": [],
+        "constants": [
+          "Const:1",
+          "Const:3",
+          "Const:2",
+          "Const:\"error\"",
+          "Const:\"warn\""
+        ]
+      },
+      {
+        "func": "process_log",
+        "line": 48,
+        "node_count_raw": 44,
+        "node_count_kept": 29,
+        "types_kept": [
+          "Constant",
+          "Decl",
+          "FuncCall",
+          "FuncDecl",
+          "FuncDef",
+          "ID",
+          "ParamList",
+          "UnaryOp"
+        ],
+        "calls": [
+          "log_init",
+          "log_set_message",
+          "log_print",
+          "log_to_file",
+          "classify_severity"
+        ],
+        "calls_uniq": [
+          "classify_severity",
+          "log_init",
+          "log_print",
+          "log_set_message",
+          "log_to_file"
+        ],
+        "conditions": [],
+        "returns": [],
+        "declarations": [],
+        "assignments": [],
+        "constants": [
+          "Const:\"/tmp/app.log\""
+        ]
+      },
+      {
+        "func": "main",
+        "line": 57,
+        "node_count_raw": 49,
+        "node_count_kept": 35,
+        "types_kept": [
+          "ArrayDecl",
+          "ArrayRef",
+          "BinaryOp",
+          "Constant",
+          "Decl",
+          "DeclList",
+          "For",
+          "FuncCall",
+          "FuncDecl",
+          "FuncDef",
+          "ID",
+          "If",
+          "ParamList",
+          "Return",
+          "UnaryOp"
+        ],
+        "calls": [
+          "printf",
+          "process_log"
+        ],
+        "calls_uniq": [
+          "printf",
+          "process_log"
+        ],
+        "conditions": [
+          "If",
+          "For"
+        ],
+        "returns": [
+          "Return",
+          "Return"
+        ],
+        "declarations": [],
+        "assignments": [],
+        "constants": [
+          "Const:0",
+          "Const:2",
+          "Const:1",
+          "Const:1",
+          "Const:\"Usage: %s <log message>\\n\"",
+          "Const:0"
+        ]
+      }
+    ],
+    "collapsed_isomorphic_functions": []
+  },
+  "filtered_cfg": {
+    "log_init": {
+      "entry": "entry_log_init",
+      "exit": "exit_log_init",
+      "node_count_raw": 4,
+      "node_count_kept": 4,
+      "branches": [],
+      "calls": [
+        {
+          "label": "call memset(...)",
+          "line": 18
+        }
+      ],
+      "merged_linear_segments": 0,
+      "paths": [
+        [
+          [
+            "FuncCall_4317056048",
+            ""
+          ],
+          [
+            "Assignment_4317056208",
+            ""
+          ],
+          [
+            "exit_log_init",
+            ""
+          ]
+        ]
+      ]
+    },
+    "log_set_message": {
+      "entry": "entry_log_set_message",
+      "exit": "exit_log_set_message",
+      "node_count_raw": 4,
+      "node_count_kept": 4,
+      "branches": [],
+      "calls": [
+        {
+          "label": "call strncpy(...)",
+          "line": 23
+        }
+      ],
+      "merged_linear_segments": 0,
+      "paths": [
+        [
+          [
+            "FuncCall_4317056928",
+            ""
+          ],
+          [
+            "Assignment_4317057488",
+            ""
+          ],
+          [
+            "exit_log_set_message",
+            ""
+          ]
+        ]
+      ]
+    },
+    "log_print": {
+      "entry": "entry_log_print",
+      "exit": "exit_log_print",
+      "node_count_raw": 5,
+      "node_count_kept": 5,
+      "branches": [],
+      "calls": [
+        {
+          "label": "call printf(...)",
+          "line": 29
+        },
+        {
+          "label": "call printf(...)",
+          "line": 30
+        },
+        {
+          "label": "call printf(...)",
+          "line": 31
+        }
+      ],
+      "merged_linear_segments": 0,
+      "paths": [
+        [
+          [
+            "FuncCall_4317057968",
+            ""
+          ],
+          [
+            "FuncCall_4317058128",
+            ""
+          ],
+          [
+            "FuncCall_4317058288",
+            ""
+          ],
+          [
+            "exit_log_print",
+            ""
+          ]
+        ]
+      ]
+    },
+    "log_to_file": {
+      "entry": "entry_log_to_file",
+      "exit": "exit_log_to_file",
+      "node_count_raw": 8,
+      "node_count_kept": 8,
+      "branches": [
+        {
+          "label": "if (!fp)",
+          "line": 36
+        }
+      ],
+      "calls": [
+        {
+          "label": "call fprintf(...)",
+          "line": 37
+        },
+        {
+          "label": "call fprintf(...)",
+          "line": 38
+        },
+        {
+          "label": "call fclose(...)",
+          "line": 39
+        }
+      ],
+      "merged_linear_segments": 0,
+      "paths": [
+        [
+          [
+            "Decl_4316542288",
+            ""
+          ],
+          [
+            "If_4317059008",
+            ""
+          ],
+          [
+            "FuncCall_4317059248",
+            ""
+          ],
+          [
+            "FuncCall_4317059488",
+            ""
+          ],
+          [
+            "FuncCall_4317059568",
+            ""
+          ],
+          [
+            "exit_log_to_file",
+            ""
+          ]
+        ]
+      ]
+    },
+    "classify_severity": {
+      "entry": "entry_classify_severity",
+      "exit": "exit_classify_severity",
+      "node_count_raw": 7,
+      "node_count_kept": 7,
+      "branches": [
+        {
+          "label": "if (strstr(...))",
+          "line": 43
+        },
+        {
+          "label": "if (strstr(...))",
+          "line": 44
+        }
+      ],
+      "calls": [],
+      "merged_linear_segments": 0,
+      "paths": []
+    },
+    "process_log": {
+      "entry": "entry_process_log",
+      "exit": "exit_process_log",
+      "node_count_raw": 8,
+      "node_count_kept": 8,
+      "branches": [],
+      "calls": [
+        {
+          "label": "call log_init(...)",
+          "line": 51
+        },
+        {
+          "label": "call log_set_message(...)",
+          "line": 52
+        },
+        {
+          "label": "call log_print(...)",
+          "line": 53
+        },
+        {
+          "label": "call log_to_file(...)",
+          "line": 54
+        }
+      ],
+      "merged_linear_segments": 0,
+      "paths": [
+        [
+          [
+            "Decl_4316542928",
+            ""
+          ],
+          [
+            "Decl_4316543056",
+            ""
+          ],
+          [
+            "FuncCall_4317061008",
+            ""
+          ],
+          [
+            "FuncCall_4317061168",
+            ""
+          ],
+          [
+            "FuncCall_4317061328",
+            ""
+          ],
+          [
+            "FuncCall_4317061568",
+            ""
+          ],
+          [
+            "exit_process_log",
+            ""
+          ]
+        ]
+      ]
+    },
+    "main": {
+      "entry": "entry_main",
+      "exit": "exit_main",
+      "node_count_raw": 10,
+      "node_count_kept": 10,
+      "branches": [
+        {
+          "label": "if (argc < 2)",
+          "line": 58
+        },
+        {
+          "label": "for_cond (i < argc)",
+          "line": 62
+        }
+      ],
+      "calls": [
+        {
+          "label": "call printf(...)",
+          "line": 59
+        },
+        {
+          "label": "call process_log(...)",
+          "line": 63
+        }
+      ],
+      "merged_linear_segments": 0,
+      "paths": []
+    }
+  },
+  "filtered_dfg": {
+    "log_init": {
+      "node_count_raw": 4,
+      "edge_count_raw": 2,
+      "edge_count_kept": 2,
+      "parameters": [
+        {
+          "id": "param_entry_log_init",
+          "label": "param: entry",
+          "line": 17
+        },
+        {
+          "id": "param_sev_log_init",
+          "label": "param: sev",
+          "line": 17
+        }
+      ],
+      "edges": [
+        {
+          "from": "param_entry_log_init",
+          "to": "FuncCall_4317056048",
+          "var": "entry"
+        },
+        {
+          "from": "param_sev_log_init",
+          "to": "Assignment_4317056208",
+          "var": "sev"
+        }
+      ],
+      "chains": [
+        [
+          "param_entry_log_init",
+          "FuncCall_4317056048"
+        ],
+        [
+          "param_sev_log_init",
+          "Assignment_4317056208"
+        ]
+      ],
+      "node_labels": {
+        "param_entry_log_init": "param: entry",
+        "param_sev_log_init": "param: sev",
+        "FuncCall_4317056048": "call memset",
+        "Assignment_4317056208": "assign entry->severity"
+      }
+    },
+    "log_set_message": {
+      "node_count_raw": 4,
+      "edge_count_raw": 2,
+      "edge_count_kept": 2,
+      "parameters": [
+        {
+          "id": "param_entry_log_set_message",
+          "label": "param: entry",
+          "line": 22
+        },
+        {
+          "id": "param_msg_log_set_message",
+          "label": "param: msg",
+          "line": 22
+        }
+      ],
+      "edges": [
+        {
+          "from": "param_entry_log_set_message",
+          "to": "FuncCall_4317056928",
+          "var": "entry"
+        },
+        {
+          "from": "param_msg_log_set_message",
+          "to": "FuncCall_4317056928",
+          "var": "msg"
+        }
+      ],
+      "chains": [
+        [
+          "param_entry_log_set_message",
+          "FuncCall_4317056928"
+        ],
+        [
+          "param_msg_log_set_message",
+          "FuncCall_4317056928"
+        ]
+      ],
+      "node_labels": {
+        "param_entry_log_set_message": "param: entry",
+        "param_msg_log_set_message": "param: msg",
+        "FuncCall_4317056928": "call strncpy",
+        "Assignment_4317057488": "assign None"
+      }
+    },
+    "log_print": {
+      "node_count_raw": 4,
+      "edge_count_raw": 2,
+      "edge_count_kept": 2,
+      "parameters": [
+        {
+          "id": "param_entry_log_print",
+          "label": "param: entry",
+          "line": 28
+        }
+      ],
+      "edges": [
+        {
+          "from": "param_entry_log_print",
+          "to": "FuncCall_4317057968",
+          "var": "entry"
+        },
+        {
+          "from": "param_entry_log_print",
+          "to": "FuncCall_4317058128",
+          "var": "entry"
+        }
+      ],
+      "chains": [
+        [
+          "param_entry_log_print",
+          "FuncCall_4317057968"
+        ],
+        [
+          "param_entry_log_print",
+          "FuncCall_4317058128"
+        ]
+      ],
+      "node_labels": {
+        "param_entry_log_print": "param: entry",
+        "FuncCall_4317057968": "call printf",
+        "FuncCall_4317058128": "call printf",
+        "FuncCall_4317058288": "call printf"
+      }
+    },
+    "log_to_file": {
+      "node_count_raw": 7,
+      "edge_count_raw": 7,
+      "edge_count_kept": 7,
+      "parameters": [
+        {
+          "id": "param_entry_log_to_file",
+          "label": "param: entry",
+          "line": 34
+        },
+        {
+          "id": "param_path_log_to_file",
+          "label": "param: path",
+          "line": 34
+        }
+      ],
+      "edges": [
+        {
+          "from": "param_path_log_to_file",
+          "to": "Decl_4316542288",
+          "var": "path"
+        },
+        {
+          "from": "Decl_4316542288",
+          "to": "If_4317059008",
+          "var": "fp"
+        },
+        {
+          "from": "Decl_4316542288",
+          "to": "FuncCall_4317059248",
+          "var": "fp"
+        },
+        {
+          "from": "param_entry_log_to_file",
+          "to": "FuncCall_4317059248",
+          "var": "entry"
+        },
+        {
+          "from": "Decl_4316542288",
+          "to": "FuncCall_4317059488",
+          "var": "fp"
+        },
+        {
+          "from": "param_entry_log_to_file",
+          "to": "FuncCall_4317059488",
+          "var": "entry"
+        },
+        {
+          "from": "Decl_4316542288",
+          "to": "FuncCall_4317059568",
+          "var": "fp"
+        }
+      ],
+      "chains": [
+        [
+          "param_entry_log_to_file",
+          "FuncCall_4317059248"
+        ],
+        [
+          "param_entry_log_to_file",
+          "FuncCall_4317059488"
+        ],
+        [
+          "param_path_log_to_file",
+          "Decl_4316542288",
+          "If_4317059008"
+        ],
+        [
+          "param_path_log_to_file",
+          "Decl_4316542288",
+          "FuncCall_4317059248"
+        ],
+        [
+          "param_path_log_to_file",
+          "Decl_4316542288",
+          "FuncCall_4317059488"
+        ],
+        [
+          "param_path_log_to_file",
+          "Decl_4316542288",
+          "FuncCall_4317059568"
+        ]
+      ],
+      "node_labels": {
+        "param_entry_log_to_file": "param: entry",
+        "param_path_log_to_file": "param: path",
+        "Decl_4316542288": "decl fp",
+        "If_4317059008": "if(...)",
+        "FuncCall_4317059248": "call fprintf",
+        "FuncCall_4317059488": "call fprintf",
+        "FuncCall_4317059568": "call fclose"
+      }
+    },
+    "classify_severity": {
+      "node_count_raw": 4,
+      "edge_count_raw": 2,
+      "edge_count_kept": 2,
+      "parameters": [
+        {
+          "id": "param_msg_classify_severity",
+          "label": "param: msg",
+          "line": 42
+        }
+      ],
+      "edges": [
+        {
+          "from": "param_msg_classify_severity",
+          "to": "If_4317060128",
+          "var": "msg"
+        },
+        {
+          "from": "param_msg_classify_severity",
+          "to": "If_4317060448",
+          "var": "msg"
+        }
+      ],
+      "chains": [
+        [
+          "param_msg_classify_severity",
+          "If_4317060128"
+        ],
+        [
+          "param_msg_classify_severity",
+          "If_4317060448"
+        ]
+      ],
+      "node_labels": {
+        "param_msg_classify_severity": "param: msg",
+        "If_4317060128": "if(...)",
+        "If_4317060448": "if(...)",
+        "Return_4317419408": "return"
+      }
+    },
+    "process_log": {
+      "node_count_raw": 7,
+      "edge_count_raw": 7,
+      "edge_count_kept": 7,
+      "parameters": [
+        {
+          "id": "param_user_input_process_log",
+          "label": "param: user_input",
+          "line": 48
+        }
+      ],
+      "edges": [
+        {
+          "from": "param_user_input_process_log",
+          "to": "Decl_4316543056",
+          "var": "user_input"
+        },
+        {
+          "from": "Decl_4316542928",
+          "to": "FuncCall_4317061008",
+          "var": "entry"
+        },
+        {
+          "from": "Decl_4316543056",
+          "to": "FuncCall_4317061008",
+          "var": "sev"
+        },
+        {
+          "from": "Decl_4316542928",
+          "to": "FuncCall_4317061168",
+          "var": "entry"
+        },
+        {
+          "from": "param_user_input_process_log",
+          "to": "FuncCall_4317061168",
+          "var": "user_input"
+        },
+        {
+          "from": "Decl_4316542928",
+          "to": "FuncCall_4317061328",
+          "var": "entry"
+        },
+        {
+          "from": "Decl_4316542928",
+          "to": "FuncCall_4317061568",
+          "var": "entry"
+        }
+      ],
+      "chains": [
+        [
+          "param_user_input_process_log",
+          "FuncCall_4317061168"
+        ],
+        [
+          "param_user_input_process_log",
+          "Decl_4316543056",
+          "FuncCall_4317061008"
+        ]
+      ],
+      "node_labels": {
+        "param_user_input_process_log": "param: user_input",
+        "Decl_4316542928": "decl entry",
+        "Decl_4316543056": "decl sev",
+        "FuncCall_4317061008": "call log_init",
+        "FuncCall_4317061168": "call log_set_message",
+        "FuncCall_4317061328": "call log_print",
+        "FuncCall_4317061568": "call log_to_file"
+      }
+    },
+    "main": {
+      "node_count_raw": 10,
+      "edge_count_raw": 4,
+      "edge_count_kept": 4,
+      "parameters": [
+        {
+          "id": "param_argc_main",
+          "label": "param: argc",
+          "line": 57
+        },
+        {
+          "id": "param_argv_main",
+          "label": "param: argv",
+          "line": 57
+        }
+      ],
+      "edges": [
+        {
+          "from": "param_argc_main",
+          "to": "If_4317062608",
+          "var": "argc"
+        },
+        {
+          "from": "param_argv_main",
+          "to": "FuncCall_4317062448",
+          "var": "argv"
+        },
+        {
+          "from": "param_argc_main",
+          "to": "For_4317433200",
+          "var": "argc"
+        },
+        {
+          "from": "param_argv_main",
+          "to": "FuncCall_4317063008",
+          "var": "argv"
+        }
+      ],
+      "chains": [
+        [
+          "param_argc_main",
+          "If_4317062608"
+        ],
+        [
+          "param_argc_main",
+          "For_4317433200"
+        ],
+        [
+          "param_argv_main",
+          "FuncCall_4317062448"
+        ],
+        [
+          "param_argv_main",
+          "FuncCall_4317063008"
+        ]
+      ],
+      "node_labels": {
+        "param_argc_main": "param: argc",
+        "param_argv_main": "param: argv",
+        "If_4317062608": "if(...)",
+        "FuncCall_4317062448": "call printf",
+        "Return_4317448208": "return",
+        "DeclList_4317448912": "DeclList",
+        "For_4317433200": "for_cond",
+        "FuncCall_4317063008": "call process_log",
+        "UnaryOp_4317062848": "UnaryOp",
+        "Return_4317451344": "return"
+      }
+    }
+  }
+}

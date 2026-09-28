@@ -1,0 +1,93 @@
+文件: /Users/vinsontang/Desktop/test/graph_demo/control_flow/test_snippets/safe_01_string_utils.c
+图构建模式: precise_c
+【AST】
+- 函数 safe_copy@L14：
+  - 赋值：Assign:=；BinaryOp:==；BinaryOp:==；BinaryOp:==
+  - 调用：strncpy
+  - 条件/循环：If
+  - 返回：Return
+- 函数 to_upper@L22：
+  - 赋值：BinaryOp:==；BinaryOp:!=；Assign:=
+  - 调用：toupper
+  - 条件/循环：If；For
+  - 返回：Return
+- 函数 count_char@L30：
+  - 赋值：BinaryOp:==；BinaryOp:!=；BinaryOp:==
+  - 条件/循环：If；For；If
+  - 返回：Return；Return
+- 函数 safe_concat@L40：
+  - 赋值：Assign:=；BinaryOp:==；BinaryOp:==；BinaryOp:==
+  - 调用：memcpy；memcpy；strlen；strlen；malloc
+  - 条件/循环：If；If
+  - 返回：Return；Return；Return
+- 函数 reverse_str@L53：
+  - 赋值：BinaryOp:==；Assign:=；Assign:=
+  - 调用：strlen
+  - 条件/循环：If；For
+  - 返回：Return
+- 函数 main@L63：
+  - 调用：safe_copy；to_upper；printf；printf；safe_concat；count_char；reverse_str；printf；free
+  - 条件/循环：If
+  - 返回：Return
+
+【CFG】
+- 函数 safe_copy：保留控制点 6/6；分支节点 1；调用节点 1；线性段折叠 0。
+  - 分支/循环节点：if (dst == 0 || src == 0 || dst_sz == 0)@L15
+  - 路径1: Entry -> if (dst == 0 || src == 0 || dst_sz == 0) -> call strncpy(...) -> dst[dst_sz - 1] = ... -> safe_copy EXIT
+- 函数 to_upper：保留控制点 8/8；分支节点 2；调用节点 0；线性段折叠 0。
+  - 分支/循环节点：if (s == 0)@L23；for_cond (s[i] != '\0')@L24
+  - 路径1: Entry -> if (s == 0) -> DeclList -> for_cond (s[i] != '\0') -> to_upper EXIT
+  - 路径2: Entry -> if (s == 0) -> DeclList -> for_cond (s[i] != '\0') -> [back] for_cond (s[i] != '\0') -> to_upper EXIT
+- 函数 count_char：保留控制点 11/11；分支节点 3；调用节点 0；线性段折叠 0。
+  - 分支/循环节点：if (s == 0)@L32；for_cond (s[i] != '\0')@L33；if (s[i] == c)@L34
+- 函数 safe_concat：保留控制点 13/13；分支节点 2；调用节点 2；线性段折叠 0。
+  - 分支/循环节点：if (a == 0 || b == 0)@L41；if (buf == 0)@L45
+- 函数 reverse_str：保留控制点 11/11；分支节点 2；调用节点 0；线性段折叠 0。
+  - 分支/循环节点：if (s == 0)@L54；for_cond (i < len / 2)@L56
+  - 路径1: Entry -> if (s == 0) -> decl len = strlen(...) -> for_cond (i < len / 2) -> reverse_str EXIT
+  - 路径2: Entry -> if (s == 0) -> decl len = strlen(...) -> for_cond (i < len / 2) -> [back] for_cond (i < len / 2) -> reverse_str EXIT
+- 函数 main：保留控制点 13/13；分支节点 1；调用节点 7；线性段折叠 0。
+  - 分支/循环节点：if (joined)@L71
+
+【DFG】
+- 函数 safe_copy：边保留 6/6；参数源 3 个；抽取链路 6 条。
+  - 参数源：param: dst@L14；param: dst_sz@L14；param: src@L14
+  - 数据链：param: dst -> if(...)
+  - 数据链：param: dst -> call strncpy
+  - 数据链：param: dst_sz -> if(...)
+  - 数据链：param: dst_sz -> call strncpy
+  - 数据链：param: src -> if(...)
+  - 数据链：param: src -> call strncpy
+- 函数 to_upper：边保留 3/3；参数源 1 个；抽取链路 3 条。
+  - 参数源：param: s@L22
+  - 数据链：param: s -> if(...)
+  - 数据链：param: s -> for_cond
+  - 数据链：param: s -> assign None
+- 函数 count_char：边保留 5/5；参数源 2 个；抽取链路 4 条。
+  - 参数源：param: s@L30；param: c@L30
+  - 数据链：param: s -> if(...)
+  - 数据链：param: s -> for_cond
+  - 数据链：param: s -> if(...)
+  - 数据链：param: c -> if(...)
+- 函数 safe_concat：边保留 15/15；参数源 2 个；抽取链路 15 条。
+  - 参数源：param: a@L40；param: b@L40
+  - 数据链：param: a -> if(...)
+  - 数据链：param: a -> call memcpy
+  - 数据链：param: a -> decl la -> call memcpy
+  - 数据链：param: a -> decl la -> call memcpy
+  - 数据链：param: a -> decl la -> decl buf -> if(...)
+  - 数据链：param: a -> decl la -> decl buf -> call memcpy
+  - 数据链：param: a -> decl la -> decl buf -> call memcpy
+  - 数据链：param: a -> decl la -> decl buf -> return
+  - 数据链：param: b -> if(...)
+  - 数据链：param: b -> call memcpy
+  - 数据链：param: b -> decl lb -> call memcpy
+  - 数据链：param: b -> decl lb -> decl buf -> if(...)
+- 函数 reverse_str：边保留 7/7；参数源 1 个；抽取链路 5 条。
+  - 参数源：param: s@L53
+  - 数据链：param: s -> if(...)
+  - 数据链：param: s -> assign None
+  - 数据链：param: s -> decl len -> for_cond
+  - 数据链：param: s -> decl len -> assign None
+  - 数据链：param: s -> decl tmp -> assign None
+- 函数 main：边保留 9/10；参数源 0 个；抽取链路 0 条。

@@ -1,0 +1,110 @@
+[
+  {
+    "id": 1085,
+    "cve_id": "CVE-2016-7035",
+    "code_before_change": " crm_client_new(qb_ipcs_connection_t * c, uid_t uid_client, gid_t gid_client)\n {\n    static uid_t uid_server = 0;\n     static gid_t gid_cluster = 0;\n \n     crm_client_t *client = NULL;\n\n    CRM_LOG_ASSERT(c);\n    if (c == NULL) {\n        return NULL;\n     }\n \n     if (gid_cluster == 0) {\n        uid_server = getuid();\n         if(crm_user_lookup(CRM_DAEMON_USER, NULL, &gid_cluster) < 0) {\n             static bool have_error = FALSE;\n             if(have_error == FALSE) {\n                crm_warn(\"Could not find group for user %s\", CRM_DAEMON_USER);\n                have_error = TRUE;\n            }\n         }\n     }\n \n    if(gid_cluster != 0 && gid_client != 0) {\n        uid_t best_uid = -1; /* Passing -1 to chown(2) means don't change */\n        if(uid_client == 0 || uid_server == 0) { /* Someone is priveliged, but the other may not be */\n            best_uid = QB_MAX(uid_client, uid_server);\n            crm_trace(\"Allowing user %u to clean up after disconnect\", best_uid);\n        }\n         crm_trace(\"Giving access to group %u\", gid_cluster);\n        qb_ipcs_connection_auth_set(c, best_uid, gid_cluster, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);\n     }\n \n     crm_client_init();\n\n    /* TODO: Do our own auth checking, return NULL if unauthorized */\n    client = calloc(1, sizeof(crm_client_t));\n\n    client->ipcs = c;\n    client->kind = CRM_CLIENT_IPC;\n    client->pid = crm_ipcs_client_pid(c);\n\n    client->id = crm_generate_uuid();\n\n    crm_debug(\"Connecting %p for uid=%d gid=%d pid=%u id=%s\", c, uid_client, gid_client, client->pid, client->id);\n\n#if ENABLE_ACL\n    client->user = uid2username(uid_client);\n#endif\n\n    g_hash_table_insert(client_connections, c, client);\n    return client;\n}\n",
+    "code_after_change": " crm_client_new(qb_ipcs_connection_t * c, uid_t uid_client, gid_t gid_client)\n {\n     static gid_t gid_cluster = 0;\n \n     crm_client_t *client = NULL;\n\n    CRM_LOG_ASSERT(c);\n    if (c == NULL) {\n        return NULL;\n     }\n \n     if (gid_cluster == 0) {\n         if(crm_user_lookup(CRM_DAEMON_USER, NULL, &gid_cluster) < 0) {\n             static bool have_error = FALSE;\n             if(have_error == FALSE) {\n                crm_warn(\"Could not find group for user %s\", CRM_DAEMON_USER);\n                have_error = TRUE;\n            }\n         }\n     }\n \n    if (uid_client != 0) {\n         crm_trace(\"Giving access to group %u\", gid_cluster);\n        /* Passing -1 to chown(2) means don't change */\n        qb_ipcs_connection_auth_set(c, -1, gid_cluster, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);\n     }\n \n     crm_client_init();\n\n    /* TODO: Do our own auth checking, return NULL if unauthorized */\n    client = calloc(1, sizeof(crm_client_t));\n\n    client->ipcs = c;\n    client->kind = CRM_CLIENT_IPC;\n    client->pid = crm_ipcs_client_pid(c);\n\n    client->id = crm_generate_uuid();\n\n    crm_debug(\"Connecting %p for uid=%d gid=%d pid=%u id=%s\", c, uid_client, gid_client, client->pid, client->id);\n\n#if ENABLE_ACL\n    client->user = uid2username(uid_client);\n#endif\n\n    g_hash_table_insert(client_connections, c, client);\n    return client;\n}\n",
+    "cwe": [
+      "CWE-285"
+    ],
+    "cve_description": "An authorization flaw was found in Pacemaker before 1.1.16, where it did not properly guard its IPC interface. An attacker with an unprivileged account on a Pacemaker node could use this flaw to, for example, force the Local Resource Manager daemon to execute a script as root and thereby gain root access on the machine.",
+    "patch": "--- code before\n+++ code after\n@@ -1,6 +1,5 @@\n  crm_client_new(qb_ipcs_connection_t * c, uid_t uid_client, gid_t gid_client)\n  {\n-    static uid_t uid_server = 0;\n      static gid_t gid_cluster = 0;\n  \n      crm_client_t *client = NULL;\n@@ -11,7 +10,6 @@\n      }\n  \n      if (gid_cluster == 0) {\n-        uid_server = getuid();\n          if(crm_user_lookup(CRM_DAEMON_USER, NULL, &gid_cluster) < 0) {\n              static bool have_error = FALSE;\n              if(have_error == FALSE) {\n@@ -21,14 +19,10 @@\n          }\n      }\n  \n-    if(gid_cluster != 0 && gid_client != 0) {\n-        uid_t best_uid = -1; /* Passing -1 to chown(2) means don't change */\n-        if(uid_client == 0 || uid_server == 0) { /* Someone is priveliged, but the other may not be */\n-            best_uid = QB_MAX(uid_client, uid_server);\n-            crm_trace(\"Allowing user %u to clean up after disconnect\", best_uid);\n-        }\n+    if (uid_client != 0) {\n          crm_trace(\"Giving access to group %u\", gid_cluster);\n-        qb_ipcs_connection_auth_set(c, best_uid, gid_cluster, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);\n+        /* Passing -1 to chown(2) means don't change */\n+        qb_ipcs_connection_auth_set(c, -1, gid_cluster, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);\n      }\n  \n      crm_client_init();",
+    "function_modified_lines": {
+      "added": [
+        "    if (uid_client != 0) {",
+        "        /* Passing -1 to chown(2) means don't change */",
+        "        qb_ipcs_connection_auth_set(c, -1, gid_cluster, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);"
+      ],
+      "deleted": [
+        "    static uid_t uid_server = 0;",
+        "        uid_server = getuid();",
+        "    if(gid_cluster != 0 && gid_client != 0) {",
+        "        uid_t best_uid = -1; /* Passing -1 to chown(2) means don't change */",
+        "        if(uid_client == 0 || uid_server == 0) { /* Someone is priveliged, but the other may not be */",
+        "            best_uid = QB_MAX(uid_client, uid_server);",
+        "            crm_trace(\"Allowing user %u to clean up after disconnect\", best_uid);",
+        "        }",
+        "        qb_ipcs_connection_auth_set(c, best_uid, gid_cluster, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);"
+      ]
+    }
+  },
+  {
+    "id": 1480,
+    "cve_id": "CVE-2018-16074",
+    "code_before_change": "GURL SiteInstance::GetSiteForURL(BrowserContext* browser_context,\n                                 const GURL& real_url) {\n  if (real_url.SchemeIs(kGuestScheme))\n    return real_url;\n\n  GURL url = SiteInstanceImpl::GetEffectiveURL(browser_context, real_url);\n  url::Origin origin = url::Origin::Create(url);\n\n  auto* policy = ChildProcessSecurityPolicyImpl::GetInstance();\n  url::Origin isolated_origin;\n  if (policy->GetMatchingIsolatedOrigin(origin, &isolated_origin))\n    return isolated_origin.GetURL();\n\n  if (!origin.host().empty() && origin.scheme() != url::kFileScheme) {\n    std::string domain = net::registry_controlled_domains::GetDomainAndRegistry(\n        origin.host(),\n        net::registry_controlled_domains::INCLUDE_PRIVATE_REGISTRIES);\n    std::string site = origin.scheme();\n    site += url::kStandardSchemeSeparator;\n    site += domain.empty() ? origin.host() : domain;\n    return GURL(site);\n  }\n\n   if (!origin.unique()) {\n     DCHECK(!origin.scheme().empty());\n     return GURL(origin.scheme() + \":\");\n   } else if (url.has_scheme()) {\n     DCHECK(!url.scheme().empty());\n     return GURL(url.scheme() + \":\");\n   }\n\n  DCHECK(!url.is_valid()) << url;\n  return GURL();\n}\n",
+    "code_after_change": "GURL SiteInstance::GetSiteForURL(BrowserContext* browser_context,\n                                 const GURL& real_url) {\n  if (real_url.SchemeIs(kGuestScheme))\n    return real_url;\n\n  GURL url = SiteInstanceImpl::GetEffectiveURL(browser_context, real_url);\n  url::Origin origin = url::Origin::Create(url);\n\n  auto* policy = ChildProcessSecurityPolicyImpl::GetInstance();\n  url::Origin isolated_origin;\n  if (policy->GetMatchingIsolatedOrigin(origin, &isolated_origin))\n    return isolated_origin.GetURL();\n\n  if (!origin.host().empty() && origin.scheme() != url::kFileScheme) {\n    std::string domain = net::registry_controlled_domains::GetDomainAndRegistry(\n        origin.host(),\n        net::registry_controlled_domains::INCLUDE_PRIVATE_REGISTRIES);\n    std::string site = origin.scheme();\n    site += url::kStandardSchemeSeparator;\n    site += domain.empty() ? origin.host() : domain;\n    return GURL(site);\n  }\n\n   if (!origin.unique()) {\n    // cover blob:file: and filesystem:file: URIs (see also\n    // https://crbug.com/697111).\n     DCHECK(!origin.scheme().empty());\n     return GURL(origin.scheme() + \":\");\n   } else if (url.has_scheme()) {\n    // In some cases, it is not safe to use just the scheme as a site URL, as\n    // that might allow two URLs created by different sites to to share a\n    // process.  See https://crbug.com/863623.\n    //\n    // TODO(alexmos,creis): This should eventually be expanded to certain other\n    // schemes, such as data: and file:.\n    if (url.SchemeIsBlob()) {\n      // We get here for blob URLs of form blob:null/guid.  Use the full URL\n      // with the guid in that case, which isolates all blob URLs with unique\n      // origins from each other.  Remove hash from the URL, since\n      // same-document navigations shouldn't use a different site URL.\n      if (url.has_ref()) {\n        GURL::Replacements replacements;\n        replacements.ClearRef();\n        url = url.ReplaceComponents(replacements);\n      }\n      return url;\n    }\n\n     DCHECK(!url.scheme().empty());\n     return GURL(url.scheme() + \":\");\n   }\n\n  DCHECK(!url.is_valid()) << url;\n  return GURL();\n}\n",
+    "cwe": [
+      "CWE-285"
+    ],
+    "cve_description": "Insufficient policy enforcement in site isolation in Google Chrome prior to 69.0.3497.81 allowed a remote attacker to bypass site isolation via a crafted HTML page.",
+    "patch": "--- code before\n+++ code after\n@@ -22,9 +22,30 @@\n   }\n \n    if (!origin.unique()) {\n+    // cover blob:file: and filesystem:file: URIs (see also\n+    // https://crbug.com/697111).\n      DCHECK(!origin.scheme().empty());\n      return GURL(origin.scheme() + \":\");\n    } else if (url.has_scheme()) {\n+    // In some cases, it is not safe to use just the scheme as a site URL, as\n+    // that might allow two URLs created by different sites to to share a\n+    // process.  See https://crbug.com/863623.\n+    //\n+    // TODO(alexmos,creis): This should eventually be expanded to certain other\n+    // schemes, such as data: and file:.\n+    if (url.SchemeIsBlob()) {\n+      // We get here for blob URLs of form blob:null/guid.  Use the full URL\n+      // with the guid in that case, which isolates all blob URLs with unique\n+      // origins from each other.  Remove hash from the URL, since\n+      // same-document navigations shouldn't use a different site URL.\n+      if (url.has_ref()) {\n+        GURL::Replacements replacements;\n+        replacements.ClearRef();\n+        url = url.ReplaceComponents(replacements);\n+      }\n+      return url;\n+    }\n+\n      DCHECK(!url.scheme().empty());\n      return GURL(url.scheme() + \":\");\n    }",
+    "function_modified_lines": {
+      "added": [
+        "    // cover blob:file: and filesystem:file: URIs (see also",
+        "    // https://crbug.com/697111).",
+        "    // In some cases, it is not safe to use just the scheme as a site URL, as",
+        "    // that might allow two URLs created by different sites to to share a",
+        "    // process.  See https://crbug.com/863623.",
+        "    //",
+        "    // TODO(alexmos,creis): This should eventually be expanded to certain other",
+        "    // schemes, such as data: and file:.",
+        "    if (url.SchemeIsBlob()) {",
+        "      // We get here for blob URLs of form blob:null/guid.  Use the full URL",
+        "      // with the guid in that case, which isolates all blob URLs with unique",
+        "      // origins from each other.  Remove hash from the URL, since",
+        "      // same-document navigations shouldn't use a different site URL.",
+        "      if (url.has_ref()) {",
+        "        GURL::Replacements replacements;",
+        "        replacements.ClearRef();",
+        "        url = url.ReplaceComponents(replacements);",
+        "      }",
+        "      return url;",
+        "    }",
+        ""
+      ],
+      "deleted": []
+    }
+  },
+  {
+    "id": 1482,
+    "cve_id": "CVE-2018-16086",
+    "code_before_change": "bool RendererPermissionsPolicyDelegate::IsRestrictedUrl(\n    const GURL& document_url,\n    std::string* error) {\n  if (dispatcher_->IsExtensionActive(kWebStoreAppId)) {\n    if (error)\n      *error = errors::kCannotScriptGallery;\n     return true;\n   }\n \n  if (SearchBouncer::GetInstance()->IsNewTabPage(document_url)) {\n     if (error)\n       *error = errors::kCannotScriptNtp;\n     return true;\n  }\n\n  return false;\n}\n",
+    "code_after_change": "bool RendererPermissionsPolicyDelegate::IsRestrictedUrl(\n    const GURL& document_url,\n    std::string* error) {\n  if (dispatcher_->IsExtensionActive(kWebStoreAppId)) {\n    if (error)\n      *error = errors::kCannotScriptGallery;\n     return true;\n   }\n \n  if (base::CommandLine::ForCurrentProcess()->HasSwitch(\n          ::switches::kInstantProcess)) {\n     if (error)\n       *error = errors::kCannotScriptNtp;\n     return true;\n  }\n\n  return false;\n}\n",
+    "cwe": [
+      "CWE-285"
+    ],
+    "cve_description": "Insufficient policy enforcement in extensions API in Google Chrome prior to 69.0.3497.81 allowed an attacker who convinced a user to install a malicious extension to bypass navigation restrictions via a crafted Chrome Extension.",
+    "patch": "--- code before\n+++ code after\n@@ -7,7 +7,8 @@\n      return true;\n    }\n  \n-  if (SearchBouncer::GetInstance()->IsNewTabPage(document_url)) {\n+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(\n+          ::switches::kInstantProcess)) {\n      if (error)\n        *error = errors::kCannotScriptNtp;\n      return true;",
+    "function_modified_lines": {
+      "added": [
+        "  if (base::CommandLine::ForCurrentProcess()->HasSwitch(",
+        "          ::switches::kInstantProcess)) {"
+      ],
+      "deleted": [
+        "  if (SearchBouncer::GetInstance()->IsNewTabPage(document_url)) {"
+      ]
+    }
+  },
+  {
+    "id": 1667,
+    "cve_id": "CVE-2016-7143",
+    "code_before_change": "m_authenticate(struct Client *client_p, struct Client *source_p,\n\tint parc, const char *parv[])\n{\n\tstruct Client *agent_p = NULL;\n\tstruct Client *saslserv_p = NULL;\n\n\t/* They really should use CAP for their own sake. */\n\tif(!IsCapable(source_p, CLICAP_SASL))\n\t\treturn 0;\n\n\tif (strlen(client_p->id) == 3)\n\t{\n\t\texit_client(client_p, client_p, client_p, \"Mixing client and server protocol\");\n \t\treturn 0;\n \t}\n \n \tsaslserv_p = find_named_client(ConfigFileEntry.sasl_service);\n \tif (saslserv_p == NULL || !IsService(saslserv_p))\n \t{\n\t\tsendto_one(source_p, form_str(ERR_SASLABORTED), me.name, EmptyString(source_p->name) ? \"*\" : source_p->name);\n\t\treturn 0;\n\t}\n\n\tif(source_p->localClient->sasl_complete)\n\t{\n\t\t*source_p->localClient->sasl_agent = '\\0';\n\t\tsource_p->localClient->sasl_complete = 0;\n\t}\n\n\tif(strlen(parv[1]) > 400)\n\t{\n\t\tsendto_one(source_p, form_str(ERR_SASLTOOLONG), me.name, EmptyString(source_p->name) ? \"*\" : source_p->name);\n\t\treturn 0;\n\t}\n\n\tif(!*source_p->id)\n\t{\n\t\t/* Allocate a UID. */\n\t\tstrcpy(source_p->id, generate_uid());\n\t\tadd_to_id_hash(source_p->id, source_p);\n\t}\n\n\tif(*source_p->localClient->sasl_agent)\n\t\tagent_p = find_id(source_p->localClient->sasl_agent);\n\n\tif(agent_p == NULL)\n\t{\n\t\tsendto_one(saslserv_p, \":%s ENCAP %s SASL %s %s H %s %s\",\n\t\t\t\t\tme.id, saslserv_p->servptr->name, source_p->id, saslserv_p->id,\n\t\t\t\t\tsource_p->host, source_p->sockhost);\n\n\t\tif (!strcmp(parv[1], \"EXTERNAL\") && source_p->certfp != NULL)\n\t\t\tsendto_one(saslserv_p, \":%s ENCAP %s SASL %s %s S %s %s\",\n\t\t\t\t\t\tme.id, saslserv_p->servptr->name, source_p->id, saslserv_p->id,\n\t\t\t\t\t\tparv[1], source_p->certfp);\n\t\telse\n\t\t\tsendto_one(saslserv_p, \":%s ENCAP %s SASL %s %s S %s\",\n\t\t\t\t\t\tme.id, saslserv_p->servptr->name, source_p->id, saslserv_p->id,\n\t\t\t\t\t\tparv[1]);\n\n\t\trb_strlcpy(source_p->localClient->sasl_agent, saslserv_p->id, IDLEN);\n\t}\n\telse\n\t\tsendto_one(agent_p, \":%s ENCAP %s SASL %s %s C %s\",\n\t\t\t\tme.id, agent_p->servptr->name, source_p->id, agent_p->id,\n\t\t\t\tparv[1]);\n\tsource_p->localClient->sasl_out++;\n\n\treturn 0;\n}\n",
+    "code_after_change": "m_authenticate(struct Client *client_p, struct Client *source_p,\n\tint parc, const char *parv[])\n{\n\tstruct Client *agent_p = NULL;\n\tstruct Client *saslserv_p = NULL;\n\n\t/* They really should use CAP for their own sake. */\n\tif(!IsCapable(source_p, CLICAP_SASL))\n\t\treturn 0;\n\n\tif (strlen(client_p->id) == 3)\n\t{\n\t\texit_client(client_p, client_p, client_p, \"Mixing client and server protocol\");\n \t\treturn 0;\n \t}\n \n\tif (*parv[1] == ':' || strchr(parv[1], ' '))\n\t{\n\t\texit_client(client_p, client_p, client_p, \"Malformed AUTHENTICATE\");\n\t\treturn 0;\n\t}\n\n \tsaslserv_p = find_named_client(ConfigFileEntry.sasl_service);\n \tif (saslserv_p == NULL || !IsService(saslserv_p))\n \t{\n\t\tsendto_one(source_p, form_str(ERR_SASLABORTED), me.name, EmptyString(source_p->name) ? \"*\" : source_p->name);\n\t\treturn 0;\n\t}\n\n\tif(source_p->localClient->sasl_complete)\n\t{\n\t\t*source_p->localClient->sasl_agent = '\\0';\n\t\tsource_p->localClient->sasl_complete = 0;\n\t}\n\n\tif(strlen(parv[1]) > 400)\n\t{\n\t\tsendto_one(source_p, form_str(ERR_SASLTOOLONG), me.name, EmptyString(source_p->name) ? \"*\" : source_p->name);\n\t\treturn 0;\n\t}\n\n\tif(!*source_p->id)\n\t{\n\t\t/* Allocate a UID. */\n\t\tstrcpy(source_p->id, generate_uid());\n\t\tadd_to_id_hash(source_p->id, source_p);\n\t}\n\n\tif(*source_p->localClient->sasl_agent)\n\t\tagent_p = find_id(source_p->localClient->sasl_agent);\n\n\tif(agent_p == NULL)\n\t{\n\t\tsendto_one(saslserv_p, \":%s ENCAP %s SASL %s %s H %s %s\",\n\t\t\t\t\tme.id, saslserv_p->servptr->name, source_p->id, saslserv_p->id,\n\t\t\t\t\tsource_p->host, source_p->sockhost);\n\n\t\tif (!strcmp(parv[1], \"EXTERNAL\") && source_p->certfp != NULL)\n\t\t\tsendto_one(saslserv_p, \":%s ENCAP %s SASL %s %s S %s %s\",\n\t\t\t\t\t\tme.id, saslserv_p->servptr->name, source_p->id, saslserv_p->id,\n\t\t\t\t\t\tparv[1], source_p->certfp);\n\t\telse\n\t\t\tsendto_one(saslserv_p, \":%s ENCAP %s SASL %s %s S %s\",\n\t\t\t\t\t\tme.id, saslserv_p->servptr->name, source_p->id, saslserv_p->id,\n\t\t\t\t\t\tparv[1]);\n\n\t\trb_strlcpy(source_p->localClient->sasl_agent, saslserv_p->id, IDLEN);\n\t}\n\telse\n\t\tsendto_one(agent_p, \":%s ENCAP %s SASL %s %s C %s\",\n\t\t\t\tme.id, agent_p->servptr->name, source_p->id, agent_p->id,\n\t\t\t\tparv[1]);\n\tsource_p->localClient->sasl_out++;\n\n\treturn 0;\n}\n",
+    "cwe": [
+      "CWE-285"
+    ],
+    "cve_description": "The m_authenticate function in modules/m_sasl.c in Charybdis before 3.5.3 allows remote attackers to spoof certificate fingerprints and consequently log in as another user via a crafted AUTHENTICATE parameter.",
+    "patch": "--- code before\n+++ code after\n@@ -14,6 +14,12 @@\n  \t\treturn 0;\n  \t}\n  \n+\tif (*parv[1] == ':' || strchr(parv[1], ' '))\n+\t{\n+\t\texit_client(client_p, client_p, client_p, \"Malformed AUTHENTICATE\");\n+\t\treturn 0;\n+\t}\n+\n  \tsaslserv_p = find_named_client(ConfigFileEntry.sasl_service);\n  \tif (saslserv_p == NULL || !IsService(saslserv_p))\n  \t{",
+    "function_modified_lines": {
+      "added": [
+        "\tif (*parv[1] == ':' || strchr(parv[1], ' '))",
+        "\t{",
+        "\t\texit_client(client_p, client_p, client_p, \"Malformed AUTHENTICATE\");",
+        "\t\treturn 0;",
+        "\t}",
+        ""
+      ],
+      "deleted": []
+    }
+  }
+]

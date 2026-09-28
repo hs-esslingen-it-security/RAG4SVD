@@ -1,0 +1,15 @@
+[
+  {
+    "id": 105,
+    "cve_id": "CVE-2022-25297",
+    "code_before_change": "int HttpFileImpl::save(const std::string &path) const\n{\n    assert(!path.empty());\n    if (fileName_.empty())\n        return -1;\n    filesystem::path fsPath(utils::toNativePath(path));\n    if (!fsPath.is_absolute() &&\n        (!fsPath.has_parent_path() ||\n         (fsPath.begin()->string() != \".\" && fsPath.begin()->string() != \"..\")))\n    {\n        filesystem::path fsUploadPath(utils::toNativePath(\n            HttpAppFrameworkImpl::instance().getUploadPath()));\n        fsPath = fsUploadPath / fsPath;\n    }\n    filesystem::path fsFileName(utils::toNativePath(fileName_));\n    if (!filesystem::exists(fsPath))\n    {\n        LOG_TRACE << \"create path:\" << fsPath;\n        drogon::error_code err;\n        filesystem::create_directories(fsPath, err);\n        if (err)\n        {\n            LOG_SYSERR;\n            return -1;\n        }\n    }\n    return saveTo(fsPath / fsFileName);\n}",
+    "code_after_change": "int HttpFileImpl::saveAs(const std::string &fileName) const\n{\n    assert(!fileName.empty());\n    filesystem::path fsFileName(utils::toNativePath(fileName));\n    if (!fsFileName.is_absolute() && (!fsFileName.has_parent_path() ||\n                                      (fsFileName.begin()->string() != \".\" &&\n                                       fsFileName.begin()->string() != \"..\")))\n    {\n        filesystem::path fsUploadPath(utils::toNativePath(\n            HttpAppFrameworkImpl::instance().getUploadPath()));\n        fsFileName = fsUploadPath / fsFileName;\n    }\n    if (fsFileName.has_parent_path() &&\n        !filesystem::exists(fsFileName.parent_path()))\n    {\n        LOG_TRACE << \"create path:\" << fsFileName.parent_path();\n        drogon::error_code err;\n        filesystem::create_directories(fsFileName.parent_path(), err);\n        if (err)\n        {\n            LOG_SYSERR;\n            return -1;\n        }\n    }\n    return saveTo(fsFileName);\n}",
+    "cwe": [
+      "CWE-552"
+    ],
+    "cve_description": "This affects the package drogonframework/drogon before 1.7.5. The unsafe handling of file names during upload using HttpFile::save() method may enable attackers to write files to arbitrary locations outside the designated target folder.",
+    "patch": null,
+    "original_vulnerable_label": 1,
+    "project": "drogon"
+  }
+]

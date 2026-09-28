@@ -1,0 +1,49 @@
+文件: /Users/vinsontang/Desktop/test/graph_demo/control_flow/test_snippets/vuln_05_double_free.c
+图构建模式: precise_c
+【AST】
+- 类型/结构定义：Typedef@L17
+- 函数 packet_create@L19：保留 20/109 个语义节点；调用=free, malloc, memcpy；分支=2；返回=3。
+- 函数 packet_addref@L35：保留 4/17 个语义节点；调用=无；分支=1；返回=0。
+- 函数 packet_release@L40：保留 8/36 个语义节点；调用=free；分支=2；返回=1。
+- 函数 packet_print@L50：保留 6/36 个语义节点；调用=printf；分支=1；返回=1。
+- 函数 packet_clone@L57：保留 7/30 个语义节点；调用=packet_create；分支=1；返回=2。
+- 函数 process_packets@L62：保留 11/48 个语义节点；调用=packet_print, packet_release, printf；分支=1；返回=0。
+- 函数 main@L77：保留 16/71 个语义节点；调用=fprintf, packet_clone, packet_create, packet_print；分支=1；返回=2。
+
+【CFG】
+- 函数 packet_create：保留控制点 9/15；分支节点 2；调用节点 2；线性段折叠 6。
+- 函数 packet_addref：保留控制点 3/4；分支节点 1；调用节点 0；线性段折叠 1。
+  - 路径1: Entry -> if (p) -> packet_addref EXIT
+  - 路径2: Entry -> if (p) -> [True] p++p->ref_count -> packet_addref EXIT
+- 函数 packet_release：保留控制点 7/8；分支节点 2；调用节点 2；线性段折叠 1。
+  - 路径1: Entry -> if (!p) -> p--p->ref_count -> if (p->ref_count <= 0) -> packet_release EXIT
+  - 路径2: Entry -> if (!p) -> p--p->ref_count -> if (p->ref_count <= 0) -> [True] call free(...) -> call free(...) -> packet_release EXIT
+- 函数 packet_print：保留控制点 5/5；分支节点 1；调用节点 1；线性段折叠 0。
+  - 路径1: Entry -> if (!p) -> call printf(...) -> packet_print EXIT
+- 函数 packet_clone：保留控制点 5/5；分支节点 1；调用节点 0；线性段折叠 0。
+- 函数 process_packets：保留控制点 9/9；分支节点 1；调用节点 6；线性段折叠 0。
+  - 路径1: Entry -> call packet_print(...) -> call packet_print(...) -> if (p1->type == p2->type) -> call printf(...) -> call packet_release(...) -> process_packets EXIT
+  - 路径2: Entry -> call packet_print(...) -> call packet_print(...) -> if (p1->type == p2->type) -> ... -> call printf(...) -> call packet_release(...) -> process_packets EXIT
+- 函数 main：保留控制点 10/13；分支节点 1；调用节点 5；线性段折叠 3。
+
+【DFG】
+- 函数 packet_create：边保留 5/9；参数源 3 个；抽取链路 2 条。
+  - 数据链：param: type -> assign p->type
+  - 数据链：param: data -> call memcpy
+- 函数 packet_addref：边保留 1/1；参数源 1 个；抽取链路 1 条。
+  - 数据链：param: p -> if(...)
+- 函数 packet_release：边保留 5/5；参数源 1 个；抽取链路 4 条。
+  - 数据链：param: p -> if(...)
+  - 数据链：param: p -> UnaryOp
+  - 数据链：param: p -> if(...)
+- 函数 packet_print：边保留 2/4；参数源 1 个；抽取链路 2 条。
+  - 数据链：param: p -> if(...)
+  - 数据链：param: p -> call printf
+- 函数 packet_clone：边保留 2/4；参数源 1 个；抽取链路 2 条。
+  - 数据链：param: src -> if(...)
+  - 数据链：param: src -> return
+- 函数 process_packets：边保留 6/6；参数源 2 个；抽取链路 6 条。
+  - 数据链：param: p1 -> call packet_print
+  - 数据链：param: p1 -> if(...)
+  - 数据链：param: p1 -> call packet_release
+- 函数 main：边保留 5/8；参数源 0 个；抽取链路 0 条。

@@ -1,0 +1,31 @@
+[
+  {
+    "id": 1402,
+    "cve_id": "CVE-2016-1643",
+    "code_before_change": "void ImageInputType::ensurePrimaryContent()\n{\n     if (!m_useFallbackContent)\n         return;\n     m_useFallbackContent = false;\n     reattachFallbackContent();\n }\n",
+    "code_after_change": "void ImageInputType::ensureFallbackContent()\n{\n    if (m_useFallbackContent)\n        return;\n    setUseFallbackContent();\n    reattachFallbackContent();\n}\n",
+    "cwe": [
+      "CWE-361"
+    ],
+    "cve_description": "The ImageInputType::ensurePrimaryContent function in WebKit/Source/core/html/forms/ImageInputType.cpp in Blink, as used in Google Chrome before 49.0.2623.87, does not properly maintain the user agent shadow DOM, which allows remote attackers to cause a denial of service or possibly have unspecified other impact via vectors that leverage \"type confusion.\"",
+    "patch": "--- code before\n+++ code after\n@@ -1,7 +1,7 @@\n-void ImageInputType::ensurePrimaryContent()\n+void ImageInputType::ensureFallbackContent()\n {\n-     if (!m_useFallbackContent)\n-         return;\n-     m_useFallbackContent = false;\n-     reattachFallbackContent();\n- }\n+    if (m_useFallbackContent)\n+        return;\n+    setUseFallbackContent();\n+    reattachFallbackContent();\n+}",
+    "function_modified_lines": {
+      "added": [
+        "void ImageInputType::ensureFallbackContent()",
+        "    if (m_useFallbackContent)",
+        "        return;",
+        "    setUseFallbackContent();",
+        "    reattachFallbackContent();",
+        "}"
+      ],
+      "deleted": [
+        "void ImageInputType::ensurePrimaryContent()",
+        "     if (!m_useFallbackContent)",
+        "         return;",
+        "     m_useFallbackContent = false;",
+        "     reattachFallbackContent();",
+        " }"
+      ]
+    }
+  }
+]

@@ -1,0 +1,775 @@
+{
+  "mode": "heuristic_c",
+  "language": "c",
+  "detail_level": "A",
+  "filtered_ast": {
+    "level": "A",
+    "typedefs": [
+      {
+        "label": "typedef struct {",
+        "line": 9
+      }
+    ],
+    "functions": [
+      {
+        "func": "global",
+        "line": 1,
+        "node_count_raw": 42,
+        "node_count_kept": 42,
+        "types_kept": [
+          "CallOrDecl",
+          "If",
+          "Loop",
+          "Return",
+          "Stmt"
+        ],
+        "calls": [
+          "matrix_create",
+          "malloc",
+          "calloc",
+          "matrix_add",
+          "matrix_create",
+          "matrix_set",
+          "matrix_transpose",
+          "matrix_create",
+          "matrix_set"
+        ],
+        "calls_uniq": [
+          "calloc",
+          "malloc",
+          "matrix_add",
+          "matrix_create",
+          "matrix_set",
+          "matrix_transpose"
+        ],
+        "conditions": [
+          "if (rows <= 0 || cols <= 0) return NULL;",
+          "if (!m) return NULL;",
+          "if (!m->data) { free(m); return NULL; }",
+          "if (!a || !b || a->rows != b->rows || a->cols != b->cols) return NULL;",
+          "if (!c) return NULL;",
+          "for (int i = 0; i < a->rows; i++) {",
+          "for (int j = 0; j < a->cols; j++) {",
+          "if (!m) return NULL;",
+          "if (!t) return NULL;",
+          "for (int i = 0; i < m->rows; i++) {",
+          "for (int j = 0; j < m->cols; j++) {"
+        ],
+        "returns": [
+          "if (rows <= 0 || cols <= 0) return NULL;",
+          "if (!m) return NULL;",
+          "if (!m->data) { free(m); return NULL; }",
+          "return m;",
+          "if (!a || !b || a->rows != b->rows || a->cols != b->cols) return NULL;",
+          "if (!c) return NULL;",
+          "return c;",
+          "if (!m) return NULL;",
+          "if (!t) return NULL;",
+          "return t;"
+        ],
+        "declarations": [
+          "int rows;",
+          "int cols;",
+          "int *data;",
+          "} Matrix;",
+          "m->rows = rows;",
+          "m->cols = cols;"
+        ],
+        "assignments": [
+          "if (rows <= 0 || cols <= 0) return NULL;",
+          "Matrix *m = (Matrix *)malloc(sizeof(Matrix));",
+          "m->rows = rows;",
+          "m->cols = cols;",
+          "m->data = (int *)calloc((size_t)rows * cols, sizeof(int));",
+          "if (!a || !b || a->rows != b->rows || a->cols != b->cols) return NULL;",
+          "Matrix *c = matrix_create(a->rows, a->cols);",
+          "for (int i = 0; i < a->rows; i++) {",
+          "for (int j = 0; j < a->cols; j++) {",
+          "Matrix *t = matrix_create(m->cols, m->rows);",
+          "for (int i = 0; i < m->rows; i++) {",
+          "for (int j = 0; j < m->cols; j++) {"
+        ],
+        "constants": []
+      },
+      {
+        "func": "matrix_free",
+        "line": 26,
+        "node_count_raw": 6,
+        "node_count_kept": 6,
+        "types_kept": [
+          "CallOrDecl",
+          "If",
+          "Stmt"
+        ],
+        "calls": [
+          "free",
+          "free"
+        ],
+        "calls_uniq": [
+          "free"
+        ],
+        "conditions": [
+          "if (m) {"
+        ],
+        "returns": [],
+        "declarations": [],
+        "assignments": [],
+        "constants": []
+      },
+      {
+        "func": "matrix_get",
+        "line": 33,
+        "node_count_raw": 4,
+        "node_count_kept": 4,
+        "types_kept": [
+          "CallOrDecl",
+          "If",
+          "Return",
+          "Stmt"
+        ],
+        "calls": [],
+        "calls_uniq": [],
+        "conditions": [
+          "if (!m || r < 0 || r >= m->rows || c < 0 || c >= m->cols) return 0;"
+        ],
+        "returns": [
+          "if (!m || r < 0 || r >= m->rows || c < 0 || c >= m->cols) return 0;",
+          "return m->data[r * m->cols + c];"
+        ],
+        "declarations": [],
+        "assignments": [
+          "if (!m || r < 0 || r >= m->rows || c < 0 || c >= m->cols) return 0;"
+        ],
+        "constants": []
+      },
+      {
+        "func": "matrix_set",
+        "line": 38,
+        "node_count_raw": 4,
+        "node_count_kept": 4,
+        "types_kept": [
+          "CallOrDecl",
+          "If",
+          "Stmt"
+        ],
+        "calls": [],
+        "calls_uniq": [],
+        "conditions": [
+          "if (!m || r < 0 || r >= m->rows || c < 0 || c >= m->cols) return;"
+        ],
+        "returns": [
+          "if (!m || r < 0 || r >= m->rows || c < 0 || c >= m->cols) return;"
+        ],
+        "declarations": [
+          "m->data[r * m->cols + c] = val;"
+        ],
+        "assignments": [
+          "if (!m || r < 0 || r >= m->rows || c < 0 || c >= m->cols) return;",
+          "m->data[r * m->cols + c] = val;"
+        ],
+        "constants": []
+      },
+      {
+        "func": "matrix_print",
+        "line": 67,
+        "node_count_raw": 9,
+        "node_count_kept": 9,
+        "types_kept": [
+          "CallOrDecl",
+          "If",
+          "Loop",
+          "Stmt"
+        ],
+        "calls": [
+          "printf",
+          "printf"
+        ],
+        "calls_uniq": [
+          "printf"
+        ],
+        "conditions": [
+          "if (!m) return;",
+          "for (int i = 0; i < m->rows; i++) {",
+          "for (int j = 0; j < m->cols; j++) {"
+        ],
+        "returns": [
+          "if (!m) return;"
+        ],
+        "declarations": [],
+        "assignments": [
+          "for (int i = 0; i < m->rows; i++) {",
+          "for (int j = 0; j < m->cols; j++) {"
+        ],
+        "constants": []
+      },
+      {
+        "func": "main",
+        "line": 77,
+        "node_count_raw": 16,
+        "node_count_kept": 16,
+        "types_kept": [
+          "CallOrDecl",
+          "Loop",
+          "Return",
+          "Stmt"
+        ],
+        "calls": [
+          "matrix_create",
+          "matrix_create",
+          "matrix_set",
+          "matrix_set",
+          "matrix_add",
+          "matrix_transpose",
+          "printf",
+          "printf",
+          "matrix_free",
+          "matrix_free"
+        ],
+        "calls_uniq": [
+          "matrix_add",
+          "matrix_create",
+          "matrix_free",
+          "matrix_set",
+          "matrix_transpose",
+          "printf"
+        ],
+        "conditions": [
+          "for (int i = 0; i < 3; i++)",
+          "for (int j = 0; j < 3; j++) {"
+        ],
+        "returns": [
+          "return 0;"
+        ],
+        "declarations": [],
+        "assignments": [
+          "Matrix *a = matrix_create(3, 3);",
+          "Matrix *b = matrix_create(3, 3);",
+          "for (int i = 0; i < 3; i++)",
+          "for (int j = 0; j < 3; j++) {",
+          "Matrix *c = matrix_add(a, b);",
+          "Matrix *t = matrix_transpose(a);"
+        ],
+        "constants": []
+      }
+    ],
+    "collapsed_isomorphic_functions": []
+  },
+  "filtered_cfg": {
+    "global": {
+      "entry": "entry_global",
+      "exit": "exit_global",
+      "node_count_raw": 83,
+      "node_count_kept": 26,
+      "branches": [
+        {
+          "label": "if (rows <= 0 || cols <= 0) return NULL;",
+          "line": 16
+        },
+        {
+          "label": "if (!m) return NULL;",
+          "line": 18
+        },
+        {
+          "label": "if (!m->data) { free(m); return NULL; }",
+          "line": 22
+        },
+        {
+          "label": "if (m) {",
+          "line": 27
+        },
+        {
+          "label": "if (!m || r < 0 || r >= m->rows || c < 0 || c >= m->cols) return 0;",
+          "line": 34
+        },
+        {
+          "label": "if (!m || r < 0 || r >= m->rows || c < 0 || c >= m->cols) return;",
+          "line": 39
+        },
+        {
+          "label": "if (!a || !b || a->rows != b->rows || a->cols != b->cols) return NULL;",
+          "line": 44
+        },
+        {
+          "label": "if (!c) return NULL;",
+          "line": 46
+        },
+        {
+          "label": "for (int i = 0; i < a->rows; i++) {",
+          "line": 47
+        },
+        {
+          "label": "for (int j = 0; j < a->cols; j++) {",
+          "line": 48
+        },
+        {
+          "label": "if (!m) return NULL;",
+          "line": 56
+        },
+        {
+          "label": "if (!t) return NULL;",
+          "line": 58
+        },
+        {
+          "label": "for (int i = 0; i < m->rows; i++) {",
+          "line": 59
+        },
+        {
+          "label": "for (int j = 0; j < m->cols; j++) {",
+          "line": 60
+        },
+        {
+          "label": "if (!m) return;",
+          "line": 68
+        },
+        {
+          "label": "for (int i = 0; i < m->rows; i++) {",
+          "line": 69
+        },
+        {
+          "label": "for (int j = 0; j < m->cols; j++) {",
+          "line": 70
+        },
+        {
+          "label": "for (int i = 0; i < 3; i++)",
+          "line": 80
+        },
+        {
+          "label": "for (int j = 0; j < 3; j++) {",
+          "line": 81
+        }
+      ],
+      "calls": [
+        {
+          "label": "m->data = (int *)calloc((size_t)rows * cols, sizeof(int));",
+          "line": 21
+        }
+      ],
+      "merged_linear_segments": 57,
+      "paths": [
+        [
+          [
+            "line_1",
+            ""
+          ],
+          [
+            "line_2",
+            ""
+          ],
+          [
+            "line_3",
+            ""
+          ],
+          [
+            "line_4",
+            ""
+          ],
+          [
+            "line_5",
+            ""
+          ],
+          [
+            "line_9",
+            ""
+          ],
+          [
+            "line_10",
+            ""
+          ],
+          [
+            "line_11",
+            ""
+          ],
+          [
+            "line_12",
+            ""
+          ],
+          [
+            "line_13",
+            ""
+          ],
+          [
+            "line_15",
+            ""
+          ],
+          [
+            "line_16",
+            ""
+          ],
+          [
+            "line_17",
+            ""
+          ],
+          [
+            "line_18",
+            ""
+          ],
+          [
+            "line_19",
+            ""
+          ],
+          [
+            "line_20",
+            ""
+          ],
+          [
+            "line_21",
+            ""
+          ],
+          [
+            "line_22",
+            ""
+          ],
+          [
+            "line_23",
+            ""
+          ],
+          [
+            "line_24",
+            ""
+          ],
+          [
+            "line_26",
+            ""
+          ],
+          [
+            "line_27",
+            ""
+          ],
+          [
+            "line_28",
+            ""
+          ],
+          [
+            "line_29",
+            ""
+          ],
+          [
+            "line_30",
+            ""
+          ],
+          [
+            "line_31",
+            ""
+          ],
+          [
+            "line_33",
+            ""
+          ],
+          [
+            "line_34",
+            ""
+          ],
+          [
+            "line_35",
+            ""
+          ],
+          [
+            "line_36",
+            ""
+          ],
+          [
+            "line_38",
+            ""
+          ],
+          [
+            "line_39",
+            ""
+          ],
+          [
+            "line_40",
+            ""
+          ],
+          [
+            "line_41",
+            ""
+          ],
+          [
+            "line_43",
+            ""
+          ],
+          [
+            "line_44",
+            ""
+          ],
+          [
+            "line_45",
+            ""
+          ],
+          [
+            "line_46",
+            ""
+          ],
+          [
+            "line_47",
+            ""
+          ],
+          [
+            "line_48",
+            ""
+          ],
+          [
+            "line_49",
+            ""
+          ],
+          [
+            "line_50",
+            ""
+          ],
+          [
+            "line_51",
+            ""
+          ],
+          [
+            "line_52",
+            ""
+          ],
+          [
+            "line_53",
+            ""
+          ],
+          [
+            "line_55",
+            ""
+          ],
+          [
+            "line_56",
+            ""
+          ],
+          [
+            "line_57",
+            ""
+          ],
+          [
+            "line_58",
+            ""
+          ],
+          [
+            "line_59",
+            ""
+          ],
+          [
+            "line_60",
+            ""
+          ],
+          [
+            "line_61",
+            ""
+          ],
+          [
+            "line_62",
+            ""
+          ],
+          [
+            "line_63",
+            ""
+          ],
+          [
+            "line_64",
+            ""
+          ],
+          [
+            "line_65",
+            ""
+          ],
+          [
+            "line_67",
+            ""
+          ],
+          [
+            "line_68",
+            ""
+          ],
+          [
+            "line_69",
+            ""
+          ],
+          [
+            "line_70",
+            ""
+          ],
+          [
+            "line_71",
+            ""
+          ],
+          [
+            "line_72",
+            ""
+          ],
+          [
+            "line_73",
+            ""
+          ],
+          [
+            "line_74",
+            ""
+          ],
+          [
+            "line_75",
+            ""
+          ],
+          [
+            "line_77",
+            ""
+          ],
+          [
+            "line_78",
+            ""
+          ],
+          [
+            "line_79",
+            ""
+          ],
+          [
+            "line_80",
+            ""
+          ],
+          [
+            "line_81",
+            ""
+          ],
+          [
+            "line_82",
+            ""
+          ],
+          [
+            "line_83",
+            ""
+          ],
+          [
+            "line_84",
+            ""
+          ],
+          [
+            "line_86",
+            ""
+          ],
+          [
+            "line_87",
+            ""
+          ],
+          [
+            "line_89",
+            ""
+          ],
+          [
+            "line_90",
+            ""
+          ],
+          [
+            "line_92",
+            ""
+          ],
+          [
+            "line_93",
+            ""
+          ],
+          [
+            "line_94",
+            ""
+          ],
+          [
+            "line_95",
+            ""
+          ],
+          [
+            "exit_global",
+            ""
+          ]
+        ]
+      ]
+    }
+  },
+  "filtered_dfg": {
+    "global": {
+      "node_count_raw": 81,
+      "edge_count_raw": 0,
+      "edge_count_kept": 0,
+      "parameters": [],
+      "edges": [],
+      "chains": [],
+      "node_labels": {
+        "line_1": "/*",
+        "line_2": "* safe_03_matrix_ops.c",
+        "line_3": "* 安全的矩阵加法与转置 —— 无漏洞",
+        "line_4": "* 所有索引运算均在已知维度范围内进行。",
+        "line_5": "*/",
+        "line_9": "typedef struct {",
+        "line_10": "int rows;",
+        "line_11": "int cols;",
+        "line_12": "int *data;",
+        "line_13": "} Matrix;",
+        "line_15": "Matrix *matrix_create(int rows, int cols) {",
+        "line_16": "if (rows <= 0 || cols <= 0) return NULL;",
+        "line_17": "Matrix *m = (Matrix *)malloc(sizeof(Matrix));",
+        "line_18": "if (!m) return NULL;",
+        "line_19": "m->rows = rows;",
+        "line_20": "m->cols = cols;",
+        "line_21": "m->data = (int *)calloc((size_t)rows * cols, sizeof(int));",
+        "line_22": "if (!m->data) { free(m); return NULL; }",
+        "line_23": "return m;",
+        "line_24": "}",
+        "line_26": "void matrix_free(Matrix *m) {",
+        "line_27": "if (m) {",
+        "line_28": "free(m->data);",
+        "line_29": "free(m);",
+        "line_30": "}",
+        "line_31": "}",
+        "line_33": "int matrix_get(const Matrix *m, int r, int c) {",
+        "line_34": "if (!m || r < 0 || r >= m->rows || c < 0 || c >= m->cols) return 0;",
+        "line_35": "return m->data[r * m->cols + c];",
+        "line_36": "}",
+        "line_38": "void matrix_set(Matrix *m, int r, int c, int val) {",
+        "line_39": "if (!m || r < 0 || r >= m->rows || c < 0 || c >= m->cols) return;",
+        "line_40": "m->data[r * m->cols + c] = val;",
+        "line_41": "}",
+        "line_43": "Matrix *matrix_add(const Matrix *a, const Matrix *b) {",
+        "line_44": "if (!a || !b || a->rows != b->rows || a->cols != b->cols) return NULL;",
+        "line_45": "Matrix *c = matrix_create(a->rows, a->cols);",
+        "line_46": "if (!c) return NULL;",
+        "line_47": "for (int i = 0; i < a->rows; i++) {",
+        "line_48": "for (int j = 0; j < a->cols; j++) {",
+        "line_49": "matrix_set(c, i, j, matrix_get(a, i, j) + matrix_get(b, i, j));",
+        "line_50": "}",
+        "line_51": "}",
+        "line_52": "return c;",
+        "line_53": "}",
+        "line_55": "Matrix *matrix_transpose(const Matrix *m) {",
+        "line_56": "if (!m) return NULL;",
+        "line_57": "Matrix *t = matrix_create(m->cols, m->rows);",
+        "line_58": "if (!t) return NULL;",
+        "line_59": "for (int i = 0; i < m->rows; i++) {",
+        "line_60": "for (int j = 0; j < m->cols; j++) {",
+        "line_61": "matrix_set(t, j, i, matrix_get(m, i, j));",
+        "line_62": "}",
+        "line_63": "}",
+        "line_64": "return t;",
+        "line_65": "}",
+        "line_67": "void matrix_print(const Matrix *m) {",
+        "line_68": "if (!m) return;",
+        "line_69": "for (int i = 0; i < m->rows; i++) {",
+        "line_70": "for (int j = 0; j < m->cols; j++) {",
+        "line_71": "printf(\"%4d \", matrix_get(m, i, j));",
+        "line_72": "}",
+        "line_73": "printf(\"\\n\");",
+        "line_74": "}",
+        "line_75": "}",
+        "line_77": "int main(void) {",
+        "line_78": "Matrix *a = matrix_create(3, 3);",
+        "line_79": "Matrix *b = matrix_create(3, 3);",
+        "line_80": "for (int i = 0; i < 3; i++)",
+        "line_81": "for (int j = 0; j < 3; j++) {",
+        "line_82": "matrix_set(a, i, j, i + j);",
+        "line_83": "matrix_set(b, i, j, (i + 1) * (j + 1));",
+        "line_84": "}",
+        "line_86": "Matrix *c = matrix_add(a, b);",
+        "line_87": "Matrix *t = matrix_transpose(a);",
+        "line_89": "printf(\"A + B:\\n\"); matrix_print(c);",
+        "line_90": "printf(\"Transpose A:\\n\"); matrix_print(t);",
+        "line_92": "matrix_free(a); matrix_free(b);",
+        "line_93": "matrix_free(c); matrix_free(t);",
+        "line_94": "return 0;",
+        "line_95": "}"
+      }
+    }
+  }
+}

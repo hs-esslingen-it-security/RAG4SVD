@@ -1,0 +1,22 @@
+[
+  {
+    "id": 135,
+    "cve_id": "CVE-2019-1563",
+    "code_before_change": "int CMS_decrypt(CMS_ContentInfo *cms, EVP_PKEY *pk, X509 *cert,\n                BIO *dcont, BIO *out, unsigned int flags)\n{\n    int r;\n    BIO *cont;\n    if (OBJ_obj2nid(CMS_get0_type(cms)) != NID_pkcs7_enveloped) {\n        CMSerr(CMS_F_CMS_DECRYPT, CMS_R_TYPE_NOT_ENVELOPED_DATA);\n        return 0;\n    }\n    if (!dcont && !check_content(cms))\n        return 0;\n    if (flags & CMS_DEBUG_DECRYPT)\n         cms->d.envelopedData->encryptedContentInfo->debug = 1;\n     else\n         cms->d.envelopedData->encryptedContentInfo->debug = 0;\n     if (!pk && !cert && !dcont && !out)\n         return 1;\n     if (pk && !CMS_decrypt_set1_pkey(cms, pk, cert))\n    r = cms_copy_content(out, cont, flags);\n    do_free_upto(cont, dcont);\n    return r;\n}\n",
+    "code_after_change": "int CMS_decrypt(CMS_ContentInfo *cms, EVP_PKEY *pk, X509 *cert,\n                BIO *dcont, BIO *out, unsigned int flags)\n{\n    int r;\n    BIO *cont;\n    if (OBJ_obj2nid(CMS_get0_type(cms)) != NID_pkcs7_enveloped) {\n        CMSerr(CMS_F_CMS_DECRYPT, CMS_R_TYPE_NOT_ENVELOPED_DATA);\n        return 0;\n    }\n    if (!dcont && !check_content(cms))\n        return 0;\n    if (flags & CMS_DEBUG_DECRYPT)\n         cms->d.envelopedData->encryptedContentInfo->debug = 1;\n     else\n         cms->d.envelopedData->encryptedContentInfo->debug = 0;\n    if (!cert)\n        cms->d.envelopedData->encryptedContentInfo->havenocert = 1;\n    else\n        cms->d.envelopedData->encryptedContentInfo->havenocert = 0;\n     if (!pk && !cert && !dcont && !out)\n         return 1;\n     if (pk && !CMS_decrypt_set1_pkey(cms, pk, cert))\n    r = cms_copy_content(out, cont, flags);\n    do_free_upto(cont, dcont);\n    return r;\n}\n",
+    "cwe": [
+      "CWE-311"
+    ],
+    "cve_description": "In situations where an attacker receives automated notification of the success or failure of a decryption attempt an attacker, after sending a very large number of messages to be decrypted, can recover a CMS/PKCS7 transported encryption key or decrypt any RSA encrypted message that was encrypted with the public RSA key, using a Bleichenbacher padding oracle attack. Applications are not affected if they use a certificate together with the private RSA key to the CMS_decrypt or PKCS7_decrypt functions to select the correct recipient info to decrypt. Fixed in OpenSSL 1.1.1d (Affected 1.1.1-1.1.1c). Fixed in OpenSSL 1.1.0l (Affected 1.1.0-1.1.0k). Fixed in OpenSSL 1.0.2t (Affected 1.0.2-1.0.2s).",
+    "patch": "--- code before\n+++ code after\n@@ -13,6 +13,10 @@\n          cms->d.envelopedData->encryptedContentInfo->debug = 1;\n      else\n          cms->d.envelopedData->encryptedContentInfo->debug = 0;\n+    if (!cert)\n+        cms->d.envelopedData->encryptedContentInfo->havenocert = 1;\n+    else\n+        cms->d.envelopedData->encryptedContentInfo->havenocert = 0;\n      if (!pk && !cert && !dcont && !out)\n          return 1;\n      if (pk && !CMS_decrypt_set1_pkey(cms, pk, cert))",
+    "function_modified_lines": {
+      "added": [
+        "    if (!cert)",
+        "        cms->d.envelopedData->encryptedContentInfo->havenocert = 1;",
+        "    else",
+        "        cms->d.envelopedData->encryptedContentInfo->havenocert = 0;"
+      ],
+      "deleted": []
+    }
+  }
+]

@@ -1,0 +1,79 @@
+文件: /Users/vinsontang/Desktop/test/graph_demo/control_flow/test_snippets/safe_04_file_reader.c
+图构建模式: precise_c
+【AST】
+- 类型/结构定义：Typedef@L17
+- 函数 init_stats@L19：
+  - 赋值：Assign:=；Assign:=；Assign:=；Assign:=
+- 函数 is_blank_line@L26：
+  - 赋值：BinaryOp:!=
+  - 调用：isspace
+  - 条件/循环：For；If
+  - 返回：Return；Return
+- 函数 count_chars@L33：
+  - 赋值：BinaryOp:!=；BinaryOp:!=
+  - 调用：isalpha
+  - 条件/循环：For；If
+- 函数 read_file_stats@L40：
+  - 赋值：BinaryOp:==；BinaryOp:!=
+  - 调用：init_stats；fclose；fopen；fprintf；fgets；count_chars；is_blank_line
+  - 条件/循环：If；While；If
+  - 返回：Return；Return
+- 函数 print_stats@L62：
+  - 调用：printf；printf；printf；printf；printf
+  - 条件/循环：If
+- 函数 main@L73：
+  - 赋值：BinaryOp:==
+  - 调用：printf；read_file_stats；print_stats
+  - 条件/循环：If；If
+  - 返回：Return；Return
+
+【CFG】
+- 函数 init_stats：保留控制点 6/6；分支节点 0；调用节点 0；线性段折叠 0。
+  - 路径1: Entry -> s->total_lines = ... -> s->blank_lines = ... -> s->alpha_chars = ... -> init_stats EXIT
+- 函数 is_blank_line：保留控制点 8/8；分支节点 2；调用节点 0；线性段折叠 0。
+  - 分支/循环节点：for_cond (line[i] != '\0')@L27；if (!isspace(...))@L28
+- 函数 count_chars：保留控制点 8/8；分支节点 2；调用节点 0；线性段折叠 0。
+  - 分支/循环节点：for_cond (line[i] != '\0' && line[i] != '\n')@L34；if (isalpha(...))@L36
+  - 路径1: Entry -> DeclList -> for_cond (line[i] != '\0' && line[i] != '\n') -> count_chars EXIT
+  - 路径2: Entry -> DeclList -> for_cond (line[i] != '\0' && line[i] != '\n') -> if (isalpha(...)) -> [back] for_cond (line[i] != '\0' && line[i] != '\n') -> count_chars EXIT
+  - 路径3: Entry -> DeclList -> for_cond (line[i] != '\0' && line[i] != '\n') -> if (isalpha(...)) -> [True] p++*alpha -> [back] for_cond (line[i] != '\0' && line[i] != '\n') -> count_chars EXIT
+- 函数 read_file_stats：保留控制点 11/11；分支节点 2；调用节点 3；线性段折叠 0。
+  - 分支/循环节点：if (fp == 0)@L42；while (fgets(...) != 0)@L50
+- 函数 print_stats：保留控制点 8/8；分支节点 1；调用节点 5；线性段折叠 0。
+  - 分支/循环节点：if (s->total_chars > 0)@L67
+  - 路径1: Entry -> call printf(...) -> call printf(...) -> call printf(...) -> call printf(...) -> if (s->total_chars > 0) -> print_stats EXIT
+  - 路径2: Entry -> call printf(...) -> call printf(...) -> call printf(...) -> call printf(...) -> if (s->total_chars > 0) -> [True] call printf(...) -> print_stats EXIT
+- 函数 main：保留控制点 9/9；分支节点 2；调用节点 2；线性段折叠 0。
+  - 分支/循环节点：if (argc < 2)@L74；if (read_file_stats(...) == 0)@L79
+
+【DFG】
+- 函数 init_stats：边保留 0/0；参数源 1 个；抽取链路 0 条。
+  - 参数源：param: s@L19
+- 函数 is_blank_line：边保留 2/2；参数源 1 个；抽取链路 2 条。
+  - 参数源：param: line@L26
+  - 数据链：param: line -> for_cond
+  - 数据链：param: line -> if(...)
+- 函数 count_chars：边保留 3/4；参数源 3 个；抽取链路 3 条。
+  - 参数源：param: line@L33；param: total@L33；param: alpha@L33
+  - 数据链：param: line -> for_cond
+  - 数据链：param: line -> if(...)
+  - 数据链：param: total -> UnaryOp
+- 函数 read_file_stats：边保留 5/5；参数源 2 个；抽取链路 4 条。
+  - 参数源：param: path@L40；param: stats@L40
+  - 数据链：param: path -> call fprintf
+  - 数据链：param: path -> decl fp -> if(...)
+  - 数据链：param: path -> decl fp -> call fclose
+  - 数据链：param: stats -> call init_stats
+- 函数 print_stats：边保留 6/7；参数源 1 个；抽取链路 6 条。
+  - 参数源：param: s@L62
+  - 数据链：param: s -> call printf
+  - 数据链：param: s -> call printf
+  - 数据链：param: s -> call printf
+  - 数据链：param: s -> call printf
+  - 数据链：param: s -> if(...)
+  - 数据链：param: s -> call printf
+- 函数 main：边保留 5/5；参数源 2 个；抽取链路 3 条。
+  - 参数源：param: argc@L73；param: argv@L73
+  - 数据链：param: argc -> if(...)
+  - 数据链：param: argv -> call printf
+  - 数据链：param: argv -> if(...)

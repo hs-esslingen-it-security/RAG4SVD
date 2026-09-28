@@ -1,0 +1,80 @@
+文件: /Users/vinsontang/Desktop/test/graph_demo/control_flow/test_snippets/vuln_04_integer_overflow.c
+图构建模式: precise_c
+【AST】
+- 类型/结构定义：Typedef@L14；Typedef@L20
+- 函数 create_list@L23：
+  - 赋值：Assign:=；Assign:=；Assign:=
+  - 调用：memset；malloc；malloc；free
+  - 条件/循环：If；If
+  - 返回：Return；Return；Return
+- 函数 add_item@L39：
+  - 赋值：Assign:=；Assign:=；Assign:=；BinaryOp:>=
+  - 调用：strncpy；printf
+  - 条件/循环：If；If
+  - 返回：Return；Return；Return
+- 函数 print_items@L55：
+  - 赋值：Const:"  [%d] id=%d val=%.2f tag=%s\n"
+  - 调用：printf
+  - 条件/循环：If；For
+  - 返回：Return
+- 函数 free_list@L63：
+  - 调用：free；free
+  - 条件/循环：If
+- 函数 sum_values@L70：
+  - 赋值：Assign:+=
+  - 条件/循环：For
+  - 返回：Return
+- 函数 main@L78：
+  - 赋值：Const:"Sum = %.2f\n"；Const:"Attempting to create list with count = 0x%x\n"
+  - 调用：add_item；add_item；print_items；printf；free_list；printf；create_list；create_list；sum_values；print_items；free_list；add_item
+  - 条件/循环：If；For
+  - 返回：Return
+
+【CFG】
+- 函数 create_list：保留控制点 14/14；分支节点 2；调用节点 2；线性段折叠 0。
+  - 分支/循环节点：if (!list)@L25；if (!list->items)@L29
+- 函数 add_item：保留控制点 14/14；分支节点 2；调用节点 2；线性段折叠 0。
+  - 分支/循环节点：if (!list)@L40；if (list->count >= list->capacity)@L41
+- 函数 print_items：保留控制点 8/8；分支节点 2；调用节点 1；线性段折叠 0。
+  - 分支/循环节点：if (!list)@L56；for_cond (i < list->count)@L57
+  - 路径1: Entry -> if (!list) -> DeclList -> for_cond (i < list->count) -> print_items EXIT
+  - 路径2: Entry -> if (!list) -> DeclList -> for_cond (i < list->count) -> call printf(...) -> [back] for_cond (i < list->count) -> print_items EXIT
+- 函数 free_list：保留控制点 5/5；分支节点 1；调用节点 2；线性段折叠 0。
+  - 分支/循环节点：if (list)@L64
+  - 路径1: Entry -> if (list) -> free_list EXIT
+  - 路径2: Entry -> if (list) -> [True] call free(...) -> call free(...) -> free_list EXIT
+- 函数 sum_values：保留控制点 8/8；分支节点 1；调用节点 0；线性段折叠 0。
+  - 分支/循环节点：for_cond (i < list->count)@L72
+- 函数 main：保留控制点 19/19；分支节点 2；调用节点 9；线性段折叠 0。
+  - 分支/循环节点：if (evil)@L91；for_cond (i < 5)@L93
+
+【DFG】
+- 函数 create_list：边保留 9/9；参数源 1 个；抽取链路 3 条。
+  - 参数源：param: count@L23
+  - 数据链：param: count -> assign list->capacity
+  - 数据链：param: count -> decl alloc_size -> assign list->items
+  - 数据链：param: count -> decl alloc_size -> call memset
+- 函数 add_item：边保留 8/11；参数源 4 个；抽取链路 7 条。
+  - 参数源：param: list@L39；param: id@L39；param: val@L39；param: tag@L39
+  - 数据链：param: list -> if(...)
+  - 数据链：param: list -> if(...)
+  - 数据链：param: list -> UnaryOp
+  - 数据链：param: list -> decl it -> call strncpy
+  - 数据链：param: id -> assign it->id
+  - 数据链：param: val -> assign it->value
+  - 数据链：param: tag -> call strncpy
+- 函数 print_items：边保留 3/5；参数源 1 个；抽取链路 3 条。
+  - 参数源：param: list@L55
+  - 数据链：param: list -> if(...)
+  - 数据链：param: list -> for_cond
+  - 数据链：param: list -> call printf
+- 函数 free_list：边保留 3/3；参数源 1 个；抽取链路 3 条。
+  - 参数源：param: list@L63
+  - 数据链：param: list -> if(...)
+  - 数据链：param: list -> call free
+  - 数据链：param: list -> call free
+- 函数 sum_values：边保留 3/3；参数源 1 个；抽取链路 2 条。
+  - 参数源：param: list@L70
+  - 数据链：param: list -> for_cond
+  - 数据链：param: list -> assign total -> return
+- 函数 main：边保留 11/11；参数源 0 个；抽取链路 0 条。

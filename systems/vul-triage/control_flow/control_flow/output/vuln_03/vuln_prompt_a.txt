@@ -1,0 +1,39 @@
+文件: /Users/vinsontang/Desktop/test/graph_demo/control_flow/test_snippets/vuln_03_use_after_free.c
+图构建模式: precise_c
+【AST】
+- 类型/结构定义：Typedef@L17
+- 函数 default_close@L19：保留 5/26 个语义节点；调用=printf；分支=0；返回=0。
+- 函数 session_create@L24：保留 14/72 个语义节点；调用=malloc, strncpy；分支=1；返回=2。
+- 函数 session_close@L35：保留 5/24 个语义节点；调用=无；分支=1；返回=0。
+- 函数 session_destroy@L42：保留 4/15 个语义节点；调用=free；分支=0；返回=0。
+- 函数 print_session@L47：保留 6/29 个语义节点；调用=printf；分支=1；返回=1。
+- 函数 main@L52：保留 20/90 个语义节点；调用=print_session, printf, session_close, session_create；分支=0；返回=1。
+
+【CFG】
+- 函数 default_close：保留控制点 3/4；分支节点 0；调用节点 1；线性段折叠 1。
+  - 路径1: Entry -> call printf(...) -> s->is_active = ... -> default_close EXIT
+- 函数 session_create：保留控制点 6/11；分支节点 1；调用节点 1；线性段折叠 5。
+- 函数 session_close：保留控制点 4/4；分支节点 1；调用节点 1；线性段折叠 0。
+  - 路径1: Entry -> if (s && s->on_close) -> session_close EXIT
+  - 路径2: Entry -> if (s && s->on_close) -> [True] call ? -> session_close EXIT
+- 函数 session_destroy：保留控制点 3/3；分支节点 0；调用节点 1；线性段折叠 0。
+  - 路径1: Entry -> call free(...) -> session_destroy EXIT
+- 函数 print_session：保留控制点 5/5；分支节点 1；调用节点 1；线性段折叠 0。
+  - 路径1: Entry -> if (s == 0) -> call printf(...) -> print_session EXIT
+- 函数 main：保留控制点 13/17；分支节点 0；调用节点 10；线性段折叠 4。
+
+【DFG】
+- 函数 default_close：边保留 1/2；参数源 1 个；抽取链路 1 条。
+  - 数据链：param: s -> call printf
+- 函数 session_create：边保留 4/5；参数源 2 个；抽取链路 2 条。
+  - 数据链：param: id -> assign s->id
+  - 数据链：param: name -> call strncpy
+- 函数 session_close：边保留 2/3；参数源 1 个；抽取链路 2 条。
+  - 数据链：param: s -> if(...)
+  - 数据链：param: s -> FuncCall
+- 函数 session_destroy：边保留 1/1；参数源 1 个；抽取链路 1 条。
+  - 数据链：param: s -> call free
+- 函数 print_session：边保留 2/4；参数源 1 个；抽取链路 2 条。
+  - 数据链：param: s -> if(...)
+  - 数据链：param: s -> call printf
+- 函数 main：边保留 9/10；参数源 0 个；抽取链路 0 条。

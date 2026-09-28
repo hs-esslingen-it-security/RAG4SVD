@@ -1,0 +1,38 @@
+文件: D:\program\Code Vulnerability Detection\control_flow\control_flow\test_snippets\vuln_01_stack_bof.c
+图构建模式: heuristic_c
+【AST】
+- 类型/结构定义：typedef struct {@L12
+- 函数 global@L1：
+  - 声明：char username[BUF_SIZE];；int  privilege;；} UserInfo;
+  - 调用：gets；gets
+- 函数 init_user@L17：
+  - 声明：u->privilege = 0;
+  - 赋值：u->privilege = 0;
+  - 调用：memset
+- 函数 greet@L22：
+  - 调用：printf；printf
+  - 条件/循环：if (u->privilege > 0) {
+- 函数 read_username@L31：
+  - 声明：char tmp[BUF_SIZE];
+  - 调用：printf；gets；strcpy
+- 函数 check_admin@L38：
+  - 赋值：if (strcmp(name, "root") == 0) return 1;；if (strcmp(name, "admin") == 0) return 1;
+  - 条件/循环：if (strcmp(name, "root") == 0) return 1;；if (strcmp(name, "admin") == 0) return 1;
+  - 返回：if (strcmp(name, "root") == 0) return 1;；if (strcmp(name, "admin") == 0) return 1;；return 0;
+- 函数 process_login@L44：
+  - 声明：u->privilege = 1;
+  - 赋值：u->privilege = 1;
+  - 调用：read_username；greet
+  - 条件/循环：if (check_admin(u->username)) {
+- 函数 main@L52：
+  - 声明：UserInfo user;
+  - 调用：init_user；process_login；printf
+  - 返回：return 0;
+
+【CFG】
+- 函数 global：保留控制点 48/48；分支节点 4；调用节点 0；线性段折叠 0。
+  - 分支/循环节点：if (u->privilege > 0) {@L23；if (strcmp(name, "root") == 0) return 1;@L39；if (strcmp(name, "admin") == 0) return 1;@L40；if (check_admin(u->username)) {@L46
+  - 路径1: Entry -> /* -> * vuln_01_stack_bof.c -> if (u->privilege > 0) { -> if (strcmp(name, "root") == 0) return 1; -> if (strcmp(name, "admin") == 0) return 1; -> return 0; -> if (check_admin(u->username)) { -> return 0; -> } -> global EXIT
+
+【DFG】
+- 函数 global：边保留 0/0；参数源 0 个；抽取链路 0 条。

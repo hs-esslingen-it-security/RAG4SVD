@@ -1,0 +1,27 @@
+[
+  {
+    "id": 2294,
+    "cve_id": "CVE-2022-25299",
+    "code_before_change": "int mg_http_upload(struct mg_connection *c, struct mg_http_message *hm,\n                   const char *dir) {\n  char offset[40] = \"\", name[200] = \"\", path[256];\n  mg_http_get_var(&hm->query, \"offset\", offset, sizeof(offset));\n  mg_http_get_var(&hm->query, \"name\", name, sizeof(name));\n  if (name[0] == '\\0') {\n    mg_http_reply(c, 400, \"\", \"%s\", \"name required\");\n    return -1;\n  } else {\n    FILE *fp;\n    size_t oft = strtoul(offset, NULL, 0);\n    snprintf(path, sizeof(path), \"%s%c%s\", dir, MG_DIRSEP, name);\n    LOG(LL_DEBUG,\n        (\"%p %d bytes @ %d [%s]\", c->fd, (int) hm->body.len, (int) oft, name));\n    if ((fp = fopen(path, oft == 0 ? \"wb\" : \"ab\")) == NULL) {\n      mg_http_reply(c, 400, \"\", \"fopen(%s): %d\", name, errno);\n      return -2;\n    } else {\n      fwrite(hm->body.ptr, 1, hm->body.len, fp);\n      fclose(fp);\n      mg_http_reply(c, 200, \"\", \"\");\n      return (int) hm->body.len;\n    }\n  }\n}",
+    "code_after_change": "int mg_http_upload(struct mg_connection *c, struct mg_http_message *hm,\n                   const char *dir) {\n  char offset[40] = \"\", name[200] = \"\", path[256];\n  mg_http_get_var(&hm->query, \"offset\", offset, sizeof(offset));\n  mg_http_get_var(&hm->query, \"name\", name, sizeof(name));\n  if (name[0] == '\\0') {\n    mg_http_reply(c, 400, \"\", \"%s\", \"name required\");\n    return -1;\n  } else {\n    FILE *fp;\n    long oft = strtol(offset, NULL, 0);\n    snprintf(path, sizeof(path), \"%s%c%s\", dir, MG_DIRSEP, name);\n    remove_double_dots(path);\n    LOG(LL_DEBUG, (\"%d bytes @ %ld [%s]\", (int) hm->body.len, oft, path));\n    if ((fp = fopen(path, oft == 0 ? \"wb\" : \"ab\")) == NULL) {\n      mg_http_reply(c, 400, \"\", \"fopen(%s): %d\", path, errno);\n      return -2;\n    } else {\n      fwrite(hm->body.ptr, 1, hm->body.len, fp);\n      fclose(fp);\n      mg_http_reply(c, 200, \"\", \"\");\n      return (int) hm->body.len;\n    }\n  }\n}",
+    "cwe": [
+      "CWE-552"
+    ],
+    "cve_description": "This affects the package cesanta/mongoose before 7.6. The unsafe handling of file names during upload using mg_http_upload() method may enable attackers to write files to arbitrary locations outside the designated target folder.",
+    "patch": "--- code before\n+++ code after\n@@ -8,12 +8,12 @@\n     return -1;\n   } else {\n     FILE *fp;\n-    size_t oft = strtoul(offset, NULL, 0);\n+    long oft = strtol(offset, NULL, 0);\n     snprintf(path, sizeof(path), \"%s%c%s\", dir, MG_DIRSEP, name);\n-    LOG(LL_DEBUG,\n-        (\"%p %d bytes @ %d [%s]\", c->fd, (int) hm->body.len, (int) oft, name));\n+    remove_double_dots(path);\n+    LOG(LL_DEBUG, (\"%d bytes @ %ld [%s]\", (int) hm->body.len, oft, path));\n     if ((fp = fopen(path, oft == 0 ? \"wb\" : \"ab\")) == NULL) {\n-      mg_http_reply(c, 400, \"\", \"fopen(%s): %d\", name, errno);\n+      mg_http_reply(c, 400, \"\", \"fopen(%s): %d\", path, errno);\n       return -2;\n     } else {\n       fwrite(hm->body.ptr, 1, hm->body.len, fp);",
+    "function_modified_lines": {
+      "added": [
+        "    long oft = strtol(offset, NULL, 0);",
+        "    remove_double_dots(path);",
+        "    LOG(LL_DEBUG, (\"%d bytes @ %ld [%s]\", (int) hm->body.len, oft, path));",
+        "      mg_http_reply(c, 400, \"\", \"fopen(%s): %d\", path, errno);"
+      ],
+      "deleted": [
+        "    size_t oft = strtoul(offset, NULL, 0);",
+        "    LOG(LL_DEBUG,",
+        "        (\"%p %d bytes @ %d [%s]\", c->fd, (int) hm->body.len, (int) oft, name));",
+        "      mg_http_reply(c, 400, \"\", \"fopen(%s): %d\", name, errno);"
+      ]
+    }
+  }
+]

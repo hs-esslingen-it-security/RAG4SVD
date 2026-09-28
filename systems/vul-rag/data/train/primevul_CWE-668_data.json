@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1461,
+    "cve_id": "CVE-2017-15393",
+    "code_before_change": "WebContents* DevToolsWindow::OpenURLFromTab(\n    WebContents* source,\n    const content::OpenURLParams& params) {\n   DCHECK(source == main_web_contents_);\n   if (!params.url.SchemeIs(content::kChromeDevToolsScheme)) {\n     WebContents* inspected_web_contents = GetInspectedWebContents();\n    return inspected_web_contents ?\n        inspected_web_contents->OpenURL(params) : NULL;\n   }\n   bindings_->Reload();\n   return main_web_contents_;\n}\n",
+    "code_after_change": "WebContents* DevToolsWindow::OpenURLFromTab(\n    WebContents* source,\n    const content::OpenURLParams& params) {\n   DCHECK(source == main_web_contents_);\n   if (!params.url.SchemeIs(content::kChromeDevToolsScheme)) {\n     WebContents* inspected_web_contents = GetInspectedWebContents();\n    if (!inspected_web_contents)\n      return nullptr;\n    content::OpenURLParams modified = params;\n    modified.referrer = content::Referrer();\n    return inspected_web_contents->OpenURL(modified);\n   }\n   bindings_->Reload();\n   return main_web_contents_;\n}\n",
+    "cwe": [
+      "CWE-668"
+    ],
+    "cve_description": "Insufficient Policy Enforcement in Devtools remote debugging in Google Chrome prior to 62.0.3202.62 allowed a remote attacker to obtain access to remote debugging functionality via a crafted HTML page, aka a Referer leak.",
+    "patch": "--- code before\n+++ code after\n@@ -4,8 +4,11 @@\n    DCHECK(source == main_web_contents_);\n    if (!params.url.SchemeIs(content::kChromeDevToolsScheme)) {\n      WebContents* inspected_web_contents = GetInspectedWebContents();\n-    return inspected_web_contents ?\n-        inspected_web_contents->OpenURL(params) : NULL;\n+    if (!inspected_web_contents)\n+      return nullptr;\n+    content::OpenURLParams modified = params;\n+    modified.referrer = content::Referrer();\n+    return inspected_web_contents->OpenURL(modified);\n    }\n    bindings_->Reload();\n    return main_web_contents_;",
+    "function_modified_lines": {
+      "added": [
+        "    if (!inspected_web_contents)",
+        "      return nullptr;",
+        "    content::OpenURLParams modified = params;",
+        "    modified.referrer = content::Referrer();",
+        "    return inspected_web_contents->OpenURL(modified);"
+      ],
+      "deleted": [
+        "    return inspected_web_contents ?",
+        "        inspected_web_contents->OpenURL(params) : NULL;"
+      ]
+    }
+  }
+]

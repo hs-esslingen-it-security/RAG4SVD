@@ -1,0 +1,177 @@
+[
+  {
+    "id": 995,
+    "cve_id": "CVE-2018-14354",
+    "code_before_change": "int imap_subscribe(char *path, bool subscribe)\n{\n  struct ImapData *idata = NULL;\n  char buf[LONG_STRING];\n  char mbox[LONG_STRING];\n   char errstr[STRING];\n   struct Buffer err, token;\n   struct ImapMbox mx;\n \n   if (!mx_is_imap(path) || imap_parse_path(path, &mx) || !mx.mbox)\n   {\n    mutt_error(_(\"Bad mailbox name\"));\n    return -1;\n  }\n  idata = imap_conn_find(&(mx.account), 0);\n  if (!idata)\n    goto fail;\n\n  imap_fix_path(idata, mx.mbox, buf, sizeof(buf));\n  if (!*buf)\n    mutt_str_strfcpy(buf, \"INBOX\", sizeof(buf));\n\n  if (ImapCheckSubscribed)\n  {\n    mutt_buffer_init(&token);\n     mutt_buffer_init(&err);\n     err.data = errstr;\n     err.dsize = sizeof(errstr);\n    snprintf(mbox, sizeof(mbox), \"%smailboxes \\\"%s\\\"\", subscribe ? \"\" : \"un\", path);\n     if (mutt_parse_rc_line(mbox, &token, &err))\n       mutt_debug(1, \"Error adding subscribed mailbox: %s\\n\", errstr);\n     FREE(&token.data);\n  }\n\n  if (subscribe)\n    mutt_message(_(\"Subscribing to %s...\"), buf);\n  else\n    mutt_message(_(\"Unsubscribing from %s...\"), buf);\n  imap_munge_mbox_name(idata, mbox, sizeof(mbox), buf);\n\n  snprintf(buf, sizeof(buf), \"%sSUBSCRIBE %s\", subscribe ? \"\" : \"UN\", mbox);\n\n  if (imap_exec(idata, buf, 0) < 0)\n    goto fail;\n\n  imap_unmunge_mbox_name(idata, mx.mbox);\n  if (subscribe)\n    mutt_message(_(\"Subscribed to %s\"), mx.mbox);\n  else\n    mutt_message(_(\"Unsubscribed from %s\"), mx.mbox);\n  FREE(&mx.mbox);\n  return 0;\n\nfail:\n  FREE(&mx.mbox);\n  return -1;\n}\n",
+    "code_after_change": "int imap_subscribe(char *path, bool subscribe)\n{\n  struct ImapData *idata = NULL;\n  char buf[LONG_STRING];\n  char mbox[LONG_STRING];\n   char errstr[STRING];\n   struct Buffer err, token;\n   struct ImapMbox mx;\n  size_t len = 0;\n \n   if (!mx_is_imap(path) || imap_parse_path(path, &mx) || !mx.mbox)\n   {\n    mutt_error(_(\"Bad mailbox name\"));\n    return -1;\n  }\n  idata = imap_conn_find(&(mx.account), 0);\n  if (!idata)\n    goto fail;\n\n  imap_fix_path(idata, mx.mbox, buf, sizeof(buf));\n  if (!*buf)\n    mutt_str_strfcpy(buf, \"INBOX\", sizeof(buf));\n\n  if (ImapCheckSubscribed)\n  {\n    mutt_buffer_init(&token);\n     mutt_buffer_init(&err);\n     err.data = errstr;\n     err.dsize = sizeof(errstr);\n\tlen = snprintf(mbox, sizeof(mbox), \"%smailboxes \", subscribe ? \"\" : \"un\");\n\timap_quote_string(mbox + len, sizeof(mbox) - len, path, true);\n     if (mutt_parse_rc_line(mbox, &token, &err))\n       mutt_debug(1, \"Error adding subscribed mailbox: %s\\n\", errstr);\n     FREE(&token.data);\n  }\n\n  if (subscribe)\n    mutt_message(_(\"Subscribing to %s...\"), buf);\n  else\n    mutt_message(_(\"Unsubscribing from %s...\"), buf);\n  imap_munge_mbox_name(idata, mbox, sizeof(mbox), buf);\n\n  snprintf(buf, sizeof(buf), \"%sSUBSCRIBE %s\", subscribe ? \"\" : \"UN\", mbox);\n\n  if (imap_exec(idata, buf, 0) < 0)\n    goto fail;\n\n  imap_unmunge_mbox_name(idata, mx.mbox);\n  if (subscribe)\n    mutt_message(_(\"Subscribed to %s\"), mx.mbox);\n  else\n    mutt_message(_(\"Unsubscribed from %s\"), mx.mbox);\n  FREE(&mx.mbox);\n  return 0;\n\nfail:\n  FREE(&mx.mbox);\n  return -1;\n}\n",
+    "cwe": [
+      "CWE-77"
+    ],
+    "cve_description": "An issue was discovered in Mutt before 1.10.1 and NeoMutt before 2018-07-16. They allow remote IMAP servers to execute arbitrary commands via backquote characters, related to the mailboxes command associated with a manual subscription or unsubscription.",
+    "patch": "--- code before\n+++ code after\n@@ -6,6 +6,7 @@\n    char errstr[STRING];\n    struct Buffer err, token;\n    struct ImapMbox mx;\n+  size_t len = 0;\n  \n    if (!mx_is_imap(path) || imap_parse_path(path, &mx) || !mx.mbox)\n    {\n@@ -26,7 +27,8 @@\n      mutt_buffer_init(&err);\n      err.data = errstr;\n      err.dsize = sizeof(errstr);\n-    snprintf(mbox, sizeof(mbox), \"%smailboxes \\\"%s\\\"\", subscribe ? \"\" : \"un\", path);\n+\tlen = snprintf(mbox, sizeof(mbox), \"%smailboxes \", subscribe ? \"\" : \"un\");\n+\timap_quote_string(mbox + len, sizeof(mbox) - len, path, true);\n      if (mutt_parse_rc_line(mbox, &token, &err))\n        mutt_debug(1, \"Error adding subscribed mailbox: %s\\n\", errstr);\n      FREE(&token.data);",
+    "function_modified_lines": {
+      "added": [
+        "  size_t len = 0;",
+        "\tlen = snprintf(mbox, sizeof(mbox), \"%smailboxes \", subscribe ? \"\" : \"un\");",
+        "\timap_quote_string(mbox + len, sizeof(mbox) - len, path, true);"
+      ],
+      "deleted": [
+        "    snprintf(mbox, sizeof(mbox), \"%smailboxes \\\"%s\\\"\", subscribe ? \"\" : \"un\", path);"
+      ]
+    }
+  },
+  {
+    "id": 1147,
+    "cve_id": "CVE-2019-11884",
+    "code_before_change": "static int do_hidp_sock_ioctl(struct socket *sock, unsigned int cmd, void __user *argp)\n{\n\tstruct hidp_connadd_req ca;\n\tstruct hidp_conndel_req cd;\n\tstruct hidp_connlist_req cl;\n\tstruct hidp_conninfo ci;\n\tstruct socket *csock;\n\tstruct socket *isock;\n\tint err;\n\n\tBT_DBG(\"cmd %x arg %p\", cmd, argp);\n\n\tswitch (cmd) {\n\tcase HIDPCONNADD:\n\t\tif (!capable(CAP_NET_ADMIN))\n\t\t\treturn -EPERM;\n\n\t\tif (copy_from_user(&ca, argp, sizeof(ca)))\n\t\t\treturn -EFAULT;\n\n\t\tcsock = sockfd_lookup(ca.ctrl_sock, &err);\n\t\tif (!csock)\n\t\t\treturn err;\n\n\t\tisock = sockfd_lookup(ca.intr_sock, &err);\n\t\tif (!isock) {\n \t\t\tsockfd_put(csock);\n \t\t\treturn err;\n \t\t}\n \n \t\terr = hidp_connection_add(&ca, csock, isock);\n \t\tif (!err && copy_to_user(argp, &ca, sizeof(ca)))\n\t\t\terr = -EFAULT;\n\n\t\tsockfd_put(csock);\n\t\tsockfd_put(isock);\n\n\t\treturn err;\n\n\tcase HIDPCONNDEL:\n\t\tif (!capable(CAP_NET_ADMIN))\n\t\t\treturn -EPERM;\n\n\t\tif (copy_from_user(&cd, argp, sizeof(cd)))\n\t\t\treturn -EFAULT;\n\n\t\treturn hidp_connection_del(&cd);\n\n\tcase HIDPGETCONNLIST:\n\t\tif (copy_from_user(&cl, argp, sizeof(cl)))\n\t\t\treturn -EFAULT;\n\n\t\tif (cl.cnum <= 0)\n\t\t\treturn -EINVAL;\n\n\t\terr = hidp_get_connlist(&cl);\n\t\tif (!err && copy_to_user(argp, &cl, sizeof(cl)))\n\t\t\treturn -EFAULT;\n\n\t\treturn err;\n\n\tcase HIDPGETCONNINFO:\n\t\tif (copy_from_user(&ci, argp, sizeof(ci)))\n\t\t\treturn -EFAULT;\n\n\t\terr = hidp_get_conninfo(&ci);\n\t\tif (!err && copy_to_user(argp, &ci, sizeof(ci)))\n\t\t\treturn -EFAULT;\n\n\t\treturn err;\n\t}\n\n\treturn -EINVAL;\n}\n",
+    "code_after_change": "static int do_hidp_sock_ioctl(struct socket *sock, unsigned int cmd, void __user *argp)\n{\n\tstruct hidp_connadd_req ca;\n\tstruct hidp_conndel_req cd;\n\tstruct hidp_connlist_req cl;\n\tstruct hidp_conninfo ci;\n\tstruct socket *csock;\n\tstruct socket *isock;\n\tint err;\n\n\tBT_DBG(\"cmd %x arg %p\", cmd, argp);\n\n\tswitch (cmd) {\n\tcase HIDPCONNADD:\n\t\tif (!capable(CAP_NET_ADMIN))\n\t\t\treturn -EPERM;\n\n\t\tif (copy_from_user(&ca, argp, sizeof(ca)))\n\t\t\treturn -EFAULT;\n\n\t\tcsock = sockfd_lookup(ca.ctrl_sock, &err);\n\t\tif (!csock)\n\t\t\treturn err;\n\n\t\tisock = sockfd_lookup(ca.intr_sock, &err);\n\t\tif (!isock) {\n \t\t\tsockfd_put(csock);\n \t\t\treturn err;\n \t\t}\n\t\tca.name[sizeof(ca.name)-1] = 0;\n \n \t\terr = hidp_connection_add(&ca, csock, isock);\n \t\tif (!err && copy_to_user(argp, &ca, sizeof(ca)))\n\t\t\terr = -EFAULT;\n\n\t\tsockfd_put(csock);\n\t\tsockfd_put(isock);\n\n\t\treturn err;\n\n\tcase HIDPCONNDEL:\n\t\tif (!capable(CAP_NET_ADMIN))\n\t\t\treturn -EPERM;\n\n\t\tif (copy_from_user(&cd, argp, sizeof(cd)))\n\t\t\treturn -EFAULT;\n\n\t\treturn hidp_connection_del(&cd);\n\n\tcase HIDPGETCONNLIST:\n\t\tif (copy_from_user(&cl, argp, sizeof(cl)))\n\t\t\treturn -EFAULT;\n\n\t\tif (cl.cnum <= 0)\n\t\t\treturn -EINVAL;\n\n\t\terr = hidp_get_connlist(&cl);\n\t\tif (!err && copy_to_user(argp, &cl, sizeof(cl)))\n\t\t\treturn -EFAULT;\n\n\t\treturn err;\n\n\tcase HIDPGETCONNINFO:\n\t\tif (copy_from_user(&ci, argp, sizeof(ci)))\n\t\t\treturn -EFAULT;\n\n\t\terr = hidp_get_conninfo(&ci);\n\t\tif (!err && copy_to_user(argp, &ci, sizeof(ci)))\n\t\t\treturn -EFAULT;\n\n\t\treturn err;\n\t}\n\n\treturn -EINVAL;\n}\n",
+    "cwe": [
+      "CWE-77"
+    ],
+    "cve_description": "The do_hidp_sock_ioctl function in net/bluetooth/hidp/sock.c in the Linux kernel before 5.0.15 allows a local user to obtain potentially sensitive information from kernel stack memory via a HIDPCONNADD command, because a name field may not end with a '\\0' character.",
+    "patch": "--- code before\n+++ code after\n@@ -27,6 +27,7 @@\n  \t\t\tsockfd_put(csock);\n  \t\t\treturn err;\n  \t\t}\n+\t\tca.name[sizeof(ca.name)-1] = 0;\n  \n  \t\terr = hidp_connection_add(&ca, csock, isock);\n  \t\tif (!err && copy_to_user(argp, &ca, sizeof(ca)))",
+    "function_modified_lines": {
+      "added": [
+        "\t\tca.name[sizeof(ca.name)-1] = 0;"
+      ],
+      "deleted": []
+    }
+  },
+  {
+    "id": 1468,
+    "cve_id": "CVE-2019-5804",
+    "code_before_change": " std::wstring GetSwitchValueFromCommandLine(const std::wstring& command_line,\n                                            const std::wstring& switch_name) {\n   assert(!command_line.empty());\n   assert(!switch_name.empty());\n \n   std::vector<std::wstring> as_array = TokenizeCommandLineToArray(command_line);\n   std::wstring switch_with_equal = L\"--\" + switch_name + L\"=\";\n  for (size_t i = 1; i < as_array.size(); ++i) {\n    const std::wstring& arg = as_array[i];\n     if (arg.compare(0, switch_with_equal.size(), switch_with_equal) == 0)\n       return arg.substr(switch_with_equal.size());\n   }\n\n  return std::wstring();\n}\n",
+    "code_after_change": " std::wstring GetSwitchValueFromCommandLine(const std::wstring& command_line,\n                                            const std::wstring& switch_name) {\n  static constexpr wchar_t kSwitchTerminator[] = L\"--\";\n   assert(!command_line.empty());\n   assert(!switch_name.empty());\n \n   std::vector<std::wstring> as_array = TokenizeCommandLineToArray(command_line);\n   std::wstring switch_with_equal = L\"--\" + switch_name + L\"=\";\n  auto end = std::find(as_array.cbegin(), as_array.cend(), kSwitchTerminator);\n  for (auto scan = as_array.cbegin(); scan != end; ++scan) {\n    const std::wstring& arg = *scan;\n     if (arg.compare(0, switch_with_equal.size(), switch_with_equal) == 0)\n       return arg.substr(switch_with_equal.size());\n   }\n\n  return std::wstring();\n}\n",
+    "cwe": [
+      "CWE-77"
+    ],
+    "cve_description": "Incorrect command line processing in Chrome in Google Chrome prior to 73.0.3683.75 allowed a local attacker to perform domain spoofing via a crafted domain name.",
+    "patch": "--- code before\n+++ code after\n@@ -1,12 +1,14 @@\n  std::wstring GetSwitchValueFromCommandLine(const std::wstring& command_line,\n                                             const std::wstring& switch_name) {\n+  static constexpr wchar_t kSwitchTerminator[] = L\"--\";\n    assert(!command_line.empty());\n    assert(!switch_name.empty());\n  \n    std::vector<std::wstring> as_array = TokenizeCommandLineToArray(command_line);\n    std::wstring switch_with_equal = L\"--\" + switch_name + L\"=\";\n-  for (size_t i = 1; i < as_array.size(); ++i) {\n-    const std::wstring& arg = as_array[i];\n+  auto end = std::find(as_array.cbegin(), as_array.cend(), kSwitchTerminator);\n+  for (auto scan = as_array.cbegin(); scan != end; ++scan) {\n+    const std::wstring& arg = *scan;\n      if (arg.compare(0, switch_with_equal.size(), switch_with_equal) == 0)\n        return arg.substr(switch_with_equal.size());\n    }",
+    "function_modified_lines": {
+      "added": [
+        "  static constexpr wchar_t kSwitchTerminator[] = L\"--\";",
+        "  auto end = std::find(as_array.cbegin(), as_array.cend(), kSwitchTerminator);",
+        "  for (auto scan = as_array.cbegin(); scan != end; ++scan) {",
+        "    const std::wstring& arg = *scan;"
+      ],
+      "deleted": [
+        "  for (size_t i = 1; i < as_array.size(); ++i) {",
+        "    const std::wstring& arg = as_array[i];"
+      ]
+    }
+  },
+  {
+    "id": 2336,
+    "cve_id": "CVE-2016-5397",
+    "code_before_change": "bool format_go_output(const string& file_path) {\n  const string command = \"gofmt -w \" + file_path;\n\n  if (system(command.c_str()) == 0) {\n    return true;\n  }\n\n  fprintf(stderr, \"WARNING - Running '%s' failed.\\n\", command.c_str());\n  return false;\n}",
+    "code_after_change": "bool format_go_output(const string& file_path) {\n\n  // formatting via gofmt deactivated due to THRIFT-3893\n  // Please look at the ticket and make sure you fully understand all the implications\n  // before submitting a patch that enables this feature again. Thank you.\n  (void) file_path;\n  return false;\n  \n  /*\n  const string command = \"gofmt -w \" + file_path;\n\n  if (system(command.c_str()) == 0) {\n    return true;\n  }\n\n  fprintf(stderr, \"WARNING - Running '%s' failed.\\n\", command.c_str());\n  return false;\n  */\n }",
+    "cwe": [
+      "CWE-77"
+    ],
+    "cve_description": "The Apache Thrift Go client library exposed the potential during code generation for command injection due to using an external formatting tool. Affected Apache Thrift 0.9.3 and older, Fixed in Apache Thrift 0.10.0.",
+    "patch": "--- code before\n+++ code after\n@@ -1,4 +1,12 @@\n bool format_go_output(const string& file_path) {\n+\n+  // formatting via gofmt deactivated due to THRIFT-3893\n+  // Please look at the ticket and make sure you fully understand all the implications\n+  // before submitting a patch that enables this feature again. Thank you.\n+  (void) file_path;\n+  return false;\n+  \n+  /*\n   const string command = \"gofmt -w \" + file_path;\n \n   if (system(command.c_str()) == 0) {\n@@ -7,4 +15,5 @@\n \n   fprintf(stderr, \"WARNING - Running '%s' failed.\\n\", command.c_str());\n   return false;\n-}+  */\n+ }",
+    "function_modified_lines": {
+      "added": [
+        "",
+        "  // formatting via gofmt deactivated due to THRIFT-3893",
+        "  // Please look at the ticket and make sure you fully understand all the implications",
+        "  // before submitting a patch that enables this feature again. Thank you.",
+        "  (void) file_path;",
+        "  return false;",
+        "  ",
+        "  /*",
+        "  */",
+        " }"
+      ],
+      "deleted": [
+        "}"
+      ]
+    }
+  },
+  {
+    "id": 3041,
+    "cve_id": "CVE-2020-15180",
+    "code_before_change": "int wsrep_sst_donate(const std::string &msg, const wsrep::gtid &current_gtid,\n                     const bool bypass) {\n  /* This will be reset when sync callback is called.\n   * Should we set wsrep_ready to false here too? */\n  local_status.set(wsrep::server_state::s_donor);\n\n  const char *method = msg.data();\n  size_t method_len = strlen(method);\n  const char *data = method + method_len + 1;\n\n  wsp::env env(NULL);\n  if (env.error()) {\n    WSREP_ERROR(\"wsrep_sst_donate_cb(): env var ctor failed: %d\", -env.error());\n    return WSREP_CB_FAILURE;\n  }\n\n#if 0\n  /* Wait for wsrep-SE to initialize that also signals\n  completion of init_server_component which is important before we initiate\n  any meangiful action especially DONOR action from this node. */\n  while (!wsrep_is_SE_initialized()) {\n    sleep(1);\n    THD *applier_thd = static_cast<THD *>(recv_ctx);\n    if (applier_thd->killed == THD::KILL_CONNECTION) return WSREP_CB_FAILURE;\n  }\n#endif\n\n  int ret;\n  ret = sst_donate_other(method, data, current_gtid, bypass, env());\n\n  return (ret >= 0 ? WSREP_CB_SUCCESS : WSREP_CB_FAILURE);\n}",
+    "code_after_change": "int wsrep_sst_donate(const std::string &msg, const wsrep::gtid &current_gtid,\n                     const bool bypass) {\n  /* This will be reset when sync callback is called.\n   * Should we set wsrep_ready to false here too? */\n  local_status.set(wsrep::server_state::s_donor);\n\n  if (!is_sst_request_valid(msg)) {\n    std::ostringstream ss;\n    std::for_each(std::begin(msg), std::end(msg), [&ss](char ch) {\n      if (ch != 0)\n        ss << ch;\n      else\n        ss << \"<nullptr>\";\n    });\n    WSREP_ERROR(\"Invalid sst_request: %s\", ss.str().c_str());\n    return WSREP_CB_FAILURE;\n  }\n\n  const char *method = msg.data();\n  size_t method_len = strlen(method);\n  const char *data = method + method_len + 1;\n\n  wsp::env env(NULL);\n  if (env.error()) {\n    WSREP_ERROR(\"wsrep_sst_donate_cb(): env var ctor failed: %d\", -env.error());\n    return WSREP_CB_FAILURE;\n  }\n\n#if 0\n  /* Wait for wsrep-SE to initialize that also signals\n  completion of init_server_component which is important before we initiate\n  any meangiful action especially DONOR action from this node. */\n  while (!wsrep_is_SE_initialized()) {\n    sleep(1);\n    THD *applier_thd = static_cast<THD *>(recv_ctx);\n    if (applier_thd->killed == THD::KILL_CONNECTION) return WSREP_CB_FAILURE;\n  }\n#endif\n\n  int ret;\n  ret = sst_donate_other(method, data, current_gtid, bypass, env());\n\n  return (ret >= 0 ? WSREP_CB_SUCCESS : WSREP_CB_FAILURE);\n}",
+    "cwe": [
+      "CWE-77"
+    ],
+    "cve_description": "A flaw was found in the mysql-wsrep component of mariadb. Lack of input sanitization in `wsrep_sst_method` allows for command injection that can be exploited by a remote attacker to execute arbitrary commands on galera cluster nodes. This threatens the system's confidentiality, integrity, and availability. This flaw affects mariadb versions before 10.1.47, before 10.2.34, before 10.3.25, before 10.4.15 and before 10.5.6.",
+    "patch": "--- code before\n+++ code after\n@@ -3,6 +3,18 @@\n   /* This will be reset when sync callback is called.\n    * Should we set wsrep_ready to false here too? */\n   local_status.set(wsrep::server_state::s_donor);\n+\n+  if (!is_sst_request_valid(msg)) {\n+    std::ostringstream ss;\n+    std::for_each(std::begin(msg), std::end(msg), [&ss](char ch) {\n+      if (ch != 0)\n+        ss << ch;\n+      else\n+        ss << \"<nullptr>\";\n+    });\n+    WSREP_ERROR(\"Invalid sst_request: %s\", ss.str().c_str());\n+    return WSREP_CB_FAILURE;\n+  }\n \n   const char *method = msg.data();\n   size_t method_len = strlen(method);",
+    "function_modified_lines": {
+      "added": [
+        "",
+        "  if (!is_sst_request_valid(msg)) {",
+        "    std::ostringstream ss;",
+        "    std::for_each(std::begin(msg), std::end(msg), [&ss](char ch) {",
+        "      if (ch != 0)",
+        "        ss << ch;",
+        "      else",
+        "        ss << \"<nullptr>\";",
+        "    });",
+        "    WSREP_ERROR(\"Invalid sst_request: %s\", ss.str().c_str());",
+        "    return WSREP_CB_FAILURE;",
+        "  }"
+      ],
+      "deleted": []
+    }
+  },
+  {
+    "id": 3063,
+    "cve_id": "CVE-2016-10729",
+    "code_before_change": "main(\n    int\t\targc,\n    char **\targv)\n{\n#ifdef GNUTAR\n    int i;\n    char *e;\n    char *dbf;\n    char *cmdline;\n    GPtrArray *array = g_ptr_array_new();\n    gchar **strings;\n    char **new_argv;\n    char **env;\n#endif\n\n    if (argc > 1 && argv[1] && g_str_equal(argv[1], \"--version\")) {\n\tprintf(\"runtar-%s\\n\", VERSION);\n\treturn (0);\n    }\n\n    /*\n     * Configure program for internationalization:\n     *   1) Only set the message locale for now.\n     *   2) Set textdomain for all amanda related programs to \"amanda\"\n     *      We don't want to be forced to support dozens of message catalogs.\n     */\n    setlocale(LC_MESSAGES, \"C\");\n    textdomain(\"amanda\"); \n\n    safe_fd(-1, 0);\n    safe_cd();\n\n    set_pname(\"runtar\");\n\n    /* Don't die when child closes pipe */\n    signal(SIGPIPE, SIG_IGN);\n\n    dbopen(DBG_SUBDIR_CLIENT);\n    config_init(CONFIG_INIT_CLIENT|CONFIG_INIT_GLOBAL, NULL);\n\n    if (argc < 3) {\n\terror(_(\"Need at least 3 arguments\\n\"));\n\t/*NOTREACHED*/\n    }\n\n    dbprintf(_(\"version %s\\n\"), VERSION);\n\n    if (!g_str_equal(argv[3], \"--create\")) {\n\terror(_(\"Can only be used to create tar archives\\n\"));\n\t/*NOTREACHED*/\n    }\n\n#ifndef GNUTAR\n\n    g_fprintf(stderr,_(\"gnutar not available on this system.\\n\"));\n    dbprintf(_(\"%s: gnutar not available on this system.\\n\"), argv[0]);\n    dbclose();\n    return 1;\n\n#else\n\n    /*\n     * Print out version information for tar.\n     */\n    do {\n\tFILE *\tversion_file;\n\tchar\tversion_buf[80];\n\n\tif ((version_file = popen(GNUTAR \" --version 2>&1\", \"r\")) != NULL) {\n\t    if (fgets(version_buf, (int)sizeof(version_buf), version_file) != NULL) {\n\t\tdbprintf(_(GNUTAR \" version: %s\\n\"), version_buf);\n\t    } else {\n\t\tif (ferror(version_file)) {\n\t\t    dbprintf(_(GNUTAR \" version: Read failure: %s\\n\"), strerror(errno));\n\t\t} else {\n\t\t    dbprintf(_(GNUTAR \" version: Read failure; EOF\\n\"));\n\t\t}\n\t    }\n\t} else {\n\t    dbprintf(_(GNUTAR \" version: unavailable: %s\\n\"), strerror(errno));\n\t}\n    } while(0);\n\n#ifdef WANT_SETUID_CLIENT\n    check_running_as(RUNNING_AS_CLIENT_LOGIN | RUNNING_AS_UID_ONLY);\n    if (!become_root()) {\n\terror(_(\"error [%s could not become root (is the setuid bit set?)]\\n\"), get_pname());\n\t/*NOTREACHED*/\n    }\n#else\n    check_running_as(RUNNING_AS_CLIENT_LOGIN);\n#endif\n\n    /* skip argv[0] */\n    argc--;\n    argv++;\n\n    dbprintf(_(\"config: %s\\n\"), argv[0]);\n    if (!g_str_equal(argv[0], \"NOCONFIG\"))\n\tdbrename(argv[0], DBG_SUBDIR_CLIENT);\n    argc--;\n    argv++;\n\n    new_argv = g_new0(char *, argc+1);\n\n    new_argv[0] = g_strdup_printf(\"%s\", argv[0]);\n    g_ptr_array_add(array, g_strdup(GNUTAR));\n    for (i = 1; argv[i]; i++) {\n        g_ptr_array_add(array, quote_string(argv[i]));\n\tnew_argv[i] = g_strdup_printf(\"%s\", argv[i]);\n    }\n\n    g_ptr_array_add(array, NULL);\n    strings = (gchar **)g_ptr_array_free(array, FALSE);\n\n    cmdline = g_strjoinv(\" \", strings);\n    g_strfreev(strings);\n\n    dbprintf(_(\"running: %s\\n\"), cmdline);\n    amfree(cmdline);\n\n    dbf = dbfn();\n    if (dbf) {\n\tdbf = g_strdup(dbf);\n    }\n    dbclose();\n\n    env = safe_env();\n    execve(GNUTAR, new_argv, env);\n    free_env(env);\n\n    e = strerror(errno);\n    dbreopen(dbf, \"more\");\n    amfree(dbf);\n    dbprintf(_(\"execve of %s failed (%s)\\n\"), GNUTAR, e);\n    dbclose();\n\n    g_fprintf(stderr, _(\"runtar: could not exec %s: %s\\n\"), GNUTAR, e);\n    return 1;\n#endif\n}",
+    "code_after_change": "main(\n    int\t\targc,\n    char **\targv)\n{\n#ifdef GNUTAR\n    int i;\n    char *e;\n    char *dbf;\n    char *cmdline;\n    GPtrArray *array = g_ptr_array_new();\n    gchar **strings;\n    char **new_argv;\n    char **env;\n#endif\n    int good_option;\n\n    if (argc > 1 && argv[1] && g_str_equal(argv[1], \"--version\")) {\n\tprintf(\"runtar-%s\\n\", VERSION);\n\treturn (0);\n    }\n\n    /*\n     * Configure program for internationalization:\n     *   1) Only set the message locale for now.\n     *   2) Set textdomain for all amanda related programs to \"amanda\"\n     *      We don't want to be forced to support dozens of message catalogs.\n     */\n    setlocale(LC_MESSAGES, \"C\");\n    textdomain(\"amanda\"); \n\n    safe_fd(-1, 0);\n    safe_cd();\n\n    set_pname(\"runtar\");\n\n    /* Don't die when child closes pipe */\n    signal(SIGPIPE, SIG_IGN);\n\n    dbopen(DBG_SUBDIR_CLIENT);\n    config_init(CONFIG_INIT_CLIENT|CONFIG_INIT_GLOBAL, NULL);\n\n    if (argc < 3) {\n\terror(_(\"Need at least 3 arguments\\n\"));\n\t/*NOTREACHED*/\n    }\n\n    dbprintf(_(\"version %s\\n\"), VERSION);\n\n    if (!g_str_equal(argv[3], \"--create\")) {\n\terror(_(\"Can only be used to create tar archives\\n\"));\n\t/*NOTREACHED*/\n    }\n\n#ifndef GNUTAR\n\n    g_fprintf(stderr,_(\"gnutar not available on this system.\\n\"));\n    dbprintf(_(\"%s: gnutar not available on this system.\\n\"), argv[0]);\n    dbclose();\n    return 1;\n\n#else\n\n    /*\n     * Print out version information for tar.\n     */\n    do {\n\tFILE *\tversion_file;\n\tchar\tversion_buf[80];\n\n\tif ((version_file = popen(GNUTAR \" --version 2>&1\", \"r\")) != NULL) {\n\t    if (fgets(version_buf, (int)sizeof(version_buf), version_file) != NULL) {\n\t\tdbprintf(_(GNUTAR \" version: %s\\n\"), version_buf);\n\t    } else {\n\t\tif (ferror(version_file)) {\n\t\t    dbprintf(_(GNUTAR \" version: Read failure: %s\\n\"), strerror(errno));\n\t\t} else {\n\t\t    dbprintf(_(GNUTAR \" version: Read failure; EOF\\n\"));\n\t\t}\n\t    }\n\t} else {\n\t    dbprintf(_(GNUTAR \" version: unavailable: %s\\n\"), strerror(errno));\n\t}\n    } while(0);\n\n#ifdef WANT_SETUID_CLIENT\n    check_running_as(RUNNING_AS_CLIENT_LOGIN | RUNNING_AS_UID_ONLY);\n    if (!become_root()) {\n\terror(_(\"error [%s could not become root (is the setuid bit set?)]\\n\"), get_pname());\n\t/*NOTREACHED*/\n    }\n#else\n    check_running_as(RUNNING_AS_CLIENT_LOGIN);\n#endif\n\n    /* skip argv[0] */\n    argc--;\n    argv++;\n\n    dbprintf(_(\"config: %s\\n\"), argv[0]);\n    if (!g_str_equal(argv[0], \"NOCONFIG\"))\n\tdbrename(argv[0], DBG_SUBDIR_CLIENT);\n    argc--;\n    argv++;\n\n    new_argv = g_new0(char *, argc+1);\n\n    new_argv[0] = g_strdup_printf(\"%s\", argv[0]);\n    g_ptr_array_add(array, g_strdup(GNUTAR));\n    good_option = 0;\n    for (i = 1; argv[i]; i++) {\n\tif (good_option <= 0) {\n\t    if (g_str_has_prefix(argv[i],\"--rsh-command\") ||\n\t\tg_str_has_prefix(argv[i],\"--to-command\") ||\n\t\tg_str_has_prefix(argv[i],\"--info-script\") ||\n\t\tg_str_has_prefix(argv[i],\"--new-volume-script\") ||\n\t\tg_str_has_prefix(argv[i],\"--rmt-command\") ||\n\t\tg_str_has_prefix(argv[i],\"--use-compress-program\")) {\n\t\t/* Filter potential malicious option */\n\t\tgood_option = 0;\n\t    } else if (g_str_has_prefix(argv[i],\"--create\") ||\n\t\tg_str_has_prefix(argv[i],\"--totals\") ||\n\t\tg_str_has_prefix(argv[i],\"--dereference\") ||\n\t\tg_str_has_prefix(argv[i],\"--no-recursion\") ||\n\t\tg_str_has_prefix(argv[i],\"--one-file-system\") ||\n\t\tg_str_has_prefix(argv[i],\"--incremental\") ||\n\t\tg_str_has_prefix(argv[i],\"--atime-preserve\") ||\n\t\tg_str_has_prefix(argv[i],\"--sparse\") ||\n\t\tg_str_has_prefix(argv[i],\"--ignore-failed-read\") ||\n\t\tg_str_has_prefix(argv[i],\"--numeric-owner\")) {\n\t\t/* Accept theses options */\n\t\tgood_option++;\n\t    } else if (g_str_has_prefix(argv[i],\"--blocking-factor\") ||\n\t\tg_str_has_prefix(argv[i],\"--file\") ||\n\t\tg_str_has_prefix(argv[i],\"--directory\") ||\n\t\tg_str_has_prefix(argv[i],\"--exclude\") ||\n\t\tg_str_has_prefix(argv[i],\"--transform\") ||\n\t\tg_str_has_prefix(argv[i],\"--listed-incremental\") ||\n\t\tg_str_has_prefix(argv[i],\"--newer\") ||\n\t\tg_str_has_prefix(argv[i],\"--exclude-from\") ||\n\t\tg_str_has_prefix(argv[i],\"--files-from\")) {\n\t\t/* Accept theses options with the following argument */\n\t\tgood_option += 2;\n\t    } else if (argv[i][0] != '-') {\n\t\tgood_option++;\n\t    }\n\t}\n\tif (good_option <= 0) {\n\t    error(\"error [%s invalid option: %s]\", get_pname(), argv[i]);\n\t}\n        g_ptr_array_add(array, quote_string(argv[i]));\n\tnew_argv[i] = g_strdup_printf(\"%s\", argv[i]);\n\tgood_option--;\n    }\n\n    g_ptr_array_add(array, NULL);\n    strings = (gchar **)g_ptr_array_free(array, FALSE);\n\n    cmdline = g_strjoinv(\" \", strings);\n    g_strfreev(strings);\n\n    dbprintf(_(\"running: %s\\n\"), cmdline);\n    amfree(cmdline);\n\n    dbf = dbfn();\n    if (dbf) {\n\tdbf = g_strdup(dbf);\n    }\n    dbclose();\n\n    env = safe_env();\n    execve(GNUTAR, new_argv, env);\n    free_env(env);\n\n    e = strerror(errno);\n    dbreopen(dbf, \"more\");\n    amfree(dbf);\n    dbprintf(_(\"execve of %s failed (%s)\\n\"), GNUTAR, e);\n    dbclose();\n\n    g_fprintf(stderr, _(\"runtar: could not exec %s: %s\\n\"), GNUTAR, e);\n    return 1;\n#endif\n}",
+    "cwe": [
+      "CWE-77"
+    ],
+    "cve_description": "An issue was discovered in Amanda 3.3.1. A user with backup privileges can trivially compromise a client installation. The \"runtar\" setuid root binary does not check for additional arguments supplied after --create, allowing users to manipulate commands and perform command injection as root.",
+    "patch": "--- code before\n+++ code after\n@@ -12,6 +12,7 @@\n     char **new_argv;\n     char **env;\n #endif\n+    int good_option;\n \n     if (argc > 1 && argv[1] && g_str_equal(argv[1], \"--version\")) {\n \tprintf(\"runtar-%s\\n\", VERSION);\n@@ -105,9 +106,50 @@\n \n     new_argv[0] = g_strdup_printf(\"%s\", argv[0]);\n     g_ptr_array_add(array, g_strdup(GNUTAR));\n+    good_option = 0;\n     for (i = 1; argv[i]; i++) {\n+\tif (good_option <= 0) {\n+\t    if (g_str_has_prefix(argv[i],\"--rsh-command\") ||\n+\t\tg_str_has_prefix(argv[i],\"--to-command\") ||\n+\t\tg_str_has_prefix(argv[i],\"--info-script\") ||\n+\t\tg_str_has_prefix(argv[i],\"--new-volume-script\") ||\n+\t\tg_str_has_prefix(argv[i],\"--rmt-command\") ||\n+\t\tg_str_has_prefix(argv[i],\"--use-compress-program\")) {\n+\t\t/* Filter potential malicious option */\n+\t\tgood_option = 0;\n+\t    } else if (g_str_has_prefix(argv[i],\"--create\") ||\n+\t\tg_str_has_prefix(argv[i],\"--totals\") ||\n+\t\tg_str_has_prefix(argv[i],\"--dereference\") ||\n+\t\tg_str_has_prefix(argv[i],\"--no-recursion\") ||\n+\t\tg_str_has_prefix(argv[i],\"--one-file-system\") ||\n+\t\tg_str_has_prefix(argv[i],\"--incremental\") ||\n+\t\tg_str_has_prefix(argv[i],\"--atime-preserve\") ||\n+\t\tg_str_has_prefix(argv[i],\"--sparse\") ||\n+\t\tg_str_has_prefix(argv[i],\"--ignore-failed-read\") ||\n+\t\tg_str_has_prefix(argv[i],\"--numeric-owner\")) {\n+\t\t/* Accept theses options */\n+\t\tgood_option++;\n+\t    } else if (g_str_has_prefix(argv[i],\"--blocking-factor\") ||\n+\t\tg_str_has_prefix(argv[i],\"--file\") ||\n+\t\tg_str_has_prefix(argv[i],\"--directory\") ||\n+\t\tg_str_has_prefix(argv[i],\"--exclude\") ||\n+\t\tg_str_has_prefix(argv[i],\"--transform\") ||\n+\t\tg_str_has_prefix(argv[i],\"--listed-incremental\") ||\n+\t\tg_str_has_prefix(argv[i],\"--newer\") ||\n+\t\tg_str_has_prefix(argv[i],\"--exclude-from\") ||\n+\t\tg_str_has_prefix(argv[i],\"--files-from\")) {\n+\t\t/* Accept theses options with the following argument */\n+\t\tgood_option += 2;\n+\t    } else if (argv[i][0] != '-') {\n+\t\tgood_option++;\n+\t    }\n+\t}\n+\tif (good_option <= 0) {\n+\t    error(\"error [%s invalid option: %s]\", get_pname(), argv[i]);\n+\t}\n         g_ptr_array_add(array, quote_string(argv[i]));\n \tnew_argv[i] = g_strdup_printf(\"%s\", argv[i]);\n+\tgood_option--;\n     }\n \n     g_ptr_array_add(array, NULL);",
+    "function_modified_lines": {
+      "added": [
+        "    int good_option;",
+        "    good_option = 0;",
+        "\tif (good_option <= 0) {",
+        "\t    if (g_str_has_prefix(argv[i],\"--rsh-command\") ||",
+        "\t\tg_str_has_prefix(argv[i],\"--to-command\") ||",
+        "\t\tg_str_has_prefix(argv[i],\"--info-script\") ||",
+        "\t\tg_str_has_prefix(argv[i],\"--new-volume-script\") ||",
+        "\t\tg_str_has_prefix(argv[i],\"--rmt-command\") ||",
+        "\t\tg_str_has_prefix(argv[i],\"--use-compress-program\")) {",
+        "\t\t/* Filter potential malicious option */",
+        "\t\tgood_option = 0;",
+        "\t    } else if (g_str_has_prefix(argv[i],\"--create\") ||",
+        "\t\tg_str_has_prefix(argv[i],\"--totals\") ||",
+        "\t\tg_str_has_prefix(argv[i],\"--dereference\") ||",
+        "\t\tg_str_has_prefix(argv[i],\"--no-recursion\") ||",
+        "\t\tg_str_has_prefix(argv[i],\"--one-file-system\") ||",
+        "\t\tg_str_has_prefix(argv[i],\"--incremental\") ||",
+        "\t\tg_str_has_prefix(argv[i],\"--atime-preserve\") ||",
+        "\t\tg_str_has_prefix(argv[i],\"--sparse\") ||",
+        "\t\tg_str_has_prefix(argv[i],\"--ignore-failed-read\") ||",
+        "\t\tg_str_has_prefix(argv[i],\"--numeric-owner\")) {",
+        "\t\t/* Accept theses options */",
+        "\t\tgood_option++;",
+        "\t    } else if (g_str_has_prefix(argv[i],\"--blocking-factor\") ||",
+        "\t\tg_str_has_prefix(argv[i],\"--file\") ||",
+        "\t\tg_str_has_prefix(argv[i],\"--directory\") ||",
+        "\t\tg_str_has_prefix(argv[i],\"--exclude\") ||",
+        "\t\tg_str_has_prefix(argv[i],\"--transform\") ||",
+        "\t\tg_str_has_prefix(argv[i],\"--listed-incremental\") ||",
+        "\t\tg_str_has_prefix(argv[i],\"--newer\") ||",
+        "\t\tg_str_has_prefix(argv[i],\"--exclude-from\") ||",
+        "\t\tg_str_has_prefix(argv[i],\"--files-from\")) {",
+        "\t\t/* Accept theses options with the following argument */",
+        "\t\tgood_option += 2;",
+        "\t    } else if (argv[i][0] != '-') {",
+        "\t\tgood_option++;",
+        "\t    }",
+        "\t}",
+        "\tif (good_option <= 0) {",
+        "\t    error(\"error [%s invalid option: %s]\", get_pname(), argv[i]);",
+        "\t}",
+        "\tgood_option--;"
+      ],
+      "deleted": []
+    }
+  }
+]

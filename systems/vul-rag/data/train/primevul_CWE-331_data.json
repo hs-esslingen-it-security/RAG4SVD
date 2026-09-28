@@ -1,0 +1,55 @@
+[
+  {
+    "id": 208,
+    "cve_id": "CVE-2017-2626",
+    "code_before_change": "IceGenerateMagicCookie (\n \tint len\n )\n {\n    char    *auth;\n#ifndef HAVE_ARC4RANDOM_BUF\n     long    ldata[2];\n     int\t    seed;\n     int\t    value;\n     int\t    i;\n#endif\n \n    if ((auth = malloc (len + 1)) == NULL)\n\treturn (NULL);\n#ifdef HAVE_ARC4RANDOM_BUF\n    arc4random_buf(auth, len);\n#else\n #ifdef ITIMER_REAL\n     {\n \tstruct timeval  now;\n    int\t    i;\n \tldata[0] = now.tv_sec;\n \tldata[1] = now.tv_usec;\n     }\n#else\n     {\n \tlong    time ();\n \tldata[0] = time ((long *) 0);\n \tldata[1] = getpid ();\n     }\n#endif\n     seed = (ldata[0]) + (ldata[1] << 16);\n     srand (seed);\n     for (i = 0; i < len; i++)\n\tldata[1] = now.tv_usec;\n \tvalue = rand ();\n \tauth[i] = value & 0xff;\n     }\n",
+    "code_after_change": "IceGenerateMagicCookie (\nstatic void\nemulate_getrandom_buf (\n\tchar *auth,\n \tint len\n )\n {\n     long    ldata[2];\n     int\t    seed;\n     int\t    value;\n     int\t    i;\n \n #ifdef ITIMER_REAL\n     {\n \tstruct timeval  now;\n    int\t    i;\n \tldata[0] = now.tv_sec;\n \tldata[1] = now.tv_usec;\n     }\n#else /* ITIMER_REAL */\n     {\n \tlong    time ();\n \tldata[0] = time ((long *) 0);\n \tldata[1] = getpid ();\n     }\n#endif /* ITIMER_REAL */\n     seed = (ldata[0]) + (ldata[1] << 16);\n     srand (seed);\n     for (i = 0; i < len; i++)\n\tldata[1] = now.tv_usec;\n \tvalue = rand ();\n \tauth[i] = value & 0xff;\n     }\n",
+    "cwe": [
+      "CWE-331"
+    ],
+    "cve_description": "It was discovered that libICE before 1.0.9-8 used a weak entropy to generate keys. A local attacker could potentially use this flaw for session hijacking using the information available from the process list.",
+    "patch": "--- code before\n+++ code after\n@@ -1,20 +1,15 @@\n IceGenerateMagicCookie (\n+static void\n+emulate_getrandom_buf (\n+\tchar *auth,\n  \tint len\n  )\n  {\n-    char    *auth;\n-#ifndef HAVE_ARC4RANDOM_BUF\n      long    ldata[2];\n      int\t    seed;\n      int\t    value;\n      int\t    i;\n-#endif\n  \n-    if ((auth = malloc (len + 1)) == NULL)\n-\treturn (NULL);\n-#ifdef HAVE_ARC4RANDOM_BUF\n-    arc4random_buf(auth, len);\n-#else\n  #ifdef ITIMER_REAL\n      {\n  \tstruct timeval  now;\n@@ -22,13 +17,13 @@\n  \tldata[0] = now.tv_sec;\n  \tldata[1] = now.tv_usec;\n      }\n-#else\n+#else /* ITIMER_REAL */\n      {\n  \tlong    time ();\n  \tldata[0] = time ((long *) 0);\n  \tldata[1] = getpid ();\n      }\n-#endif\n+#endif /* ITIMER_REAL */\n      seed = (ldata[0]) + (ldata[1] << 16);\n      srand (seed);\n      for (i = 0; i < len; i++)",
+    "function_modified_lines": {
+      "added": [
+        "static void",
+        "emulate_getrandom_buf (",
+        "\tchar *auth,",
+        "#else /* ITIMER_REAL */",
+        "#endif /* ITIMER_REAL */"
+      ],
+      "deleted": [
+        "    char    *auth;",
+        "#ifndef HAVE_ARC4RANDOM_BUF",
+        "#endif",
+        "    if ((auth = malloc (len + 1)) == NULL)",
+        "\treturn (NULL);",
+        "#ifdef HAVE_ARC4RANDOM_BUF",
+        "    arc4random_buf(auth, len);",
+        "#else",
+        "#else",
+        "#endif"
+      ]
+    }
+  },
+  {
+    "id": 3202,
+    "cve_id": "CVE-2021-3505",
+    "code_before_change": "RsaAdjustPrimeCandidate(\n\t\t\tbigNum          prime,\n\t\t\tSEED_COMPAT_LEVEL seedCompatLevel  // IN: compatibility level; libtpms added\n\t\t\t)\n{\n    switch (seedCompatLevel) {\n    case SEED_COMPAT_LEVEL_ORIGINAL:\n        RsaAdjustPrimeCandidate_PreRev155(prime);\n        break;\n    /* case SEED_COMPAT_LEVEL_LAST: */\n    case SEED_COMPAT_LEVEL_RSA_PRIME_ADJUST_FIX:\n        RsaAdjustPrimeCandidate_New(prime);\n        break;\n    default:\n        FAIL(FATAL_ERROR_INTERNAL);\n    }\n}",
+    "code_after_change": "RsaAdjustPrimeCandidate(\n\t\t\tbigNum          prime,\n\t\t\tSEED_COMPAT_LEVEL seedCompatLevel  // IN: compatibility level; libtpms added\n\t\t\t)\n{\n    switch (seedCompatLevel) {\n    case SEED_COMPAT_LEVEL_ORIGINAL:\n        RsaAdjustPrimeCandidate_PreRev155(prime);\n        break;\n    case SEED_COMPAT_LEVEL_LAST:\n    /* case SEED_COMPAT_LEVEL_RSA_PRIME_ADJUST_FIX: */\n        RsaAdjustPrimeCandidate_New(prime);\n        break;\n    default:\n        FAIL(FATAL_ERROR_INTERNAL);\n    }\n}",
+    "cwe": [
+      "CWE-331"
+    ],
+    "cve_description": "A flaw was found in libtpms in versions before 0.8.0. The TPM 2 implementation returns 2048 bit keys with ~1984 bit strength due to a bug in the TCG specification. The bug is in the key creation algorithm in RsaAdjustPrimeCandidate(), which is called before the prime number check. The highest threat from this vulnerability is to data confidentiality.",
+    "patch": "--- code before\n+++ code after\n@@ -7,8 +7,8 @@\n     case SEED_COMPAT_LEVEL_ORIGINAL:\n         RsaAdjustPrimeCandidate_PreRev155(prime);\n         break;\n-    /* case SEED_COMPAT_LEVEL_LAST: */\n-    case SEED_COMPAT_LEVEL_RSA_PRIME_ADJUST_FIX:\n+    case SEED_COMPAT_LEVEL_LAST:\n+    /* case SEED_COMPAT_LEVEL_RSA_PRIME_ADJUST_FIX: */\n         RsaAdjustPrimeCandidate_New(prime);\n         break;\n     default:",
+    "function_modified_lines": {
+      "added": [
+        "    case SEED_COMPAT_LEVEL_LAST:",
+        "    /* case SEED_COMPAT_LEVEL_RSA_PRIME_ADJUST_FIX: */"
+      ],
+      "deleted": [
+        "    /* case SEED_COMPAT_LEVEL_LAST: */",
+        "    case SEED_COMPAT_LEVEL_RSA_PRIME_ADJUST_FIX:"
+      ]
+    }
+  }
+]

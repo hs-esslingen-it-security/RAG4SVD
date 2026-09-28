@@ -1,0 +1,79 @@
+文件: /Users/vinsontang/Desktop/test/graph_demo/control_flow/test_snippets/safe_02_linked_list.c
+图构建模式: precise_c
+【AST】
+- 类型/结构定义：Typedef@L12
+- 函数 create_node@L14：
+  - 赋值：Assign:=；Assign:=；BinaryOp:==
+  - 调用：malloc；fprintf
+  - 条件/循环：If
+  - 返回：Return；Return
+- 函数 push_front@L25：
+  - 赋值：Assign:=；Assign:=；BinaryOp:==
+  - 调用：create_node
+  - 条件/循环：If
+  - 返回：Return
+- 函数 pop_front@L32：
+  - 赋值：Assign:=；BinaryOp:==
+  - 调用：free
+  - 条件/循环：If
+  - 返回：Return；Return
+- 函数 list_length@L41：
+  - 赋值：BinaryOp:!=；Assign:=
+  - 条件/循环：While
+  - 返回：Return
+- 函数 print_list@L50：
+  - 赋值：BinaryOp:!=；Assign:=
+  - 调用：printf；printf；printf；printf
+  - 条件/循环：While；If
+- 函数 free_list@L60：
+  - 赋值：Assign:=；BinaryOp:!=；Assign:=
+  - 调用：free
+  - 条件/循环：While
+- 函数 main@L70：
+  - 赋值：BinaryOp:<=
+  - 调用：printf；print_list；printf；printf；print_list；free_list；printf；push_front；list_length；pop_front；pop_front；list_length
+  - 条件/循环：For
+  - 返回：Return
+
+【CFG】
+- 函数 create_node：保留控制点 9/9；分支节点 1；调用节点 1；线性段折叠 0。
+  - 分支/循环节点：if (n == 0)@L16
+- 函数 push_front：保留控制点 7/7；分支节点 1；调用节点 0；线性段折叠 0。
+  - 分支/循环节点：if (n == 0)@L27
+  - 路径1: Entry -> decl n = create_node(...) -> if (n == 0) -> *head = ... -> push_front EXIT
+- 函数 pop_front：保留控制点 9/9；分支节点 1；调用节点 1；线性段折叠 0。
+  - 分支/循环节点：if (*head == 0)@L33
+- 函数 list_length：保留控制点 5/5；分支节点 1；调用节点 0；线性段折叠 0。
+  - 分支/循环节点：while (head != 0)@L43
+- 函数 print_list：保留控制点 5/5；分支节点 1；调用节点 2；线性段折叠 0。
+  - 分支/循环节点：while (head != 0)@L52
+  - 路径1: Entry -> call printf(...) -> while (head != 0) -> call printf(...) -> print_list EXIT
+- 函数 free_list：保留控制点 5/5；分支节点 1；调用节点 0；线性段折叠 0。
+  - 分支/循环节点：while (cur != 0)@L62
+  - 路径1: Entry -> decl cur -> while (cur != 0) -> *head = ... -> free_list EXIT
+- 函数 main：保留控制点 15/15；分支节点 1；调用节点 8；线性段折叠 0。
+  - 分支/循环节点：for_cond (i <= 10)@L72
+
+【DFG】
+- 函数 create_node：边保留 3/3；参数源 1 个；抽取链路 1 条。
+  - 参数源：param: val@L14
+  - 数据链：param: val -> assign n->data
+- 函数 push_front：边保留 4/4；参数源 2 个；抽取链路 3 条。
+  - 参数源：param: head@L25；param: val@L25
+  - 数据链：param: head -> assign n->next
+  - 数据链：param: val -> decl n -> if(...)
+  - 数据链：param: val -> decl n -> assign None
+- 函数 pop_front：边保留 6/6；参数源 1 个；抽取链路 4 条。
+  - 参数源：param: head@L32
+  - 数据链：param: head -> if(...)
+  - 数据链：param: head -> decl tmp -> assign None
+  - 数据链：param: head -> decl tmp -> call free
+  - 数据链：param: head -> decl tmp -> decl val -> return
+- 函数 list_length：边保留 1/1；参数源 1 个；抽取链路 0 条。
+  - 参数源：param: head@L41
+- 函数 print_list：边保留 0/0；参数源 1 个；抽取链路 0 条。
+  - 参数源：param: head@L50
+- 函数 free_list：边保留 1/1；参数源 1 个；抽取链路 1 条。
+  - 参数源：param: head@L60
+  - 数据链：param: head -> decl cur
+- 函数 main：边保留 8/8；参数源 0 个；抽取链路 0 条。

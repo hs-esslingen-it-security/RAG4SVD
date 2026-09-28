@@ -1,0 +1,255 @@
+cve_id,faithfulness,coverage,retrieval,conciseness,clarity,judge_response
+CVE-2009-3605,4,3,3,5,5,"Faithfulness: 4 | The summary’s statements are accurate but omit many concrete actions (matrix setup, lookup table creation, inline‑image handling, cleanup), though nothing stated is false.  
+Functional Coverage: 3 | It mentions the main idea of drawing with color‑mode conversion and mask use, but leaves out key behaviors such as CTM transformation, lookup table generation, and resource management.  
+Retrieval Utility: 3 | The description captures the high‑level purpose, aiding retrieval of image‑drawing code, but lacks discriminative details (e.g., Splash API, lookup table logic) that would differentiate it from other generic drawing routines.  
+Conciseness: 5 | The summary is brief and to the point, avoiding extraneous information.  
+Clarity: 5 | The sentence is grammatically correct, clear, and unambiguous."
+CVE-2009-3607,5,4,3,5,5,"Faithfulness: 5 | All statements in the summary are directly supported by the code: it creates a Cairo surface, converts 3‑byte RGB data to the 4‑byte format expected by Cairo, and allocates memory that is later freed via user‑data.  
+Functional Coverage: 4 | The summary captures the main purpose (surface creation from thumbnail data) and the key conversion/memory handling, but omits details such as row‑stride handling and endianness‑specific byte ordering.  
+Retrieval Utility: 3 | The summary conveys the general idea of converting raw RGB to a Cairo surface, which helps retrieve similar implementations, yet its lack of specifics (e.g., pixel‑format handling, row‑stride) limits discriminative power.  
+Conciseness: 5 | The description is brief and conveys the essential behavior without extraneous information.  
+Clarity: 5 | The sentence is grammatically correct, clear, and unambiguous."
+CVE-2011-1943,5,4,4,5,5,"Faithfulness: 5 | The summary accurately describes actions performed (zeroing memory and freeing) and makes no unsupported claims.  
+Functional Coverage: 4 | It captures the core behavior but omits the logging call, a secondary but present operation.  
+Retrieval Utility: 4 | Highlights the key security‑relevant steps (memset then free), aiding retrieval of similar secret‑handling code, though it lacks mention of the diagnostic log which could improve discrimination.  
+Conciseness: 5 | The description is brief and includes only essential information.  
+Clarity: 5 | The sentence is grammatically correct, clear, and unambiguous."
+CVE-2011-2200,5,5,5,5,5,"Faithfulness: 5 | The summary accurately reflects that the function changes the header’s byte order and invokes a marshal routine on the signature string, matching the code’s behavior.  
+Functional Coverage: 5 | It captures the core actions (byte‑order swapping and marshaling the signature) without omitting any major functionality.  
+Retrieval Utility: 5 | Key concepts like “byte order,” “DBus header,” and “marshal signature” are retained, aiding retrieval of semantically similar code.  
+Conciseness: 5 | The description is brief and includes only essential information.  
+Clarity: 5 | The sentence is grammatically correct, clear, and unambiguous."
+CVE-2011-2724,4,5,5,5,5,"Faithfulness: 4 | The summary correctly describes the overall behavior (checking for newlines and returning EX_USAGE or 0), but it assumes `check_newline` checks each string individually, which isn’t explicit in the code.  
+Functional Coverage: 5 | It captures the main purpose and all relevant inputs without omitting any major functionality.  
+Retrieval Utility: 5 | The description highlights the key semantic actions (newline validation and error code return), making it useful for finding similar validation code.  
+Conciseness: 5 | The summary is brief and contains no superfluous information.  
+Clarity: 5 | The sentence is grammatically correct, clear, and unambiguous."
+CVE-2011-2895,1,1,1,4,5,"Faithfulness: 1 | The summary incorrectly states that the function performs both compression and decompression using Huffman coding, while the code implements LZW‑style decompression only and contains no Huffman logic.  
+Functional Coverage: 1 | It omits the core behavior of filling the output buffer with decompressed data, handling CLEAR codes, and updating the LZW dictionary, and instead mentions unrelated compression functionality.  
+Retrieval Utility: 1 | By describing the routine as a Huffman compressor/decompressor, the summary would lead a retrieval system to unrelated code, reducing its usefulness for finding similar LZW decompression implementations.  
+Conciseness: 4 | The summary is very brief and avoids unnecessary detail, though its brevity comes at the cost of accuracy.  
+Clarity: 5 | The sentence is grammatically correct, easy to read, and unambiguous."
+CVE-2011-4128,5,4,4,5,5,"Faithfulness: 5 | All statements in the summary are accurate reflections of the code; no claim contradicts the implementation.  
+Functional Coverage: 4 | Captures the main operation (packing and copying) and primary error cases, but omits details like handling of pack failures and the size‑output parameter.  
+Retrieval Utility: 4 | Provides key semantic cues (session packing, buffer copy, resumable check, buffer‑size error) useful for finding similar code, though it lacks some nuance.  
+Conciseness: 5 | The summary conveys the essential behavior in a brief, no‑extraneous‑detail manner.  
+Clarity: 5 | The wording is grammatically correct, clear, and unambiguous."
+CVE-2013-4130,5,5,5,5,5,"Faithfulness: 5 | The summary accurately reflects the loop over channel->clients and the call to red_channel_client_pipe_add_empty_msg with the given msg_type.  
+Functional Coverage: 5 | It captures the essential behavior of iterating over all clients and adding an empty message to each client’s pipe, which is the whole purpose of the function.  
+Retrieval Utility: 5 | The description includes key semantic elements (client list iteration, per‑client pipe operation, empty message) that will match similar implementations or vulnerability patterns.  
+Conciseness: 5 | The summary conveys the complete behavior in a single, brief sentence without unnecessary detail.  
+Clarity: 5 | The wording is grammatically correct, straightforward, and unambiguous."
+CVE-2013-4282,5,4,4,5,5,"Faithfulness: 5 | The summary accurately reflects the code’s actions: RSA decryption, expiration and password verification, and proceeding to link handling only on successful authentication.  
+Functional Coverage: 4 | It captures the core workflow but omits conditional gating (ticketing_enabled, skip_auth) and error handling details such as missing password warnings and link cleanup.  
+Retrieval Utility: 4 | The summary includes the essential semantic elements (ticket decryption, expiration/password checks, conditional link processing) useful for finding similar authentication implementations, though it lacks some contextual qualifiers.  
+Conciseness: 5 | The description is brief and to the point, conveying the main behavior without extraneous information.  
+Clarity: 5 | The sentence is grammatically correct, clear, and unambiguous."
+CVE-2013-4391,4,3,4,5,5,"Faithfulness: 4 | The summary accurately describes the buffer parsing, property extraction, and dispatching behavior without stating any incorrect details, though it omits nuances like handling of control lines, priority fields, and binary payloads.  
+Functional Coverage: 3 | It captures the main high‑level purpose (parsing and dispatching) but leaves out important functional aspects such as priority parsing, special field handling, memory management, and error handling.  
+Retrieval Utility: 4 | The summary includes distinctive terms (newline‑separated messages, property‑value pairs, logging destinations, forwarding based on settings) that help locate semantically similar journal‑parsing or logging code.  
+Conciseness: 5 | The description is brief and to the point, conveying the essential behavior without unnecessary detail.  
+Clarity: 5 | The wording is grammatically correct, clear, and unambiguous."
+CVE-2013-4473,4,4,4,5,5,"Faithfulness: 4 | The summary accurately reflects the core actions (page extraction, saving, error checks, filename requirement) without adding unsupported claims, though it omits details about default page range handling.  
+Functional Coverage: 4 | It captures the main purpose and key error‑handling behavior, but leaves out specifics such as default page range logic and the boolean return value.  
+Retrieval Utility: 4 | The description includes distinctive concepts (PDF page extraction, per‑page file naming, error validation) useful for finding similar implementations, though it could mention the formatting step explicitly.  
+Conciseness: 5 | The summary conveys the essential idea in a brief, no‑extraneous‑detail manner.  
+Clarity: 5 | The sentence is grammatically correct, clear, and unambiguous."
+CVE-2013-4474,4,4,4,5,5,"Faithfulness: 4 | The summary correctly states that the code extracts pages from a PDF and writes each to a separate file with the page number in the name, which the source code does. It omits details like default page range handling and the requirement for a “%d” placeholder, but makes no incorrect claims.  
+Functional Coverage: 4 | It captures the main purpose (page extraction and naming) but leaves out important behaviors such as range defaults, error checks, and the placeholder validation, which are part of the function’s logic.  
+Retrieval Utility: 4 | The summary includes the core semantic elements (PDF page extraction, per‑page output files, page number in filename) that would help locate similar implementations, though it lacks finer details that could improve discrimination.  
+Conciseness: 5 | The description is brief and conveys the essential idea without superfluous information.  
+Clarity: 5 | The sentence is grammatically correct, easy to understand, and unambiguous."
+CVE-2013-6449,2,3,3,5,4,"Faithfulness: 2 | The summary correctly notes that the function reads an algorithm2 value, but it incorrectly claims the function “updates” the value in the structure and mischaracterizes the condition as “current algorithm is not SHA256” rather than checking for the specific default MAC|PRF combination.  
+Functional Coverage: 3 | It mentions the primary retrieval and conditional replacement behavior, yet omits the exact condition (TLS version ≥ 1.2 and alg2 equals SSL_HANDSHAKE_MAC_DEFAULT|TLS1_PRF) and the fact that the function returns a value rather than modifying the SSL object.  
+Retrieval Utility: 3 | The summary includes relevant keywords (TLS 1.2, SHA256) that could help locate similar code, but the inaccurate description of the condition may lead to false positives or miss exact matches.  
+Conciseness: 5 | The summary is brief and contains no unnecessary detail.  
+Clarity: 4 | The wording is grammatically correct and easy to read, though the phrase “updates the algorithm2 to SHA256” is slightly ambiguous regarding whether it modifies the structure or just the return value."
+CVE-2015-5252,2,2,2,4,5,"Faithfulness: 2 | The summary mentions a “reduced name” which is not explicit in the code and omits key steps (splitting the path, stat checks, realpath resolution, and connection‑root verification), so it is only loosely aligned with the actual behavior.  
+Functional Coverage: 2 | It captures the high‑level idea of comparing directory attributes and denying on mismatch, but leaves out major functionality such as obtaining the parent directory, performing realpath, checking same inode/device/uid/gid, and ensuring the path is under the connection root.  
+Retrieval Utility: 2 | The description is vague and uses non‑standard terminology (“reduced name”), which limits its ability to retrieve code that performs precise path‑validation or directory‑traversal checks.  
+Conciseness: 4 | The summary is brief and avoids unnecessary detail, though brevity comes at the cost of missing important specifics.  
+Clarity: 5 | The sentence is grammatically correct, clear, and unambiguous."
+CVE-2015-5289,5,3,3,5,5,"Faithfulness: 5 | All statements in the summary are accurate reflections of the code’s behavior; no incorrect claims are made.  
+Functional Coverage: 3 | The summary captures the core conversion purpose and some type handling, but omits several important branches (e.g., array/composite handling, key‑scalar validation, error cases, cast handling).  
+Retrieval Utility: 3 | Provides enough semantic cues to locate type‑based JSON conversion code, yet its omission of many branches makes it less effective for retrieving fully matching implementations.  
+Conciseness: 5 | The summary is brief and avoids unnecessary detail while remaining informative.  
+Clarity: 5 | The wording is clear, grammatically correct, and unambiguous."
+CVE-2015-5296,3,3,4,5,5,"Faithfulness: 3 | The summary correctly notes that the function returns a bitmask reflecting signing options and that it checks the mandatory signing flag, but it omits the always‑set ENABLED flag and the early‑return of 0 when the connection pointer is NULL, making the description incomplete.  
+Functional Coverage: 3 | It captures the main purpose (determining SMB2 security mode) but leaves out important behavior such as the default ENABLED flag and the null‑connection guard, thus missing key functional details.  
+Retrieval Utility: 4 | The summary includes distinctive concepts (“SMB2 security mode”, “mandatory signing”, “bitmask”, “negotiated signing options”) that will help locate similar implementations, though the omission of the null‑check slightly reduces specificity.  
+Conciseness: 5 | The description is brief and to the point, containing no unnecessary information.  
+Clarity: 5 | The wording is clear, grammatically correct, and easy to understand."
+CVE-2015-5330,4,3,4,5,5,"Faithfulness: 4 | The summary accurately states that the function converts from a source charset to a codepoint, supports UTF‑16 codepoints up to U+100000 and handles characters above 64 KB per RFC2781; it does not contain any incorrect claims, though it omits many implementation specifics.  
+Functional Coverage: 3 | It captures the main conversion purpose but leaves out important behaviors such as the ASCII fast‑path, the bytes_consumed output, error handling on descriptor failure, and the 5‑byte input limit.  
+Retrieval Utility: 4 | Key concepts like charset conversion, UTF‑16 surrogate handling, high codepoint range, and RFC2781 are present, making it useful for finding semantically similar conversion routines while remaining concise.  
+Conciseness: 5 | The summary conveys the essential idea in a single, brief sentence without superfluous detail.  
+Clarity: 5 | The wording is grammatically correct, clear, and unambiguous."
+CVE-2015-5352,1,2,2,5,5,"Faithfulness: 1 | The summary reverses the return values (code returns 0 when length < 12, -1 otherwise) and misstates which branch prints the message, making its statements unsupported by the source.  
+Functional Coverage: 2 | It mentions the length check but gets the core logic wrong, omitting the correct return semantics and the fact that the debug message is printed only when the length is sufficient.  
+Retrieval Utility: 2 | Because the summary inverts the behavior, it would likely retrieve unrelated or incorrect code snippets, reducing its usefulness for semantic search.  
+Conciseness: 5 | The summary is brief and contains no superfluous information.  
+Clarity: 5 | The wording is grammatically correct and easy to understand."
+CVE-2015-6496,4,2,3,5,5,"Faithfulness: 4 | The summary correctly states that the function builds DCCP state and role attributes, which the code does, but it omits the earlier construction of the original port group and the conditional early return, so it is not fully comprehensive.  
+Functional Coverage: 2 | It captures only a subset of the function’s behavior (state and role) while ignoring the port‑group construction and the guard that may skip attribute building, thus missing major functionality.  
+Retrieval Utility: 3 | The summary includes key terms (DCCP state, role) that help locate similar attribute‑building code, but the lack of mention of the port‑group handling reduces its discriminative power.  
+Conciseness: 5 | The summary is brief and to the point, containing no superfluous information.  
+Clarity: 5 | The sentence is grammatically correct, clear, and unambiguous."
+CVE-2015-7540,4,4,5,5,5,"Faithfulness: 4 | The summary accurately describes the core reading and boolean mapping logic, but omits mention of the tag handling calls and the function’s return value based on error state.  
+Functional Coverage: 4 | It captures the main purpose of reading an ASN.1 BOOLEAN and setting the output, yet leaves out ancillary behavior such as tag management and error‑status return.  
+Retrieval Utility: 5 | The description includes distinctive semantic cues (“BOOLEAN ASN.1”, “0xFF”, boolean mapping) that will effectively match similar implementations.  
+Conciseness: 5 | The summary conveys the essential behavior without unnecessary detail.  
+Clarity: 5 | The wording is grammatically correct, straightforward, and unambiguous."
+CVE-2015-7665,5,4,4,5,5,"Faithfulness: 5 | All statements in the summary (FTP client handling login, file retrieval, directory listing, optional passive mode, and adapting to server responses including system‑type detection) are directly supported by the source code. No unsupported claims are made.  
+Functional Coverage: 4 | The summary captures the core actions (login, RETR, LIST, passive mode, error handling, system‑type logic) but omits other significant behaviors such as CWD handling, REST/size support, proxy handling, and spider mode, which are notable parts of the function.  
+Retrieval Utility: 4 | The summary includes discriminative keywords (FTP client, login, RETR, LIST, passive mode, system‑type detection) that would help locate semantically similar FTP implementations, though it remains somewhat generic and could miss code that focuses on the omitted features.  
+Conciseness: 5 | The description is brief and to the point, conveying the essential functionality without superfluous detail.  
+Clarity: 5 | The sentence is grammatically correct, clearly phrased, and unambiguous."
+CVE-2015-8467,2,3,3,4,5,"Faithfulness: 2 | The summary claims the function returns 0 when flags are not allowed, which is not evident in the provided code, and it omits many operations (e.g., ACL retrieval, token handling) present in the source.  
+Functional Coverage: 3 | It captures the high‑level idea of checking UAC flags against required rights, but ignores key steps such as fetching the domain security descriptor and performing ACL checks.  
+Retrieval Utility: 3 | The description conveys the general purpose of UAC‑to‑right validation, useful for finding similar checks, yet lacks discriminative details (e.g., the specific map structure, security token usage) that would improve precise retrieval.  
+Conciseness: 4 | The summary is brief and avoids unnecessary detail, though the brevity sacrifices some important information.  
+Clarity: 5 | The wording is grammatically correct, easy to read, and unambiguous."
+CVE-2017-13723,2,3,4,5,5,"Faithfulness: 2 | The summary mischaracterizes the operation as “allocating” a buffer and omits the wrap‑around reset of tbNext when remaining space is insufficient.  
+Functional Coverage: 3 | It mentions size checking and pointer return but fails to note the circular‑buffer behavior (resetting tbNext to 0).  
+Retrieval Utility: 4 | The description includes key concepts (buffer, size limits, position update) useful for finding similar ring‑buffer or static‑buffer code, though missing the wrap‑around detail reduces specificity.  
+Conciseness: 5 | The summary is brief and contains no superfluous information.  
+Clarity: 5 | The sentence is grammatically correct, clear, and unambiguous."
+CVE-2017-14976,5,3,2,5,5,"Faithfulness: 5 | All statements in the summary are accurate reflections of the code’s behavior; no incorrect or unsupported claims are made.  
+Functional Coverage: 3 | The summary captures the overall conversion purpose and the use of a code map versus automatic detection, but omits many significant steps such as handling private dictionaries, eexec encryption, and detailed font metric output.  
+Retrieval Utility: 2 | The description is very high‑level and generic, offering limited discriminative cues for locating code that performs the same detailed Type1C‑to‑Type0 conversion.  
+Conciseness: 5 | The summary conveys the core idea in a brief, succinct manner without extraneous information.  
+Clarity: 5 | The wording is clear, grammatically correct, and unambiguous."
+CVE-2017-15650,4,4,4,5,5,"Faithfulness: 4 | The summary correctly states that the function extracts IP addresses and canonical hostnames into a context, but it omits that the code also handles CNAME records explicitly and does not mention length checks or family/scoped settings.  
+Functional Coverage: 4 | It captures the main purpose (parsing DNS A/AAAA and storing results) and mentions canonical names, yet it overlooks the CNAME case in the opening clause and ignores validation/error‑handling details.  
+Retrieval Utility: 4 | The summary includes key semantic elements (DNS A/AAAA parsing, IP extraction, hostname storage) useful for retrieval, but the lack of explicit “CNAME” mention may reduce precision for queries targeting that case.  
+Conciseness: 5 | The summary is brief and conveys the essential behavior without superfluous information.  
+Clarity: 5 | The sentence is grammatically correct, clear, and unambiguous."
+CVE-2017-15873,5,2,4,5,5,"Faithfulness: 5 | All statements in the summary are accurate and directly supported by the code; it correctly notes that the function processes a bzip2 block, decodes Huffman symbols, handles run‑length encoding, and rebuilds the original data.  
+Functional Coverage: 2 | The summary omits many essential steps such as header validation, selector and MTF handling, construction of Huffman tables, BWT reconstruction, and error handling, thus missing large portions of the function’s behavior.  
+Retrieval Utility: 4 | The mention of “bzip2”, “compressed block”, “Huffman‑coded symbols”, and “run‑length encoded data” provides enough discriminative keywords to retrieve similar block‑decoding implementations, though it lacks finer details that could improve precision.  
+Conciseness: 5 | The summary conveys the core idea in a single concise sentence without superfluous information.  
+Clarity: 5 | The wording is grammatically correct, clear, and unambiguous."
+CVE-2017-15994,5,4,5,5,5,"Faithfulness: 5 | All statements in the summary are directly supported by the code: the function switches on the checksum type (MD5, MD4 variants, or none), processes data in chunk-sized blocks, and manages leftover (“residue”) bytes before updating the respective algorithm.  
+Functional Coverage: 4 | The summary captures the main purpose—updating a checksum with chunked input and residue handling—but omits specifics such as the MD5 case bypassing chunk logic and the grouping of multiple MD4‑related types.  
+Retrieval Utility: 5 | It includes discriminative keywords (checksum, MD5, MD4, chunk processing, residue) that will help locate semantically similar implementations or vulnerability‑relevant code.  
+Conciseness: 5 | The description conveys the essential behavior in a single concise sentence without extraneous detail.  
+Clarity: 5 | The sentence is grammatically correct, clear, and unambiguous."
+CVE-2017-16612,2,2,3,5,5,"Faithfulness: 2 | The summary correctly notes that memory is allocated for an XcursorImage and its pixel data, but incorrectly claims the function “specifies its width and height,” which the code does not do (the width/height fields are never set correctly). It also omits the setting of the `delay` field and the erroneous `if (!image)` block.
+
+Functional Coverage: 2 | It captures the primary allocation step but leaves out key behaviors: the conditional block that mishandles allocation failure, the initialization of `delay`, and the return of the allocated pointer. These omissions miss important functional aspects.
+
+Retrieval Utility: 3 | The description of allocating a struct plus a pixel buffer is useful for finding similar allocation patterns, but the lack of detail about the bug and other fields reduces its discriminative power for vulnerability‑related retrieval.
+
+Conciseness: 5 | The summary is brief and includes only essential information without unnecessary detail.
+
+Clarity: 5 | The sentence is grammatically correct, easy to read, and unambiguous."
+CVE-2017-16852,5,4,4,5,5,"Faithfulness: 5 | All listed configurations (verifyHost, ignoreTransport, encoding, substitution, regex, trust engine, dummy credential resolver) are directly set from the XML in the constructor; no unsupported claims.  
+Functional Coverage: 4 | Captures the main initialization steps but omits error handling (exception throws) and the conditional requirement of the trust engine when transport is not ignored.  
+Retrieval Utility: 4 | Includes specific semantic cues (verification host, ignoreTransport, substitution, regex, X509TrustEngine) useful for finding similar XML‑driven configuration code, though phrasing is slightly generic.  
+Conciseness: 5 | Provides a compact single‑sentence overview without extraneous detail.  
+Clarity: 5 | Grammatically correct, clear, and unambiguous."
+CVE-2017-16853,5,4,4,5,5,"Faithfulness: 5 | All statements in the summary are accurate reflections of the constructor’s actions; no unsupported claims are made.  
+Functional Coverage: 4 | The summary captures the main initialization and thread‑starting behavior but omits secondary details such as default handling, parameter validation, and logging.  
+Retrieval Utility: 4 | It retains key semantic elements (DOM attribute parsing, caching config, cleanup thread) useful for finding similar implementations, though it could mention validation nuances for higher specificity.  
+Conciseness: 5 | The description is brief and avoids extraneous information.  
+Clarity: 5 | The sentence is grammatically correct, clear, and unambiguous."
+CVE-2017-17434,5,2,2,5,5,"Faithfulness: 5 | All statements in the summary are accurate reflections of the code: the function is the receiving side of rsync, it performs file transfers, deals with partial‑file handling, and logs progress.  
+Functional Coverage: 2 | The summary mentions only high‑level actions and omits many core behaviors such as phase handling, delayed updates, checksum mode switching, backup/alternate‑basis handling, filter checks, permission adjustments, and error handling.  
+Retrieval Utility: 2 | While it captures that the code is a receive routine for rsync, the description is too generic to reliably distinguish this implementation from other file‑receive or transfer code, limiting its usefulness for precise retrieval.  
+Conciseness: 5 | The summary conveys its points in a single, brief sentence without superfluous detail.  
+Clarity: 5 | The wording is grammatically correct, clear, and unambiguous."
+CVE-2018-1000037,5,4,5,5,5,"Faithfulness: 5 | All statements in the summary are directly reflected in the code: the functions process PDF images and path fill/stroke, use image masks, apply color shading and patterns, and manage rendering groups and clipping regions.  
+Functional Coverage: 4 | The summary captures the core responsibilities (image handling, fill/stroke, masking, shading, patterns, groups, clips) but omits secondary details such as blend‑mode handling, soft‑mask management, hidden‑layer checks, and knockout‑group logic.  
+Retrieval Utility: 5 | By mentioning specific concepts like PDF image rendering, fill/stroke operations, masking, shading, pattern application, and group/clip management, the summary provides discriminative keywords that will retrieve semantically similar rendering code.  
+Conciseness: 5 | The description conveys the essential behavior in a single, compact sentence without extraneous information.  
+Clarity: 5 | The wording is grammatically correct, clear, and unambiguous, making the intended functionality easy to understand."
+CVE-2018-1000039,5,4,4,5,5,"Faithfulness: 5 | The summary’s statements (“adds a range”, “sorted cmap tree”, “handling overlaps”, “merging with existing ranges”) are all directly supported by the code; no incorrect claims are made.  
+Functional Coverage: 4 | It captures the core purpose of inserting a range and dealing with overlaps/merges, but omits secondary but notable behaviors such as bounds checking, tree resizing, the “many” flag handling, and splay‑tree rebalancing.  
+Retrieval Utility: 4 | The description includes key semantic elements (range insertion, overlap handling, merging) that will help locate similar interval‑tree or cmap‑range‑addition implementations, while remaining specific enough to avoid overly broad matches.  
+Conciseness: 5 | The summary conveys the essential idea in a single concise sentence without unnecessary detail.  
+Clarity: 5 | The wording is grammatically correct, clear, and unambiguous."
+CVE-2018-1000040,4,3,4,5,5,"Faithfulness: 4 | The summary accurately mentions initializing a cached converter, locating a suitable converter, and creating a hash table, all of which are present in the code, though it omits details like memory allocation, field assignments, and error handling.  
+Functional Coverage: 3 | It captures the core purpose but leaves out significant actions such as allocating the struct, setting fallback color space, and the cleanup on failure, which are important to the function’s behavior.  
+Retrieval Utility: 4 | The key concepts (cached color converter, finding a converter, hash table creation) are retained, making it useful for finding semantically similar implementations, while remaining concise.  
+Conciseness: 5 | The summary conveys the essential idea in a brief sentence without superfluous information.  
+Clarity: 5 | The wording is grammatically correct, easy to understand, and unambiguous."
+CVE-2018-16802,2,2,3,5,5,"Faithfulness: 2 | The summary mentions checking page‑device dictionaries and returning true when they differ, which matches the final return, but it omits the earlier checks involving get_page_device and the early‑return paths, and it adds “after restoring the graphics state” which is not explicit in the code.  
+Functional Coverage: 2 | It captures only the dictionary‑equality aspect and ignores the important logic that compares the actual page devices (dev_t1 vs dev_t2) and the early‑return conditions, thus missing major functionality.  
+Retrieval Utility: 3 | The summary conveys the high‑level idea of comparing page‑device state, which may retrieve related code, but its lack of detail about device‑level checks reduces its discriminative power for precise matches.  
+Conciseness: 5 | The summary is brief and avoids unnecessary detail while still conveying a core idea.  
+Clarity: 5 | The sentence is grammatically correct, easy to read, and unambiguous."
+CVE-2018-16863,3,4,4,5,5,"Faithfulness: 3 | The summary correctly mentions creating a null device, copying from a default, inheriting properties, and setting the device, but it incorrectly states that the device’s reference count is incremented (the code increments the ICC profile’s count) and omits error‑handling and cleanup details.  
+Functional Coverage: 4 | It captures the main actions of the function—device creation, property copying, optional inheritance, and device installation—but leaves out important error‑path handling and reference‑count initialization.  
+Retrieval Utility: 4 | The summary includes distinctive concepts (null device creation, copying from a default device, inheriting current device properties) that help locate semantically similar code, though it lacks some specifics that could improve discrimination.  
+Conciseness: 5 | The description is brief and to the point, conveying the core behavior without unnecessary detail.  
+Clarity: 5 | The wording is clear, grammatically correct, and unambiguous."
+CVE-2018-17961,5,4,4,5,5,"Faithfulness: 5 | All statements in the summary are supported by the code; the function indeed interprets PostScript, manages GC, handles errors, and performs stack recovery, with no inaccurate claims.  
+Functional Coverage: 4 | The summary captures the core responsibilities (interpretation, GC, error handling, stack management) but omits several detailed behaviors (e.g., specific error code handling, error‑object propagation, SAFERERRORS) that are important to the function’s full operation.  
+Retrieval Utility: 4 | By mentioning interpretation, garbage collection, error handling, and stack overflow/VM reclaim recovery, the summary provides discriminative keywords useful for finding similar interpreter loops, though it lacks finer-grained details that could improve precision.  
+Conciseness: 5 | The description conveys the essential functionality in a single, compact sentence without unnecessary elaboration.  
+Clarity: 5 | The wording is grammatically correct, clear, and unambiguous."
+CVE-2018-19134,5,4,5,5,5,"Faithfulness: 5 | The summary accurately reflects that the function updates overprint settings and color component mappings using the pattern's color space, matching the code's operations.  
+Functional Coverage: 4 | It captures the main purpose (setting overprint mode and color components) but omits minor details like the loop copying the map and the return of the set_overprint result.  
+Retrieval Utility: 5 | Contains specific terminology (overprint mode, color components, pattern2 instance, color space) that will effectively match semantically similar code.  
+Conciseness: 5 | The summary conveys the essential behavior in a single concise sentence without extraneous information.  
+Clarity: 5 | The sentence is grammatically correct, clear, and unambiguous."
+CVE-2018-19409,4,3,4,5,5,"Faithfulness: 4 | The summary accurately reflects the main actions (device setting, access checks, parameter updates, invalidating stack devices, clearing page devices) without stating anything incorrect, but it omits specifics such as the ShowpageCount reset, error handling, and the boolean result of the operation.  
+Functional Coverage: 3 | It captures the core purpose but leaves out notable details like resetting ShowpageCount, the exact nature of the access check, and the handling of the return code/erase flag, which are important to the function’s behavior.  
+Retrieval Utility: 4 | The summary includes distinctive keywords (set device, access restrictions, invalidate stack devices, clear page devices) that would help locate semantically similar code, though the lack of finer details slightly reduces precision.  
+Conciseness: 5 | The description is brief and to the point, conveying the essential steps without unnecessary elaboration.  
+Clarity: 5 | The sentence is grammatically correct, clear, and unambiguous."
+CVE-2018-19475,2,3,3,5,5,"Faithfulness: 2 | The summary correctly notes the dictionary comparison and stack‑overflow checks, but incorrectly claims the function “restores the device,” which the code does not explicitly do.  
+Functional Coverage: 3 | It captures the main check for identical page‑device dictionaries and the safety‑stack checks, yet omits important details such as the LockSafetyParams handling, get_page_device calls, and the return value semantics.  
+Retrieval Utility: 3 | The mention of page‑device dictionary comparison and stack‑overflow handling provides useful cues for finding similar code, though the wording is somewhat generic.  
+Conciseness: 5 | The summary is brief and avoids unnecessary detail while conveying the core ideas.  
+Clarity: 5 | The sentence is grammatically correct, clear, and unambiguous."
+CVE-2018-19476,5,2,3,5,5,"Faithfulness: 5 | All three statements (“sets an ICC profile for a stream”, “handles standard profile names”, “adjusts the color range based on the input data space”) are directly supported by the code; no unsupported claims are made.  
+Functional Coverage: 2 | The summary omits most of the function’s core behavior (validation of DataSource, building the color space object, profile creation/fallback, component‑count checks, override handling, reference‑count management, and final colorspace installation).  
+Retrieval Utility: 3 | It captures the high‑level intent (ICC profile setup, standard‑name lookup, range adjustment) which helps locate similar ICC‑handling code, but the lack of detail on validation and override logic reduces discriminative power.  
+Conciseness: 5 | The summary is brief and contains no superfluous information.  
+Clarity: 5 | The sentence is grammatically correct, clear, and unambiguous."
+CVE-2018-19489,3,4,4,5,5,"Faithfulness: 3 | The summary correctly notes initialization of the statistics structure and extraction of a file ID and stats via unmarshaling, but it incorrectly claims error handling; the code does not inspect the `err` value before jumping to a label.  
+Functional Coverage: 4 | It captures the main behavior (PDU processing, stat initialization, and data extraction) but omits details such as the fixed offset, the unused variable, and the unconditional `goto`.  
+Retrieval Utility: 4 | The summary includes specific identifiers (v9fs_wstat, V9fs PDU, unmarshaling) that aid retrieval of similar code, though it could mention the coroutine context for higher specificity.  
+Conciseness: 5 | The summary is brief and conveys the essential information without superfluous detail.  
+Clarity: 5 | The wording is clear, grammatically correct, and unambiguous."
+CVE-2018-20102,4,3,3,5,5,"Faithfulness: 4 | The summary’s statements are accurate and reflected in the code, but it omits many detailed checks (e.g., truncated flag, TTL handling, duplicate detection) without introducing any false claims.  
+Functional Coverage: 3 | It captures the main goal of validating and storing DNS answers, yet leaves out significant behaviors such as handling of different record types (A, AAAA, SRV), TTL processing, duplicate‑record merging, and specific error codes.  
+Retrieval Utility: 3 | The summary conveys enough high‑level semantics to retrieve DNS‑response‑parsing code, but its lack of detail on record‑type handling and duplicate logic reduces its discriminative power for more precise matches.  
+Conciseness: 5 | The description is brief and to the point, avoiding unnecessary elaboration.  
+Clarity: 5 | The wording is clear, grammatically correct, and unambiguous."
+CVE-2018-20103,5,4,4,5,5,"Faithfulness: 5 | All statements in the summary are accurate reflections of the code’s behavior; no unsupported claims are made.  
+Functional Coverage: 4 | The summary captures the main purpose (reading a DNS name, handling compression, copying labels, computing offset) but omits details such as error handling and the return of the byte count.  
+Retrieval Utility: 4 | It includes key discriminative concepts (DNS name, compression, label copying, offset calculation) useful for finding similar code, though it lacks mention of recursion and error paths that could improve specificity.  
+Conciseness: 5 | The summary conveys the essential information in a brief, no‑extraneous‑detail manner.  
+Clarity: 5 | The sentence is grammatically correct, clear, and unambiguous."
+CVE-2018-20482,4,4,4,5,5,"Faithfulness: 4 | The summary accurately reflects that the code processes sparse regions, performs block reads/writes, handles errors, and updates metadata, though it omits specifics like seeking, zero‑filling, and detailed error diagnostics present in the source.  
+Functional Coverage: 4 | It captures the main purpose—iterating over sparse tar regions and moving data while managing errors and metadata—but leaves out auxiliary steps such as the initial seek, padding, and the surrounding dump orchestration.  
+Retrieval Utility: 4 | The mention of “sparse regions,” “tar archive,” “reading and writing blocks,” and “error handling” provides discriminative cues useful for finding similar sparse‑file handling code, without being overly generic.  
+Conciseness: 5 | The summary conveys the essential behavior in a single concise sentence without extraneous detail.  
+Clarity: 5 | The wording is grammatically correct, clear, and unambiguous."
+CVE-2019-13636,4,3,4,5,5,"Faithfulness: 4 | The summary correctly states that the function reads a file into a buffer and checks for errors like open failures and size issues, which are present in the code, though it omits many implementation specifics.  
+Functional Coverage: 3 | It captures the main purpose but leaves out important details such as handling empty files, regular‑file checks, allocation fallback, and cleanup on failure.  
+Retrieval Utility: 4 | The description includes key semantic elements (file reading, buffer allocation, error handling) useful for finding similar code, while remaining concise enough to avoid excessive noise.  
+Conciseness: 5 | The summary conveys the essential behavior in a single clear sentence without unnecessary detail.  
+Clarity: 5 | The wording is grammatically correct, straightforward, and unambiguous."
+CVE-2019-13638,5,3,4,3,4,"Faithfulness: 5 | All statements in the summary (“creates a temporary file, writes ed commands to it, and then executes ed with the temporary file as input, causing ed to abort on invalid commands”) are directly supported by the source code; no incorrect claims are made.  
+Functional Coverage: 3 | The summary captures the core idea of writing an ed script to a temp file and invoking ed, but omits several important behaviors such as handling dry‑run/skip flags, copying the original file, constructing the command line with verbosity, and error handling/waiting for the child process.  
+Retrieval Utility: 4 | The summary includes the key semantic elements (temporary file, ed command script, execution via fork/exec, abort on invalid commands) that would help locate similar ed‑script processing code, though the redundancy slightly reduces precision.  
+Conciseness: 3 | The summary is brief but repeats the same idea in two sentences, introducing unnecessary redundancy.  
+Clarity: 4 | The language is grammatically correct and understandable; the only drawback is the repetitive phrasing, which does not cause ambiguity."
+CVE-2019-14975,3,3,3,4,5,"Faithfulness: 3 | The summary mentions updating Alt/ActualText and removing abbreviations, which the code does, but it omits key actions (removing the structure title, dropping the object, freeing memory) and misstates that only the string is deleted rather than the whole object.  
+Functional Coverage: 3 | It captures the main idea of editing strings and handling inconsistencies, yet leaves out major functionality such as dictionary entry removal for the title and full object cleanup.  
+Retrieval Utility: 3 | The summary includes enough distinctive terms (Alt, ActualText, expanded abbreviation, inconsistency handling) to aid retrieval, but the lack of details about PDF dictionary manipulation and object disposal reduces its discriminative power.  
+Conciseness: 4 | The summary is brief and to the point, avoiding unnecessary detail while still conveying the core behavior.  
+Clarity: 5 | The sentence is grammatically correct, clear, and unambiguous."
+CVE-2019-15937,4,2,4,5,5,"Faithfulness: 4 | The summary correctly states that the function extracts the new path length and path from the packet, which the code does, but it omits other actions (error check and copying to nfs_path) without stating anything false.  
+Functional Coverage: 2 | It leaves out significant behavior such as the RPC reply validation, the conditional copy of the path into nfs_path, and the null‑termination step, thus missing major functionality.  
+Retrieval Utility: 4 | By mentioning NFS reply parsing and extraction of path length and path, it captures the core semantic purpose, aiding retrieval of similar NFS‑related parsing code, though it lacks detail that could further discriminate.  
+Conciseness: 5 | The summary is brief and includes only essential information without superfluous detail.  
+Clarity: 5 | The sentence is grammatically correct, easy to understand, and unambiguous."
+CVE-2019-15938,3,3,4,5,5,"Faithfulness: 3 | The summary correctly notes that the function builds and sends an NFS READLINK RPC and deals with the response, but it overstates the behavior by saying it extracts the target path, whereas the code only allocates a buffer for it and does not copy the path data.  
+Functional Coverage: 3 | It captures the main purpose (handling a readlink request) but omits important steps such as credential addition, error checking, and the fact that the response parsing stops after allocating memory without copying the link data.  
+Retrieval Utility: 4 | The summary includes distinctive keywords (“NFS readlink”, “RPC request”, “target path”) that will help locate semantically similar implementations, though it lacks some finer-grained details.  
+Conciseness: 5 | The description is brief and to the point, avoiding unnecessary elaboration.  
+Clarity: 5 | The sentence is grammatically correct, easy to read, and unambiguous."

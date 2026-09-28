@@ -1,0 +1,122 @@
+[
+    {
+        "cve_id": "CVE-2010-3432",
+        "code_before_change": "struct sctp_packet *sctp_packet_config(struct sctp_packet *packet,\n\t\t\t\t       __u32 vtag, int ecn_capable)\n{\n\tstruct sctp_chunk *chunk = NULL;\n\n\tSCTP_DEBUG_PRINTK(\"%s: packet:%p vtag:0x%x\\n\", __func__,\n\t\t\t  packet, vtag);\n\n\tsctp_packet_reset(packet);\n\tpacket->vtag = vtag;\n\n\tif (ecn_capable && sctp_packet_empty(packet)) {\n\t\tchunk = sctp_get_ecne_prepend(packet->transport->asoc);\n\n\t\t/* If there a is a prepend chunk stick it on the list before\n\t\t * any other chunks get appended.\n\t\t */\n\t\tif (chunk)\n\t\t\tsctp_packet_append_chunk(packet, chunk);\n\t}\n\n\treturn packet;\n}",
+        "code_after_change": "struct sctp_packet *sctp_packet_config(struct sctp_packet *packet,\n\t\t\t\t       __u32 vtag, int ecn_capable)\n{\n\tstruct sctp_chunk *chunk = NULL;\n\n\tSCTP_DEBUG_PRINTK(\"%s: packet:%p vtag:0x%x\\n\", __func__,\n\t\t\t  packet, vtag);\n\n\tpacket->vtag = vtag;\n\n\tif (ecn_capable && sctp_packet_empty(packet)) {\n\t\tchunk = sctp_get_ecne_prepend(packet->transport->asoc);\n\n\t\t/* If there a is a prepend chunk stick it on the list before\n\t\t * any other chunks get appended.\n\t\t */\n\t\tif (chunk)\n\t\t\tsctp_packet_append_chunk(packet, chunk);\n\t}\n\n\treturn packet;\n}",
+        "patch": "--- code before\n+++ code after\n@@ -6,7 +6,6 @@\n \tSCTP_DEBUG_PRINTK(\"%s: packet:%p vtag:0x%x\\n\", __func__,\n \t\t\t  packet, vtag);\n \n-\tsctp_packet_reset(packet);\n \tpacket->vtag = vtag;\n \n \tif (ecn_capable && sctp_packet_empty(packet)) {",
+        "function_modified_lines": {
+            "added": [],
+            "deleted": [
+                "\tsctp_packet_reset(packet);"
+            ]
+        },
+        "cwe": [
+            "CWE-20"
+        ],
+        "cve_description": "The sctp_packet_config function in net/sctp/output.c in the Linux kernel before 2.6.35.6 performs extraneous initializations of packet data structures, which allows remote attackers to cause a denial of service (panic) via a certain sequence of SCTP traffic.",
+        "id": 22
+    },
+    {
+        "cve_id": "CVE-2014-2739",
+        "code_before_change": "static int cma_req_handler(struct ib_cm_id *cm_id, struct ib_cm_event *ib_event)\n{\n\tstruct rdma_id_private *listen_id, *conn_id;\n\tstruct rdma_cm_event event;\n\tint offset, ret;\n\tu8 smac[ETH_ALEN];\n\tu8 alt_smac[ETH_ALEN];\n\tu8 *psmac = smac;\n\tu8 *palt_smac = alt_smac;\n\tint is_iboe = ((rdma_node_get_transport(cm_id->device->node_type) ==\n\t\t\tRDMA_TRANSPORT_IB) &&\n\t\t       (rdma_port_get_link_layer(cm_id->device,\n\t\t\tib_event->param.req_rcvd.port) ==\n\t\t\tIB_LINK_LAYER_ETHERNET));\n\n\tlisten_id = cm_id->context;\n\tif (!cma_check_req_qp_type(&listen_id->id, ib_event))\n\t\treturn -EINVAL;\n\n\tif (cma_disable_callback(listen_id, RDMA_CM_LISTEN))\n\t\treturn -ECONNABORTED;\n\n\tmemset(&event, 0, sizeof event);\n\toffset = cma_user_data_offset(listen_id);\n\tevent.event = RDMA_CM_EVENT_CONNECT_REQUEST;\n\tif (ib_event->event == IB_CM_SIDR_REQ_RECEIVED) {\n\t\tconn_id = cma_new_udp_id(&listen_id->id, ib_event);\n\t\tevent.param.ud.private_data = ib_event->private_data + offset;\n\t\tevent.param.ud.private_data_len =\n\t\t\t\tIB_CM_SIDR_REQ_PRIVATE_DATA_SIZE - offset;\n\t} else {\n\t\tconn_id = cma_new_conn_id(&listen_id->id, ib_event);\n\t\tcma_set_req_event_data(&event, &ib_event->param.req_rcvd,\n\t\t\t\t       ib_event->private_data, offset);\n\t}\n\tif (!conn_id) {\n\t\tret = -ENOMEM;\n\t\tgoto err1;\n\t}\n\n\tmutex_lock_nested(&conn_id->handler_mutex, SINGLE_DEPTH_NESTING);\n\tret = cma_acquire_dev(conn_id, listen_id);\n\tif (ret)\n\t\tgoto err2;\n\n\tconn_id->cm_id.ib = cm_id;\n\tcm_id->context = conn_id;\n\tcm_id->cm_handler = cma_ib_handler;\n\n\t/*\n\t * Protect against the user destroying conn_id from another thread\n\t * until we're done accessing it.\n\t */\n\tatomic_inc(&conn_id->refcount);\n\tret = conn_id->id.event_handler(&conn_id->id, &event);\n\tif (ret)\n\t\tgoto err3;\n\n\tif (is_iboe) {\n\t\tif (ib_event->param.req_rcvd.primary_path != NULL)\n\t\t\trdma_addr_find_smac_by_sgid(\n\t\t\t\t&ib_event->param.req_rcvd.primary_path->sgid,\n\t\t\t\tpsmac, NULL);\n\t\telse\n\t\t\tpsmac = NULL;\n\t\tif (ib_event->param.req_rcvd.alternate_path != NULL)\n\t\t\trdma_addr_find_smac_by_sgid(\n\t\t\t\t&ib_event->param.req_rcvd.alternate_path->sgid,\n\t\t\t\tpalt_smac, NULL);\n\t\telse\n\t\t\tpalt_smac = NULL;\n\t}\n\t/*\n\t * Acquire mutex to prevent user executing rdma_destroy_id()\n\t * while we're accessing the cm_id.\n\t */\n\tmutex_lock(&lock);\n\tif (is_iboe)\n\t\tib_update_cm_av(cm_id, psmac, palt_smac);\n\tif (cma_comp(conn_id, RDMA_CM_CONNECT) &&\n\t    (conn_id->id.qp_type != IB_QPT_UD))\n\t\tib_send_cm_mra(cm_id, CMA_CM_MRA_SETTING, NULL, 0);\n\tmutex_unlock(&lock);\n\tmutex_unlock(&conn_id->handler_mutex);\n\tmutex_unlock(&listen_id->handler_mutex);\n\tcma_deref_id(conn_id);\n\treturn 0;\n\nerr3:\n\tcma_deref_id(conn_id);\n\t/* Destroy the CM ID by returning a non-zero value. */\n\tconn_id->cm_id.ib = NULL;\nerr2:\n\tcma_exch(conn_id, RDMA_CM_DESTROYING);\n\tmutex_unlock(&conn_id->handler_mutex);\nerr1:\n\tmutex_unlock(&listen_id->handler_mutex);\n\tif (conn_id)\n\t\trdma_destroy_id(&conn_id->id);\n\treturn ret;\n}",
+        "code_after_change": "static int cma_req_handler(struct ib_cm_id *cm_id, struct ib_cm_event *ib_event)\n{\n\tstruct rdma_id_private *listen_id, *conn_id;\n\tstruct rdma_cm_event event;\n\tint offset, ret;\n\n\tlisten_id = cm_id->context;\n\tif (!cma_check_req_qp_type(&listen_id->id, ib_event))\n\t\treturn -EINVAL;\n\n\tif (cma_disable_callback(listen_id, RDMA_CM_LISTEN))\n\t\treturn -ECONNABORTED;\n\n\tmemset(&event, 0, sizeof event);\n\toffset = cma_user_data_offset(listen_id);\n\tevent.event = RDMA_CM_EVENT_CONNECT_REQUEST;\n\tif (ib_event->event == IB_CM_SIDR_REQ_RECEIVED) {\n\t\tconn_id = cma_new_udp_id(&listen_id->id, ib_event);\n\t\tevent.param.ud.private_data = ib_event->private_data + offset;\n\t\tevent.param.ud.private_data_len =\n\t\t\t\tIB_CM_SIDR_REQ_PRIVATE_DATA_SIZE - offset;\n\t} else {\n\t\tconn_id = cma_new_conn_id(&listen_id->id, ib_event);\n\t\tcma_set_req_event_data(&event, &ib_event->param.req_rcvd,\n\t\t\t\t       ib_event->private_data, offset);\n\t}\n\tif (!conn_id) {\n\t\tret = -ENOMEM;\n\t\tgoto err1;\n\t}\n\n\tmutex_lock_nested(&conn_id->handler_mutex, SINGLE_DEPTH_NESTING);\n\tret = cma_acquire_dev(conn_id, listen_id);\n\tif (ret)\n\t\tgoto err2;\n\n\tconn_id->cm_id.ib = cm_id;\n\tcm_id->context = conn_id;\n\tcm_id->cm_handler = cma_ib_handler;\n\n\t/*\n\t * Protect against the user destroying conn_id from another thread\n\t * until we're done accessing it.\n\t */\n\tatomic_inc(&conn_id->refcount);\n\tret = conn_id->id.event_handler(&conn_id->id, &event);\n\tif (ret)\n\t\tgoto err3;\n\t/*\n\t * Acquire mutex to prevent user executing rdma_destroy_id()\n\t * while we're accessing the cm_id.\n\t */\n\tmutex_lock(&lock);\n\tif (cma_comp(conn_id, RDMA_CM_CONNECT) &&\n\t    (conn_id->id.qp_type != IB_QPT_UD))\n\t\tib_send_cm_mra(cm_id, CMA_CM_MRA_SETTING, NULL, 0);\n\tmutex_unlock(&lock);\n\tmutex_unlock(&conn_id->handler_mutex);\n\tmutex_unlock(&listen_id->handler_mutex);\n\tcma_deref_id(conn_id);\n\treturn 0;\n\nerr3:\n\tcma_deref_id(conn_id);\n\t/* Destroy the CM ID by returning a non-zero value. */\n\tconn_id->cm_id.ib = NULL;\nerr2:\n\tcma_exch(conn_id, RDMA_CM_DESTROYING);\n\tmutex_unlock(&conn_id->handler_mutex);\nerr1:\n\tmutex_unlock(&listen_id->handler_mutex);\n\tif (conn_id)\n\t\trdma_destroy_id(&conn_id->id);\n\treturn ret;\n}",
+        "patch": "--- code before\n+++ code after\n@@ -3,15 +3,6 @@\n \tstruct rdma_id_private *listen_id, *conn_id;\n \tstruct rdma_cm_event event;\n \tint offset, ret;\n-\tu8 smac[ETH_ALEN];\n-\tu8 alt_smac[ETH_ALEN];\n-\tu8 *psmac = smac;\n-\tu8 *palt_smac = alt_smac;\n-\tint is_iboe = ((rdma_node_get_transport(cm_id->device->node_type) ==\n-\t\t\tRDMA_TRANSPORT_IB) &&\n-\t\t       (rdma_port_get_link_layer(cm_id->device,\n-\t\t\tib_event->param.req_rcvd.port) ==\n-\t\t\tIB_LINK_LAYER_ETHERNET));\n \n \tlisten_id = cm_id->context;\n \tif (!cma_check_req_qp_type(&listen_id->id, ib_event))\n@@ -55,28 +46,11 @@\n \tret = conn_id->id.event_handler(&conn_id->id, &event);\n \tif (ret)\n \t\tgoto err3;\n-\n-\tif (is_iboe) {\n-\t\tif (ib_event->param.req_rcvd.primary_path != NULL)\n-\t\t\trdma_addr_find_smac_by_sgid(\n-\t\t\t\t&ib_event->param.req_rcvd.primary_path->sgid,\n-\t\t\t\tpsmac, NULL);\n-\t\telse\n-\t\t\tpsmac = NULL;\n-\t\tif (ib_event->param.req_rcvd.alternate_path != NULL)\n-\t\t\trdma_addr_find_smac_by_sgid(\n-\t\t\t\t&ib_event->param.req_rcvd.alternate_path->sgid,\n-\t\t\t\tpalt_smac, NULL);\n-\t\telse\n-\t\t\tpalt_smac = NULL;\n-\t}\n \t/*\n \t * Acquire mutex to prevent user executing rdma_destroy_id()\n \t * while we're accessing the cm_id.\n \t */\n \tmutex_lock(&lock);\n-\tif (is_iboe)\n-\t\tib_update_cm_av(cm_id, psmac, palt_smac);\n \tif (cma_comp(conn_id, RDMA_CM_CONNECT) &&\n \t    (conn_id->id.qp_type != IB_QPT_UD))\n \t\tib_send_cm_mra(cm_id, CMA_CM_MRA_SETTING, NULL, 0);",
+        "function_modified_lines": {
+            "added": [],
+            "deleted": [
+                "\tu8 smac[ETH_ALEN];",
+                "\tu8 alt_smac[ETH_ALEN];",
+                "\tu8 *psmac = smac;",
+                "\tu8 *palt_smac = alt_smac;",
+                "\tint is_iboe = ((rdma_node_get_transport(cm_id->device->node_type) ==",
+                "\t\t\tRDMA_TRANSPORT_IB) &&",
+                "\t\t       (rdma_port_get_link_layer(cm_id->device,",
+                "\t\t\tib_event->param.req_rcvd.port) ==",
+                "\t\t\tIB_LINK_LAYER_ETHERNET));",
+                "",
+                "\tif (is_iboe) {",
+                "\t\tif (ib_event->param.req_rcvd.primary_path != NULL)",
+                "\t\t\trdma_addr_find_smac_by_sgid(",
+                "\t\t\t\t&ib_event->param.req_rcvd.primary_path->sgid,",
+                "\t\t\t\tpsmac, NULL);",
+                "\t\telse",
+                "\t\t\tpsmac = NULL;",
+                "\t\tif (ib_event->param.req_rcvd.alternate_path != NULL)",
+                "\t\t\trdma_addr_find_smac_by_sgid(",
+                "\t\t\t\t&ib_event->param.req_rcvd.alternate_path->sgid,",
+                "\t\t\t\tpalt_smac, NULL);",
+                "\t\telse",
+                "\t\t\tpalt_smac = NULL;",
+                "\t}",
+                "\tif (is_iboe)",
+                "\t\tib_update_cm_av(cm_id, psmac, palt_smac);"
+            ]
+        },
+        "cwe": [
+            "CWE-20"
+        ],
+        "cve_description": "The cma_req_handler function in drivers/infiniband/core/cma.c in the Linux kernel 3.14.x through 3.14.1 attempts to resolve an RDMA over Converged Ethernet (aka RoCE) address that is properly resolved within a different module, which allows remote attackers to cause a denial of service (incorrect pointer dereference and system crash) via crafted network traffic.",
+        "id": 497
+    },
+    {
+        "cve_id": "CVE-2018-20669",
+        "code_before_change": "\nCOMPAT_SYSCALL_DEFINE5(waitid,\n\t\tint, which, compat_pid_t, pid,\n\t\tstruct compat_siginfo __user *, infop, int, options,\n\t\tstruct compat_rusage __user *, uru)\n{\n\tstruct rusage ru;\n\tstruct waitid_info info = {.status = 0};\n\tlong err = kernel_waitid(which, pid, &info, options, uru ? &ru : NULL);\n\tint signo = 0;\n\tif (err > 0) {\n\t\tsigno = SIGCHLD;\n\t\terr = 0;\n\t\tif (uru) {\n\t\t\t/* kernel_waitid() overwrites everything in ru */\n\t\t\tif (COMPAT_USE_64BIT_TIME)\n\t\t\t\terr = copy_to_user(uru, &ru, sizeof(ru));\n\t\t\telse\n\t\t\t\terr = put_compat_rusage(&ru, uru);\n\t\t\tif (err)\n\t\t\t\treturn -EFAULT;\n\t\t}\n\t}\n\n\tif (!infop)\n\t\treturn err;\n\n\tif (!access_ok(infop, sizeof(*infop)))\n\t\treturn -EFAULT;\n\n\tuser_access_begin();\n\tunsafe_put_user(signo, &infop->si_signo, Efault);\n\tunsafe_put_user(0, &infop->si_errno, Efault);\n\tunsafe_put_user(info.cause, &infop->si_code, Efault);\n\tunsafe_put_user(info.pid, &infop->si_pid, Efault);\n\tunsafe_put_user(info.uid, &infop->si_uid, Efault);\n\tunsafe_put_user(info.status, &infop->si_status, Efault);\n\tuser_access_end();\n\treturn err;\nEfault:\n\tuser_access_end();\n\treturn -EFAULT;\n}",
+        "code_after_change": "\nCOMPAT_SYSCALL_DEFINE5(waitid,\n\t\tint, which, compat_pid_t, pid,\n\t\tstruct compat_siginfo __user *, infop, int, options,\n\t\tstruct compat_rusage __user *, uru)\n{\n\tstruct rusage ru;\n\tstruct waitid_info info = {.status = 0};\n\tlong err = kernel_waitid(which, pid, &info, options, uru ? &ru : NULL);\n\tint signo = 0;\n\tif (err > 0) {\n\t\tsigno = SIGCHLD;\n\t\terr = 0;\n\t\tif (uru) {\n\t\t\t/* kernel_waitid() overwrites everything in ru */\n\t\t\tif (COMPAT_USE_64BIT_TIME)\n\t\t\t\terr = copy_to_user(uru, &ru, sizeof(ru));\n\t\t\telse\n\t\t\t\terr = put_compat_rusage(&ru, uru);\n\t\t\tif (err)\n\t\t\t\treturn -EFAULT;\n\t\t}\n\t}\n\n\tif (!infop)\n\t\treturn err;\n\n\tif (!user_access_begin(infop, sizeof(*infop)))\n\t\treturn -EFAULT;\n\n\tunsafe_put_user(signo, &infop->si_signo, Efault);\n\tunsafe_put_user(0, &infop->si_errno, Efault);\n\tunsafe_put_user(info.cause, &infop->si_code, Efault);\n\tunsafe_put_user(info.pid, &infop->si_pid, Efault);\n\tunsafe_put_user(info.uid, &infop->si_uid, Efault);\n\tunsafe_put_user(info.status, &infop->si_status, Efault);\n\tuser_access_end();\n\treturn err;\nEfault:\n\tuser_access_end();\n\treturn -EFAULT;\n}",
+        "patch": "--- code before\n+++ code after\n@@ -25,10 +25,9 @@\n \tif (!infop)\n \t\treturn err;\n \n-\tif (!access_ok(infop, sizeof(*infop)))\n+\tif (!user_access_begin(infop, sizeof(*infop)))\n \t\treturn -EFAULT;\n \n-\tuser_access_begin();\n \tunsafe_put_user(signo, &infop->si_signo, Efault);\n \tunsafe_put_user(0, &infop->si_errno, Efault);\n \tunsafe_put_user(info.cause, &infop->si_code, Efault);",
+        "function_modified_lines": {
+            "added": [
+                "\tif (!user_access_begin(infop, sizeof(*infop)))"
+            ],
+            "deleted": [
+                "\tif (!access_ok(infop, sizeof(*infop)))",
+                "\tuser_access_begin();"
+            ]
+        },
+        "cwe": [
+            "CWE-20"
+        ],
+        "cve_description": "An issue where a provided address with access_ok() is not checked was discovered in i915_gem_execbuffer2_ioctl in drivers/gpu/drm/i915/i915_gem_execbuffer.c in the Linux kernel through 4.19.13. A local attacker can craft a malicious IOCTL function call to overwrite arbitrary kernel memory, resulting in a Denial of Service or privilege escalation.",
+        "id": 1777
+    },
+    {
+        "cve_id": "CVE-2021-3655",
+        "code_before_change": "static void sctp_v4_from_addr_param(union sctp_addr *addr,\n\t\t\t\t    union sctp_addr_param *param,\n\t\t\t\t    __be16 port, int iif)\n{\n\taddr->v4.sin_family = AF_INET;\n\taddr->v4.sin_port = port;\n\taddr->v4.sin_addr.s_addr = param->v4.addr.s_addr;\n\tmemset(addr->v4.sin_zero, 0, sizeof(addr->v4.sin_zero));\n}",
+        "code_after_change": "static bool sctp_v4_from_addr_param(union sctp_addr *addr,\n\t\t\t\t    union sctp_addr_param *param,\n\t\t\t\t    __be16 port, int iif)\n{\n\tif (ntohs(param->v4.param_hdr.length) < sizeof(struct sctp_ipv4addr_param))\n\t\treturn false;\n\n\taddr->v4.sin_family = AF_INET;\n\taddr->v4.sin_port = port;\n\taddr->v4.sin_addr.s_addr = param->v4.addr.s_addr;\n\tmemset(addr->v4.sin_zero, 0, sizeof(addr->v4.sin_zero));\n\n\treturn true;\n}",
+        "patch": "--- code before\n+++ code after\n@@ -1,9 +1,14 @@\n-static void sctp_v4_from_addr_param(union sctp_addr *addr,\n+static bool sctp_v4_from_addr_param(union sctp_addr *addr,\n \t\t\t\t    union sctp_addr_param *param,\n \t\t\t\t    __be16 port, int iif)\n {\n+\tif (ntohs(param->v4.param_hdr.length) < sizeof(struct sctp_ipv4addr_param))\n+\t\treturn false;\n+\n \taddr->v4.sin_family = AF_INET;\n \taddr->v4.sin_port = port;\n \taddr->v4.sin_addr.s_addr = param->v4.addr.s_addr;\n \tmemset(addr->v4.sin_zero, 0, sizeof(addr->v4.sin_zero));\n+\n+\treturn true;\n }",
+        "function_modified_lines": {
+            "added": [
+                "static bool sctp_v4_from_addr_param(union sctp_addr *addr,",
+                "\tif (ntohs(param->v4.param_hdr.length) < sizeof(struct sctp_ipv4addr_param))",
+                "\t\treturn false;",
+                "",
+                "",
+                "\treturn true;"
+            ],
+            "deleted": [
+                "static void sctp_v4_from_addr_param(union sctp_addr *addr,"
+            ]
+        },
+        "cwe": [
+            "CWE-20"
+        ],
+        "cve_description": "A vulnerability was found in the Linux kernel in versions prior to v5.14-rc1. Missing size validations on inbound SCTP packets may allow the kernel to read uninitialized memory.",
+        "id": 3033
+    },
+    {
+        "cve_id": "CVE-2018-14619",
+        "code_before_change": "static void aead_release(void *private)\n{\n\tstruct aead_tfm *tfm = private;\n\n\tcrypto_free_aead(tfm->aead);\n\tkfree(tfm);\n}",
+        "code_after_change": "static void aead_release(void *private)\n{\n\tstruct aead_tfm *tfm = private;\n\n\tcrypto_free_aead(tfm->aead);\n\tcrypto_put_default_null_skcipher2();\n\tkfree(tfm);\n}",
+        "patch": "--- code before\n+++ code after\n@@ -3,5 +3,6 @@\n \tstruct aead_tfm *tfm = private;\n \n \tcrypto_free_aead(tfm->aead);\n+\tcrypto_put_default_null_skcipher2();\n \tkfree(tfm);\n }",
+        "function_modified_lines": {
+            "added": [
+                "\tcrypto_put_default_null_skcipher2();"
+            ],
+            "deleted": []
+        },
+        "cwe": [
+            "CWE-20"
+        ],
+        "cve_description": "A flaw was found in the crypto subsystem of the Linux kernel before version kernel-4.15-rc4. The \"null skcipher\" was being dropped when each af_alg_ctx was freed instead of when the aead_tfm was freed. This can cause the null skcipher to be freed while it is still in use leading to a local user being able to crash the system or possibly escalate privileges.",
+        "id": 1691
+    }
+]

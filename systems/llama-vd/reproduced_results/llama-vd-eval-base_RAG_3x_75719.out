@@ -1,0 +1,1865 @@
+JOB ID 75719
+
+
+*** Load model and tokenizer ***
+
+
+*** Load and preprocess dataset ***
+
+
+ Label distribution in Train set : 
+ label_text
+Safe          9799
+Vulnerable    9799
+Name: count, dtype: int64
+
+ Label distribution in Eval set : 
+ label_text
+Safe          547
+Vulnerable    547
+Name: count, dtype: int64
+
+ Label distribution in Test set : 
+ label_text
+Safe          554
+Vulnerable    554
+Name: count, dtype: int64
+
+ Example data points in Train set : 
+
+                                                code  label label_text
+0  ChromeContentBrowserClient::GetTaskSchedulerIn...      0       Safe
+1  static void remove_translation_table(FlowSourc...      0       Safe
+2  void CairoOutputDev::endTransparencyGroup(GfxS...      0       Safe
+3  GF_Err mvhd_Write(GF_Box *s, GF_BitStream *bs)...      0       Safe
+4  static struct ns_common *netns_get(struct task...      0       Safe
+
+*** Load embedding model and tokenizer ***
+
+
+*** Load index ***
+
+FAISS index and metadata loaded successfully.
+
+
+*** Generate prompts and Predict ***
+
+Out of scope prediction :  %u",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_24BITS(obj_tptr + 17)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                break;
+            case RSVP_CTYPE_TUNNEL_IPV6:
+                if (obj_tlen < 20)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, LSP-ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 18)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                break;
+            case RSVP_CTYPE_13: /* IPv6 p2mp LSP tunnel */
+                if (obj_tlen < 40)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv6 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+18),
+                       ident,
+                       ip6addr_string(ndo, obj_tptr+20),
+                       EXTRACT_16BITS(obj_tptr + 38)));
+                obj_tlen-=40;
+                obj_tptr+=40;
+                break;
+            case RSVP_CTYPE_TUNNEL_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, LSP-ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 6)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                break;
+            case RSVP_CTYPE_12: /* IPv4 p2mp LSP tunnel */
+                if (obj_tlen < 16)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv4 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+6),
+                       ident,
+                       ipaddr_string(ndo, obj_tptr+8),
+                       EXTRACT_16BITS(obj_tptr + 12)));
+                obj_tlen-=16;
+                obj_tptr+=16;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_FASTREROUTE:
+            /* the differences between c-type 1 and 7 are minor */
+            obj_ptr.rsvp_obj_frr = (const struct rsvp_obj_frr_t *)obj_tptr;
+
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1: /* new style */
+                if (obj_tlen < sizeof(struct rsvp_obj_frr_t))
+                    return-1;
+                bw.i = EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->bandwidth);
+                ND_PRINT((ndo, "%s  Setup Priority: %u, Holding Priority: %u, Hop-limit: %u, Bandwidth: %.10g Mbps",
+                       ident,
+                       (int)obj_ptr.rsvp_obj_frr->setup_prio,
+                       (int)obj_ptr.rsvp_obj_frr->hold_prio,
+                       (int)obj_ptr.rsvp_obj_frr->hop_limit,
+                        bw.f * 8 / 1000000));
+                ND_PRINT((ndo, "%s  Include-any: 0x%08x, Exclude-any: 0x%08x, Include-all: 0x%08x",
+                       ident,
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->include_any),
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->exclude_any),
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->include_all)));
+                obj_tlen-=sizeof(struct rsvp_obj_frr_t);
+                obj_tptr+=sizeof(struct rsvp_obj_frr_t);
+                break;
+
+            case RSVP_CTYPE_TUNNEL_IPV4: /* old style */
+                if (obj_tlen < 16)
+                    return-1;
+                bw.i = EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->bandwidth);
+                ND_PRINT((ndo, "%s  Setup Priority: %u, Holding Priority: %u, Hop-limit: %u, Bandwidth: %.10g Mbps",
+                       ident,
+                       (int)obj_ptr.rsvp_obj_frr->setup_prio,
+                       (int)obj_ptr.rsvp_obj_frr->hold_prio,
+                       (int)obj_ptr.rsvp_obj_frr->hop_limit,
+                        bw.f * 8 / 1000000));
+                ND_PRINT((ndo, "%s  Include Colors: 0x%08x, Exclude Colors: 0x%08x",
+                       ident,
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->include_any),
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->exclude_any)));
+                obj_tlen-=16;
+                obj_tptr+=16;
+                break;
+
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_DETOUR:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_TUNNEL_IPV4:
+                while(obj_tlen >= 8) {
+                    ND_PRINT((ndo, "%s  PLR-ID: %s, Avoid-Node-ID: %s",
+                           ident,
+                           ipaddr_string(ndo, obj_tptr),
+                           ipaddr_string(ndo, obj_tptr + 4)));
+                    obj_tlen-=8;
+                    obj_tptr+=8;
+                }
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_CLASSTYPE:
+         case RSVP_OBJ_CLASSTYPE_OLD: /* fall through */
+             switch(rsvp_obj_ctype) {
+             case RSVP_C
+Out of scope prediction :  %u",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_24BITS(obj_tptr + 17)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                break;
+            case RSVP_CTYPE_TUNNEL_IPV6:
+                if (obj_tlen < 20)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, LSP-ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 18)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                break;
+            case RSVP_CTYPE_13: /* IPv6 p2mp LSP tunnel */
+                if (obj_tlen < 40)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv6 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+18),
+                       ident,
+                       ip6addr_string(ndo, obj_tptr+20),
+                       EXTRACT_16BITS(obj_tptr + 38)));
+                obj_tlen-=40;
+                obj_tptr+=40;
+                break;
+            case RSVP_CTYPE_TUNNEL_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, LSP-ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 6)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                break;
+            case RSVP_CTYPE_12: /* IPv4 p2mp LSP tunnel */
+                if (obj_tlen < 16)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv4 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+6),
+                       ident,
+                       ipaddr_string(ndo, obj_tptr+8),
+                       EXTRACT_16BITS(obj_tptr + 12)));
+                obj_tlen-=16;
+                obj_tptr+=16;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_FASTREROUTE:
+            /* the differences between c-type 1 and 7 are minor */
+            obj_ptr.rsvp_obj_frr = (const struct rsvp_obj_frr_t *)obj_tptr;
+
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1: /* new style */
+                if (obj_tlen < sizeof(struct rsvp_obj_frr_t))
+                    return-1;
+                bw.i = EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->bandwidth);
+                ND_PRINT((ndo, "%s  Setup Priority: %u, Holding Priority: %u, Hop-limit: %u, Bandwidth: %.10g Mbps",
+                       ident,
+                       (int)obj_ptr.rsvp_obj_frr->setup_prio,
+                       (int)obj_ptr.rsvp_obj_frr->hold_prio,
+                       (int)obj_ptr.rsvp_obj_frr->hop_limit,
+                        bw.f * 8 / 1000000));
+                ND_PRINT((ndo, "%s  Include-any: 0x%08x, Exclude-any: 0x%08x, Include-all: 0x%08x",
+                       ident,
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->include_any),
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->exclude_any),
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->include_all)));
+                obj_tlen-=sizeof(struct rsvp_obj_frr_t);
+                obj_tptr+=sizeof(struct rsvp_obj_frr_t);
+                break;
+
+            case RSVP_CTYPE_TUNNEL_IPV4: /* old style */
+                if (obj_tlen < 16)
+                    return-1;
+                bw.i = EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->bandwidth);
+                ND_PRINT((ndo, "%s  Setup Priority: %u, Holding Priority: %u, Hop-limit: %u, Bandwidth: %.10g Mbps",
+                       ident,
+                       (int)obj_ptr.rsvp_obj_frr->setup_prio,
+                       (int)obj_ptr.rsvp_obj_frr->hold_prio,
+                       (int)obj_ptr.rsvp_obj_frr->hop_limit,
+                        bw.f * 8 / 1000000));
+                ND_PRINT((ndo, "%s  Include Colors: 0x%08x, Exclude Colors: 0x%08x",
+                       ident,
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->include_any),
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->exclude_any)));
+                obj_tlen-=16;
+                obj_tptr+=16;
+                break;
+
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_DETOUR:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_TUNNEL_IPV4:
+                while(obj_tlen >= 8) {
+                    ND_PRINT((ndo, "%s  PLR-ID: %s, Avoid-Node-ID: %s",
+                           ident,
+                           ipaddr_string(ndo, obj_tptr),
+                           ipaddr_string(ndo, obj_tptr + 4)));
+                    obj_tlen-=8;
+                    obj_tptr+=8;
+                }
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_CLASSTYPE:
+         case RSVP_OBJ_CLASSTYPE_OLD: /* fall through */
+             switch(rsvp_obj_ctype) {
+             case RSVP_C
+
+
+*** Evaluate model ****
+
+Accuracy: 0.690
+
+Classification Report:
+              precision    recall  f1-score   support
+
+        Safe       0.68      0.73      0.70       554
+  Vulnerable       0.70      0.65      0.68       554
+
+   micro avg       0.69      0.69      0.69      1108
+   macro avg       0.69      0.69      0.69      1108
+weighted avg       0.69      0.69      0.69      1108
+
+
+Confusion Matrix:
+[[402 152]
+ [190 362]]
+
+ (See plots in 'plots' folder)
+
+
+
+*** Load model and tokenizer ***
+
+
+*** Load and preprocess dataset ***
+
+
+ Label distribution in Train set : 
+ label_text
+Safe          9799
+Vulnerable    9799
+Name: count, dtype: int64
+
+ Label distribution in Eval set : 
+ label_text
+Safe          547
+Vulnerable    547
+Name: count, dtype: int64
+
+ Label distribution in Test set : 
+ label_text
+Safe          554
+Vulnerable    554
+Name: count, dtype: int64
+
+ Example data points in Train set : 
+
+                                                code  label label_text
+0  ChromeContentBrowserClient::GetTaskSchedulerIn...      0       Safe
+1  static void remove_translation_table(FlowSourc...      0       Safe
+2  void CairoOutputDev::endTransparencyGroup(GfxS...      0       Safe
+3  GF_Err mvhd_Write(GF_Box *s, GF_BitStream *bs)...      0       Safe
+4  static struct ns_common *netns_get(struct task...      0       Safe
+
+*** Load embedding model and tokenizer ***
+
+
+*** Load index ***
+
+FAISS index and metadata loaded successfully.
+
+
+*** Generate prompts and Predict ***
+
+Out of scope prediction :  %u",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_24BITS(obj_tptr + 17)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                break;
+            case RSVP_CTYPE_TUNNEL_IPV6:
+                if (obj_tlen < 20)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, LSP-ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 18)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                break;
+            case RSVP_CTYPE_13: /* IPv6 p2mp LSP tunnel */
+                if (obj_tlen < 40)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv6 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+18),
+                       ident,
+                       ip6addr_string(ndo, obj_tptr+20),
+                       EXTRACT_16BITS(obj_tptr + 38)));
+                obj_tlen-=40;
+                obj_tptr+=40;
+                break;
+            case RSVP_CTYPE_TUNNEL_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, LSP-ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 6)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                break;
+            case RSVP_CTYPE_12: /* IPv4 p2mp LSP tunnel */
+                if (obj_tlen < 16)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv4 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+6),
+                       ident,
+                       ipaddr_string(ndo, obj_tptr+8),
+                       EXTRACT_16BITS(obj_tptr + 12)));
+                obj_tlen-=16;
+                obj_tptr+=16;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_FASTREROUTE:
+            /* the differences between c-type 1 and 7 are minor */
+            obj_ptr.rsvp_obj_frr = (const struct rsvp_obj_frr_t *)obj_tptr;
+
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1: /* new style */
+                if (obj_tlen < sizeof(struct rsvp_obj_frr_t))
+                    return-1;
+                bw.i = EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->bandwidth);
+                ND_PRINT((ndo, "%s  Setup Priority: %u, Holding Priority: %u, Hop-limit: %u, Bandwidth: %.10g Mbps",
+                       ident,
+                       (int)obj_ptr.rsvp_obj_frr->setup_prio,
+                       (int)obj_ptr.rsvp_obj_frr->hold_prio,
+                       (int)obj_ptr.rsvp_obj_frr->hop_limit,
+                        bw.f * 8 / 1000000));
+                ND_PRINT((ndo, "%s  Include-any: 0x%08x, Exclude-any: 0x%08x, Include-all: 0x%08x",
+                       ident,
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->include_any),
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->exclude_any),
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->include_all)));
+                obj_tlen-=sizeof(struct rsvp_obj_frr_t);
+                obj_tptr+=sizeof(struct rsvp_obj_frr_t);
+                break;
+
+            case RSVP_CTYPE_TUNNEL_IPV4: /* old style */
+                if (obj_tlen < 16)
+                    return-1;
+                bw.i = EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->bandwidth);
+                ND_PRINT((ndo, "%s  Setup Priority: %u, Holding Priority: %u, Hop-limit: %u, Bandwidth: %.10g Mbps",
+                       ident,
+                       (int)obj_ptr.rsvp_obj_frr->setup_prio,
+                       (int)obj_ptr.rsvp_obj_frr->hold_prio,
+                       (int)obj_ptr.rsvp_obj_frr->hop_limit,
+                        bw.f * 8 / 1000000));
+                ND_PRINT((ndo, "%s  Include Colors: 0x%08x, Exclude Colors: 0x%08x",
+                       ident,
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->include_any),
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->exclude_any)));
+                obj_tlen-=16;
+                obj_tptr+=16;
+                break;
+
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_DETOUR:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_TUNNEL_IPV4:
+                while(obj_tlen >= 8) {
+                    ND_PRINT((ndo, "%s  PLR-ID: %s, Avoid-Node-ID: %s",
+                           ident,
+                           ipaddr_string(ndo, obj_tptr),
+                           ipaddr_string(ndo, obj_tptr + 4)));
+                    obj_tlen-=8;
+                    obj_tptr+=8;
+                }
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_CLASSTYPE:
+         case RSVP_OBJ_CLASSTYPE_OLD: /* fall through */
+             switch(rsvp_obj_ctype) {
+             case RSVP_C
+Out of scope prediction :  %u",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_24BITS(obj_tptr + 17)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                break;
+            case RSVP_CTYPE_TUNNEL_IPV6:
+                if (obj_tlen < 20)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, LSP-ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 18)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                break;
+            case RSVP_CTYPE_13: /* IPv6 p2mp LSP tunnel */
+                if (obj_tlen < 40)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv6 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+18),
+                       ident,
+                       ip6addr_string(ndo, obj_tptr+20),
+                       EXTRACT_16BITS(obj_tptr + 38)));
+                obj_tlen-=40;
+                obj_tptr+=40;
+                break;
+            case RSVP_CTYPE_TUNNEL_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, LSP-ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 6)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                break;
+            case RSVP_CTYPE_12: /* IPv4 p2mp LSP tunnel */
+                if (obj_tlen < 16)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv4 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+6),
+                       ident,
+                       ipaddr_string(ndo, obj_tptr+8),
+                       EXTRACT_16BITS(obj_tptr + 12)));
+                obj_tlen-=16;
+                obj_tptr+=16;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_FASTREROUTE:
+            /* the differences between c-type 1 and 7 are minor */
+            obj_ptr.rsvp_obj_frr = (const struct rsvp_obj_frr_t *)obj_tptr;
+
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1: /* new style */
+                if (obj_tlen < sizeof(struct rsvp_obj_frr_t))
+                    return-1;
+                bw.i = EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->bandwidth);
+                ND_PRINT((ndo, "%s  Setup Priority: %u, Holding Priority: %u, Hop-limit: %u, Bandwidth: %.10g Mbps",
+                       ident,
+                       (int)obj_ptr.rsvp_obj_frr->setup_prio,
+                       (int)obj_ptr.rsvp_obj_frr->hold_prio,
+                       (int)obj_ptr.rsvp_obj_frr->hop_limit,
+                        bw.f * 8 / 1000000));
+                ND_PRINT((ndo, "%s  Include-any: 0x%08x, Exclude-any: 0x%08x, Include-all: 0x%08x",
+                       ident,
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->include_any),
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->exclude_any),
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->include_all)));
+                obj_tlen-=sizeof(struct rsvp_obj_frr_t);
+                obj_tptr+=sizeof(struct rsvp_obj_frr_t);
+                break;
+
+            case RSVP_CTYPE_TUNNEL_IPV4: /* old style */
+                if (obj_tlen < 16)
+                    return-1;
+                bw.i = EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->bandwidth);
+                ND_PRINT((ndo, "%s  Setup Priority: %u, Holding Priority: %u, Hop-limit: %u, Bandwidth: %.10g Mbps",
+                       ident,
+                       (int)obj_ptr.rsvp_obj_frr->setup_prio,
+                       (int)obj_ptr.rsvp_obj_frr->hold_prio,
+                       (int)obj_ptr.rsvp_obj_frr->hop_limit,
+                        bw.f * 8 / 1000000));
+                ND_PRINT((ndo, "%s  Include Colors: 0x%08x, Exclude Colors: 0x%08x",
+                       ident,
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->include_any),
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->exclude_any)));
+                obj_tlen-=16;
+                obj_tptr+=16;
+                break;
+
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_DETOUR:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_TUNNEL_IPV4:
+                while(obj_tlen >= 8) {
+                    ND_PRINT((ndo, "%s  PLR-ID: %s, Avoid-Node-ID: %s",
+                           ident,
+                           ipaddr_string(ndo, obj_tptr),
+                           ipaddr_string(ndo, obj_tptr + 4)));
+                    obj_tlen-=8;
+                    obj_tptr+=8;
+                }
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_CLASSTYPE:
+         case RSVP_OBJ_CLASSTYPE_OLD: /* fall through */
+             switch(rsvp_obj_ctype) {
+             case RSVP_C
+
+
+*** Evaluate model ****
+
+Accuracy: 0.699
+
+Classification Report:
+              precision    recall  f1-score   support
+
+        Safe       0.69      0.73      0.71       554
+  Vulnerable       0.71      0.67      0.69       554
+
+   micro avg       0.70      0.70      0.70      1108
+   macro avg       0.70      0.70      0.70      1108
+weighted avg       0.70      0.70      0.70      1108
+
+
+Confusion Matrix:
+[[403 151]
+ [181 371]]
+
+ (See plots in 'plots' folder)
+
+
+
+*** Load model and tokenizer ***
+
+
+*** Load and preprocess dataset ***
+
+
+ Label distribution in Train set : 
+ label_text
+Safe          9799
+Vulnerable    9799
+Name: count, dtype: int64
+
+ Label distribution in Eval set : 
+ label_text
+Safe          547
+Vulnerable    547
+Name: count, dtype: int64
+
+ Label distribution in Test set : 
+ label_text
+Safe          554
+Vulnerable    554
+Name: count, dtype: int64
+
+ Example data points in Train set : 
+
+                                                code  label label_text
+0  ChromeContentBrowserClient::GetTaskSchedulerIn...      0       Safe
+1  static void remove_translation_table(FlowSourc...      0       Safe
+2  void CairoOutputDev::endTransparencyGroup(GfxS...      0       Safe
+3  GF_Err mvhd_Write(GF_Box *s, GF_BitStream *bs)...      0       Safe
+4  static struct ns_common *netns_get(struct task...      0       Safe
+
+*** Load embedding model and tokenizer ***
+
+
+*** Load index ***
+
+FAISS index and metadata loaded successfully.
+
+
+*** Generate prompts and Predict ***
+
+Out of scope prediction :  %u",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_24BITS(obj_tptr + 17)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                break;
+            case RSVP_CTYPE_TUNNEL_IPV6:
+                if (obj_tlen < 20)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, LSP-ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 18)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                break;
+            case RSVP_CTYPE_13: /* IPv6 p2mp LSP tunnel */
+                if (obj_tlen < 40)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv6 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+18),
+                       ident,
+                       ip6addr_string(ndo, obj_tptr+20),
+                       EXTRACT_16BITS(obj_tptr + 38)));
+                obj_tlen-=40;
+                obj_tptr+=40;
+                break;
+            case RSVP_CTYPE_TUNNEL_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, LSP-ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 6)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                break;
+            case RSVP_CTYPE_12: /* IPv4 p2mp LSP tunnel */
+                if (obj_tlen < 16)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv4 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+6),
+                       ident,
+                       ipaddr_string(ndo, obj_tptr+8),
+                       EXTRACT_16BITS(obj_tptr + 12)));
+                obj_tlen-=16;
+                obj_tptr+=16;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_FASTREROUTE:
+            /* the differences between c-type 1 and 7 are minor */
+            obj_ptr.rsvp_obj_frr = (const struct rsvp_obj_frr_t *)obj_tptr;
+
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1: /* new style */
+                if (obj_tlen < sizeof(struct rsvp_obj_frr_t))
+                    return-1;
+                bw.i = EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->bandwidth);
+                ND_PRINT((ndo, "%s  Setup Priority: %u, Holding Priority: %u, Hop-limit: %u, Bandwidth: %.10g Mbps",
+                       ident,
+                       (int)obj_ptr.rsvp_obj_frr->setup_prio,
+                       (int)obj_ptr.rsvp_obj_frr->hold_prio,
+                       (int)obj_ptr.rsvp_obj_frr->hop_limit,
+                        bw.f * 8 / 1000000));
+                ND_PRINT((ndo, "%s  Include-any: 0x%08x, Exclude-any: 0x%08x, Include-all: 0x%08x",
+                       ident,
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->include_any),
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->exclude_any),
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->include_all)));
+                obj_tlen-=sizeof(struct rsvp_obj_frr_t);
+                obj_tptr+=sizeof(struct rsvp_obj_frr_t);
+                break;
+
+            case RSVP_CTYPE_TUNNEL_IPV4: /* old style */
+                if (obj_tlen < 16)
+                    return-1;
+                bw.i = EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->bandwidth);
+                ND_PRINT((ndo, "%s  Setup Priority: %u, Holding Priority: %u, Hop-limit: %u, Bandwidth: %.10g Mbps",
+                       ident,
+                       (int)obj_ptr.rsvp_obj_frr->setup_prio,
+                       (int)obj_ptr.rsvp_obj_frr->hold_prio,
+                       (int)obj_ptr.rsvp_obj_frr->hop_limit,
+                        bw.f * 8 / 1000000));
+                ND_PRINT((ndo, "%s  Include Colors: 0x%08x, Exclude Colors: 0x%08x",
+                       ident,
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->include_any),
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->exclude_any)));
+                obj_tlen-=16;
+                obj_tptr+=16;
+                break;
+
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_DETOUR:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_TUNNEL_IPV4:
+                while(obj_tlen >= 8) {
+                    ND_PRINT((ndo, "%s  PLR-ID: %s, Avoid-Node-ID: %s",
+                           ident,
+                           ipaddr_string(ndo, obj_tptr),
+                           ipaddr_string(ndo, obj_tptr + 4)));
+                    obj_tlen-=8;
+                    obj_tptr+=8;
+                }
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_CLASSTYPE:
+         case RSVP_OBJ_CLASSTYPE_OLD: /* fall through */
+             switch(rsvp_obj_ctype) {
+             case RSVP_C
+Out of scope prediction :  %u",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_24BITS(obj_tptr + 17)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                break;
+            case RSVP_CTYPE_TUNNEL_IPV6:
+                if (obj_tlen < 20)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, LSP-ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 18)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                break;
+            case RSVP_CTYPE_13: /* IPv6 p2mp LSP tunnel */
+                if (obj_tlen < 40)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv6 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+18),
+                       ident,
+                       ip6addr_string(ndo, obj_tptr+20),
+                       EXTRACT_16BITS(obj_tptr + 38)));
+                obj_tlen-=40;
+                obj_tptr+=40;
+                break;
+            case RSVP_CTYPE_TUNNEL_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, LSP-ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 6)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                break;
+            case RSVP_CTYPE_12: /* IPv4 p2mp LSP tunnel */
+                if (obj_tlen < 16)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv4 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+6),
+                       ident,
+                       ipaddr_string(ndo, obj_tptr+8),
+                       EXTRACT_16BITS(obj_tptr + 12)));
+                obj_tlen-=16;
+                obj_tptr+=16;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_FASTREROUTE:
+            /* the differences between c-type 1 and 7 are minor */
+            obj_ptr.rsvp_obj_frr = (const struct rsvp_obj_frr_t *)obj_tptr;
+
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1: /* new style */
+                if (obj_tlen < sizeof(struct rsvp_obj_frr_t))
+                    return-1;
+                bw.i = EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->bandwidth);
+                ND_PRINT((ndo, "%s  Setup Priority: %u, Holding Priority: %u, Hop-limit: %u, Bandwidth: %.10g Mbps",
+                       ident,
+                       (int)obj_ptr.rsvp_obj_frr->setup_prio,
+                       (int)obj_ptr.rsvp_obj_frr->hold_prio,
+                       (int)obj_ptr.rsvp_obj_frr->hop_limit,
+                        bw.f * 8 / 1000000));
+                ND_PRINT((ndo, "%s  Include-any: 0x%08x, Exclude-any: 0x%08x, Include-all: 0x%08x",
+                       ident,
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->include_any),
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->exclude_any),
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->include_all)));
+                obj_tlen-=sizeof(struct rsvp_obj_frr_t);
+                obj_tptr+=sizeof(struct rsvp_obj_frr_t);
+                break;
+
+            case RSVP_CTYPE_TUNNEL_IPV4: /* old style */
+                if (obj_tlen < 16)
+                    return-1;
+                bw.i = EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->bandwidth);
+                ND_PRINT((ndo, "%s  Setup Priority: %u, Holding Priority: %u, Hop-limit: %u, Bandwidth: %.10g Mbps",
+                       ident,
+                       (int)obj_ptr.rsvp_obj_frr->setup_prio,
+                       (int)obj_ptr.rsvp_obj_frr->hold_prio,
+                       (int)obj_ptr.rsvp_obj_frr->hop_limit,
+                        bw.f * 8 / 1000000));
+                ND_PRINT((ndo, "%s  Include Colors: 0x%08x, Exclude Colors: 0x%08x",
+                       ident,
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->include_any),
+                       EXTRACT_32BITS(obj_ptr.rsvp_obj_frr->exclude_any)));
+                obj_tlen-=16;
+                obj_tptr+=16;
+                break;
+
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_DETOUR:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_TUNNEL_IPV4:
+                while(obj_tlen >= 8) {
+                    ND_PRINT((ndo, "%s  PLR-ID: %s, Avoid-Node-ID: %s",
+                           ident,
+                           ipaddr_string(ndo, obj_tptr),
+                           ipaddr_string(ndo, obj_tptr + 4)));
+                    obj_tlen-=8;
+                    obj_tptr+=8;
+                }
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_CLASSTYPE:
+         case RSVP_OBJ_CLASSTYPE_OLD: /* fall through */
+             switch(rsvp_obj_ctype) {
+             case RSVP_C
+
+
+*** Evaluate model ****
+
+Accuracy: 0.697
+
+Classification Report:
+              precision    recall  f1-score   support
+
+        Safe       0.69      0.72      0.70       554
+  Vulnerable       0.71      0.67      0.69       554
+
+   micro avg       0.70      0.70      0.70      1108
+   macro avg       0.70      0.70      0.70      1108
+weighted avg       0.70      0.70      0.70      1108
+
+
+Confusion Matrix:
+[[399 155]
+ [179 373]]
+
+ (See plots in 'plots' folder)
+
+
+
+*** Load model and tokenizer ***
+
+
+*** Load and preprocess dataset ***
+
+
+ Label distribution in Train set : 
+ label_text
+Safe          4862
+Vulnerable    4862
+Name: count, dtype: int64
+
+ Label distribution in Eval set : 
+ label_text
+Safe          593
+Vulnerable    593
+Name: count, dtype: int64
+
+ Label distribution in Test set : 
+ label_text
+Safe          549
+Vulnerable    549
+Name: count, dtype: int64
+
+ Example data points in Train set : 
+
+                                                code  label label_text
+0  void udp_v4_early_demux(struct sk_buff *skb)\n...      0       Safe
+1  iakerb_gss_process_context_token(OM_uint32 *mi...      0       Safe
+2  int dm_get_geometry(struct mapped_device *md, ...      0       Safe
+3  int\nhttp_parser_parse_url(const char *buf, si...      0       Safe
+4  eb_reset(struct eb_objects *eb)\n{\n\tmemset(e...      0       Safe
+
+*** Load embedding model and tokenizer ***
+
+
+*** Load index ***
+
+FAISS index and metadata loaded successfully.
+
+
+*** Generate prompts and Predict ***
+
+Out of scope prediction :  %u",
+                               ident,
+                               ((EXTRACT_32BITS(obj_tptr+4))>>31),
+                               ((EXTRACT_32BITS(obj_tptr+4))&0xFF),
+                               EXTRACT_32BITS(obj_tptr+8),
+                               EXTRACT_32BITS(obj_tptr + 12)));
+                        break;
+
+                    case RSVP_GEN_UNI_SUBOBJ_SERVICE_LEVEL:
+                        if (subobj_len < 8) {
+                            return -1;
+                        }
+
+                        ND_PRINT((ndo, "%s    Service level: %u",
+                               ident, (EXTRACT_32BITS(obj_tptr + 4)) >> 24));
+                        break;
+
+                    default:
+                        hexdump=TRUE;
+                        break;
+                    }
+                    total_subobj_len-=subobj_len;
+                    obj_tptr+=subobj_len;
+                    obj_tlen+=subobj_len;
+		}
+
+                if (total_subobj_len) {
+                    /* unless we have a TLV parser lets just hexdump */
+                    hexdump=TRUE;
+                }
+                break;
+
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_RSVP_HOP:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_3: /* fall through - FIXME add TLV parser */
+            case RSVP_CTYPE_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  Previous/Next Interface: %s, Logical Interface Handle: 0x%08x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_32BITS(obj_tptr + 4)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                if (obj_tlen)
+                    hexdump=TRUE; /* unless we have a TLV parser lets just hexdump */
+                break;
+            case RSVP_CTYPE_4: /* fall through - FIXME add TLV parser */
+            case RSVP_CTYPE_IPV6:
+                if (obj_tlen < 20)
+                    return-1;
+                ND_PRINT((ndo, "%s  Previous/Next Interface: %s, Logical Interface Handle: 0x%08x",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_32BITS(obj_tptr + 16)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                hexdump=TRUE; /* unless we have a TLV parser lets just hexdump */
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_TIME_VALUES:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1:
+                if (obj_tlen < 4)
+                    return-1;
+                ND_PRINT((ndo, "%s  Refresh Period: %ums",
+                       ident,
+                       EXTRACT_32BITS(obj_tptr)));
+                obj_tlen-=4;
+                obj_tptr+=4;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        /* those three objects do share the same semantics */
+        case RSVP_OBJ_SENDER_TSPEC:
+        case RSVP_OBJ_ADSPEC:
+        case RSVP_OBJ_FLOWSPEC:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_2:
+                if (obj_tlen < 4)
+Out of scope prediction :  %u",
+                               ident,
+                               ((EXTRACT_32BITS(obj_tptr+4))>>31),
+                               ((EXTRACT_32BITS(obj_tptr+4))&0xFF),
+                               EXTRACT_32BITS(obj_tptr+8),
+                               EXTRACT_32BITS(obj_tptr + 12)));
+                        break;
+
+                    case RSVP_GEN_UNI_SUBOBJ_SERVICE_LEVEL:
+                        if (subobj_len < 8) {
+                            return -1;
+                        }
+
+                        ND_PRINT((ndo, "%s    Service level: %u",
+                               ident, (EXTRACT_32BITS(obj_tptr + 4)) >> 24));
+                        break;
+
+                    default:
+                        hexdump=TRUE;
+                        break;
+                    }
+                    total_subobj_len-=subobj_len;
+                    obj_tptr+=subobj_len;
+                    obj_tlen+=subobj_len;
+		}
+
+                if (total_subobj_len) {
+                    /* unless we have a TLV parser lets just hexdump */
+                    hexdump=TRUE;
+                }
+                break;
+
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_RSVP_HOP:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_3: /* fall through - FIXME add TLV parser */
+            case RSVP_CTYPE_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  Previous/Next Interface: %s, Logical Interface Handle: 0x%08x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_32BITS(obj_tptr + 4)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                if (obj_tlen)
+                    hexdump=TRUE; /* unless we have a TLV parser lets just hexdump */
+                break;
+            case RSVP_CTYPE_4: /* fall through - FIXME add TLV parser */
+            case RSVP_CTYPE_IPV6:
+                if (obj_tlen < 20)
+                    return-1;
+                ND_PRINT((ndo, "%s  Previous/Next Interface: %s, Logical Interface Handle: 0x%08x",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_32BITS(obj_tptr + 16)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                hexdump=TRUE; /* unless we have a TLV parser lets just hexdump */
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_TIME_VALUES:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1:
+                if (obj_tlen < 4)
+                    return-1;
+                ND_PRINT((ndo, "%s  Refresh Period: %ums",
+                       ident,
+                       EXTRACT_32BITS(obj_tptr)));
+                obj_tlen-=4;
+                obj_tptr+=4;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        /* those three objects do share the same semantics */
+        case RSVP_OBJ_SENDER_TSPEC:
+        case RSVP_OBJ_ADSPEC:
+        case RSVP_OBJ_FLOWSPEC:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_2:
+                if (obj_tlen < 4)
+                    return-1;
+                ND_PRINT((ndo, "%s  Msg-Version: %u, length: %u",
+                       ident,
+                       (*obj_tptr & 0xf0) >> 4,
+                       EXTRACT_16BITS(obj_tptr + 2) << 2));
+                obj_tptr+=4; /* get to the start of the service header */
+                obj_tlen-=4;
+
+                while (obj_tlen >= 4) {
+                    intserv_serv_tlen=EXTRACT_16BITS(obj_tptr+2)<<2;
+                    ND_PRINT((ndo, "%s  Service Type: %s (%u), break bit %s set, Service length: %u",
+                           ident,
+                           tok2str(rsvp_intserv_service_type_values,"unknown",*(obj_tptr)),
+                           *(obj_tptr),
+                           (*(obj_tptr+1)&0x80)? "" : "not",
+                           intserv_serv_tlen));
+
+                    obj_tptr+=4; /* get to the start of the parameter list */
+                    obj_tlen-=4;
+
+                    while (intserv_serv_tlen>=4) {
+                        processed = rsvp_intserv_print(ndo, obj_tptr, obj_tlen);
+                        if (processed == 0)
+                            break;
+                        obj_tlen-=processed;
+                        intserv_serv_tlen-=processed;
+                        obj_tptr+=processed;
+                    }
+                }
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_FILTERSPEC:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, Source Port: %u",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 6)));
+                obj_t
+
+
+*** Evaluate model ****
+
+Accuracy: 0.664
+
+Classification Report:
+              precision    recall  f1-score   support
+
+        Safe       0.66      0.70      0.67       549
+  Vulnerable       0.68      0.63      0.65       549
+
+   micro avg       0.67      0.66      0.66      1098
+   macro avg       0.67      0.66      0.66      1098
+weighted avg       0.67      0.66      0.66      1098
+
+
+Confusion Matrix:
+[[382 166]
+ [201 347]]
+
+ (See plots in 'plots' folder)
+
+
+
+*** Load model and tokenizer ***
+
+
+*** Load and preprocess dataset ***
+
+
+ Label distribution in Train set : 
+ label_text
+Safe          4862
+Vulnerable    4862
+Name: count, dtype: int64
+
+ Label distribution in Eval set : 
+ label_text
+Safe          593
+Vulnerable    593
+Name: count, dtype: int64
+
+ Label distribution in Test set : 
+ label_text
+Safe          549
+Vulnerable    549
+Name: count, dtype: int64
+
+ Example data points in Train set : 
+
+                                                code  label label_text
+0  void udp_v4_early_demux(struct sk_buff *skb)\n...      0       Safe
+1  iakerb_gss_process_context_token(OM_uint32 *mi...      0       Safe
+2  int dm_get_geometry(struct mapped_device *md, ...      0       Safe
+3  int\nhttp_parser_parse_url(const char *buf, si...      0       Safe
+4  eb_reset(struct eb_objects *eb)\n{\n\tmemset(e...      0       Safe
+
+*** Load embedding model and tokenizer ***
+
+
+*** Load index ***
+
+FAISS index and metadata loaded successfully.
+
+
+*** Generate prompts and Predict ***
+
+Out of scope prediction :  %u",
+                               ident,
+                               ((EXTRACT_32BITS(obj_tptr+4))>>31),
+                               ((EXTRACT_32BITS(obj_tptr+4))&0xFF),
+                               EXTRACT_32BITS(obj_tptr+8),
+                               EXTRACT_32BITS(obj_tptr + 12)));
+                        break;
+
+                    case RSVP_GEN_UNI_SUBOBJ_SERVICE_LEVEL:
+                        if (subobj_len < 8) {
+                            return -1;
+                        }
+
+                        ND_PRINT((ndo, "%s    Service level: %u",
+                               ident, (EXTRACT_32BITS(obj_tptr + 4)) >> 24));
+                        break;
+
+                    default:
+                        hexdump=TRUE;
+                        break;
+                    }
+                    total_subobj_len-=subobj_len;
+                    obj_tptr+=subobj_len;
+                    obj_tlen+=subobj_len;
+		}
+
+                if (total_subobj_len) {
+                    /* unless we have a TLV parser lets just hexdump */
+                    hexdump=TRUE;
+                }
+                break;
+
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_RSVP_HOP:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_3: /* fall through - FIXME add TLV parser */
+            case RSVP_CTYPE_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  Previous/Next Interface: %s, Logical Interface Handle: 0x%08x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_32BITS(obj_tptr + 4)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                if (obj_tlen)
+                    hexdump=TRUE; /* unless we have a TLV parser lets just hexdump */
+                break;
+            case RSVP_CTYPE_4: /* fall through - FIXME add TLV parser */
+            case RSVP_CTYPE_IPV6:
+                if (obj_tlen < 20)
+                    return-1;
+                ND_PRINT((ndo, "%s  Previous/Next Interface: %s, Logical Interface Handle: 0x%08x",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_32BITS(obj_tptr + 16)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                hexdump=TRUE; /* unless we have a TLV parser lets just hexdump */
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_TIME_VALUES:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1:
+                if (obj_tlen < 4)
+                    return-1;
+                ND_PRINT((ndo, "%s  Refresh Period: %ums",
+                       ident,
+                       EXTRACT_32BITS(obj_tptr)));
+                obj_tlen-=4;
+                obj_tptr+=4;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        /* those three objects do share the same semantics */
+        case RSVP_OBJ_SENDER_TSPEC:
+        case RSVP_OBJ_ADSPEC:
+        case RSVP_OBJ_FLOWSPEC:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_2:
+                if (obj_tlen < 4)
+Out of scope prediction :  %u",
+                               ident,
+                               ((EXTRACT_32BITS(obj_tptr+4))>>31),
+                               ((EXTRACT_32BITS(obj_tptr+4))&0xFF),
+                               EXTRACT_32BITS(obj_tptr+8),
+                               EXTRACT_32BITS(obj_tptr + 12)));
+                        break;
+
+                    case RSVP_GEN_UNI_SUBOBJ_SERVICE_LEVEL:
+                        if (subobj_len < 8) {
+                            return -1;
+                        }
+
+                        ND_PRINT((ndo, "%s    Service level: %u",
+                               ident, (EXTRACT_32BITS(obj_tptr + 4)) >> 24));
+                        break;
+
+                    default:
+                        hexdump=TRUE;
+                        break;
+                    }
+                    total_subobj_len-=subobj_len;
+                    obj_tptr+=subobj_len;
+                    obj_tlen+=subobj_len;
+		}
+
+                if (total_subobj_len) {
+                    /* unless we have a TLV parser lets just hexdump */
+                    hexdump=TRUE;
+                }
+                break;
+
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_RSVP_HOP:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_3: /* fall through - FIXME add TLV parser */
+            case RSVP_CTYPE_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  Previous/Next Interface: %s, Logical Interface Handle: 0x%08x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_32BITS(obj_tptr + 4)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                if (obj_tlen)
+                    hexdump=TRUE; /* unless we have a TLV parser lets just hexdump */
+                break;
+            case RSVP_CTYPE_4: /* fall through - FIXME add TLV parser */
+            case RSVP_CTYPE_IPV6:
+                if (obj_tlen < 20)
+                    return-1;
+                ND_PRINT((ndo, "%s  Previous/Next Interface: %s, Logical Interface Handle: 0x%08x",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_32BITS(obj_tptr + 16)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                hexdump=TRUE; /* unless we have a TLV parser lets just hexdump */
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_TIME_VALUES:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1:
+                if (obj_tlen < 4)
+                    return-1;
+                ND_PRINT((ndo, "%s  Refresh Period: %ums",
+                       ident,
+                       EXTRACT_32BITS(obj_tptr)));
+                obj_tlen-=4;
+                obj_tptr+=4;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        /* those three objects do share the same semantics */
+        case RSVP_OBJ_SENDER_TSPEC:
+        case RSVP_OBJ_ADSPEC:
+        case RSVP_OBJ_FLOWSPEC:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_2:
+                if (obj_tlen < 4)
+                    return-1;
+                ND_PRINT((ndo, "%s  Msg-Version: %u, length: %u",
+                       ident,
+                       (*obj_tptr & 0xf0) >> 4,
+                       EXTRACT_16BITS(obj_tptr + 2) << 2));
+                obj_tptr+=4; /* get to the start of the service header */
+                obj_tlen-=4;
+
+                while (obj_tlen >= 4) {
+                    intserv_serv_tlen=EXTRACT_16BITS(obj_tptr+2)<<2;
+                    ND_PRINT((ndo, "%s  Service Type: %s (%u), break bit %s set, Service length: %u",
+                           ident,
+                           tok2str(rsvp_intserv_service_type_values,"unknown",*(obj_tptr)),
+                           *(obj_tptr),
+                           (*(obj_tptr+1)&0x80)? "" : "not",
+                           intserv_serv_tlen));
+
+                    obj_tptr+=4; /* get to the start of the parameter list */
+                    obj_tlen-=4;
+
+                    while (intserv_serv_tlen>=4) {
+                        processed = rsvp_intserv_print(ndo, obj_tptr, obj_tlen);
+                        if (processed == 0)
+                            break;
+                        obj_tlen-=processed;
+                        intserv_serv_tlen-=processed;
+                        obj_tptr+=processed;
+                    }
+                }
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_FILTERSPEC:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, Source Port: %u",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 6)));
+                obj_t
+
+
+*** Evaluate model ****
+
+Accuracy: 0.671
+
+Classification Report:
+              precision    recall  f1-score   support
+
+        Safe       0.66      0.70      0.68       549
+  Vulnerable       0.68      0.64      0.66       549
+
+   micro avg       0.67      0.67      0.67      1098
+   macro avg       0.67      0.67      0.67      1098
+weighted avg       0.67      0.67      0.67      1098
+
+
+Confusion Matrix:
+[[387 161]
+ [198 350]]
+
+ (See plots in 'plots' folder)
+
+
+
+*** Load model and tokenizer ***
+
+
+*** Load and preprocess dataset ***
+
+
+ Label distribution in Train set : 
+ label_text
+Safe          4862
+Vulnerable    4862
+Name: count, dtype: int64
+
+ Label distribution in Eval set : 
+ label_text
+Safe          593
+Vulnerable    593
+Name: count, dtype: int64
+
+ Label distribution in Test set : 
+ label_text
+Safe          549
+Vulnerable    549
+Name: count, dtype: int64
+
+ Example data points in Train set : 
+
+                                                code  label label_text
+0  void udp_v4_early_demux(struct sk_buff *skb)\n...      0       Safe
+1  iakerb_gss_process_context_token(OM_uint32 *mi...      0       Safe
+2  int dm_get_geometry(struct mapped_device *md, ...      0       Safe
+3  int\nhttp_parser_parse_url(const char *buf, si...      0       Safe
+4  eb_reset(struct eb_objects *eb)\n{\n\tmemset(e...      0       Safe
+
+*** Load embedding model and tokenizer ***
+
+
+*** Load index ***
+
+FAISS index and metadata loaded successfully.
+
+
+*** Generate prompts and Predict ***
+
+Out of scope prediction :  %u",
+                               ident,
+                               ((EXTRACT_32BITS(obj_tptr+4))>>31),
+                               ((EXTRACT_32BITS(obj_tptr+4))&0xFF),
+                               EXTRACT_32BITS(obj_tptr+8),
+                               EXTRACT_32BITS(obj_tptr + 12)));
+                        break;
+
+                    case RSVP_GEN_UNI_SUBOBJ_SERVICE_LEVEL:
+                        if (subobj_len < 8) {
+                            return -1;
+                        }
+
+                        ND_PRINT((ndo, "%s    Service level: %u",
+                               ident, (EXTRACT_32BITS(obj_tptr + 4)) >> 24));
+                        break;
+
+                    default:
+                        hexdump=TRUE;
+                        break;
+                    }
+                    total_subobj_len-=subobj_len;
+                    obj_tptr+=subobj_len;
+                    obj_tlen+=subobj_len;
+		}
+
+                if (total_subobj_len) {
+                    /* unless we have a TLV parser lets just hexdump */
+                    hexdump=TRUE;
+                }
+                break;
+
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_RSVP_HOP:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_3: /* fall through - FIXME add TLV parser */
+            case RSVP_CTYPE_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  Previous/Next Interface: %s, Logical Interface Handle: 0x%08x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_32BITS(obj_tptr + 4)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                if (obj_tlen)
+                    hexdump=TRUE; /* unless we have a TLV parser lets just hexdump */
+                break;
+            case RSVP_CTYPE_4: /* fall through - FIXME add TLV parser */
+            case RSVP_CTYPE_IPV6:
+                if (obj_tlen < 20)
+                    return-1;
+                ND_PRINT((ndo, "%s  Previous/Next Interface: %s, Logical Interface Handle: 0x%08x",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_32BITS(obj_tptr + 16)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                hexdump=TRUE; /* unless we have a TLV parser lets just hexdump */
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_TIME_VALUES:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1:
+                if (obj_tlen < 4)
+                    return-1;
+                ND_PRINT((ndo, "%s  Refresh Period: %ums",
+                       ident,
+                       EXTRACT_32BITS(obj_tptr)));
+                obj_tlen-=4;
+                obj_tptr+=4;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        /* those three objects do share the same semantics */
+        case RSVP_OBJ_SENDER_TSPEC:
+        case RSVP_OBJ_ADSPEC:
+        case RSVP_OBJ_FLOWSPEC:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_2:
+                if (obj_tlen < 4)
+Out of scope prediction :  %u",
+                               ident,
+                               ((EXTRACT_32BITS(obj_tptr+4))>>31),
+                               ((EXTRACT_32BITS(obj_tptr+4))&0xFF),
+                               EXTRACT_32BITS(obj_tptr+8),
+                               EXTRACT_32BITS(obj_tptr + 12)));
+                        break;
+
+                    case RSVP_GEN_UNI_SUBOBJ_SERVICE_LEVEL:
+                        if (subobj_len < 8) {
+                            return -1;
+                        }
+
+                        ND_PRINT((ndo, "%s    Service level: %u",
+                               ident, (EXTRACT_32BITS(obj_tptr + 4)) >> 24));
+                        break;
+
+                    default:
+                        hexdump=TRUE;
+                        break;
+                    }
+                    total_subobj_len-=subobj_len;
+                    obj_tptr+=subobj_len;
+                    obj_tlen+=subobj_len;
+		}
+
+                if (total_subobj_len) {
+                    /* unless we have a TLV parser lets just hexdump */
+                    hexdump=TRUE;
+                }
+                break;
+
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_RSVP_HOP:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_3: /* fall through - FIXME add TLV parser */
+            case RSVP_CTYPE_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  Previous/Next Interface: %s, Logical Interface Handle: 0x%08x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_32BITS(obj_tptr + 4)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                if (obj_tlen)
+                    hexdump=TRUE; /* unless we have a TLV parser lets just hexdump */
+                break;
+            case RSVP_CTYPE_4: /* fall through - FIXME add TLV parser */
+            case RSVP_CTYPE_IPV6:
+                if (obj_tlen < 20)
+                    return-1;
+                ND_PRINT((ndo, "%s  Previous/Next Interface: %s, Logical Interface Handle: 0x%08x",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_32BITS(obj_tptr + 16)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                hexdump=TRUE; /* unless we have a TLV parser lets just hexdump */
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_TIME_VALUES:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1:
+                if (obj_tlen < 4)
+                    return-1;
+                ND_PRINT((ndo, "%s  Refresh Period: %ums",
+                       ident,
+                       EXTRACT_32BITS(obj_tptr)));
+                obj_tlen-=4;
+                obj_tptr+=4;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        /* those three objects do share the same semantics */
+        case RSVP_OBJ_SENDER_TSPEC:
+        case RSVP_OBJ_ADSPEC:
+        case RSVP_OBJ_FLOWSPEC:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_2:
+                if (obj_tlen < 4)
+                    return-1;
+                ND_PRINT((ndo, "%s  Msg-Version: %u, length: %u",
+                       ident,
+                       (*obj_tptr & 0xf0) >> 4,
+                       EXTRACT_16BITS(obj_tptr + 2) << 2));
+                obj_tptr+=4; /* get to the start of the service header */
+                obj_tlen-=4;
+
+                while (obj_tlen >= 4) {
+                    intserv_serv_tlen=EXTRACT_16BITS(obj_tptr+2)<<2;
+                    ND_PRINT((ndo, "%s  Service Type: %s (%u), break bit %s set, Service length: %u",
+                           ident,
+                           tok2str(rsvp_intserv_service_type_values,"unknown",*(obj_tptr)),
+                           *(obj_tptr),
+                           (*(obj_tptr+1)&0x80)? "" : "not",
+                           intserv_serv_tlen));
+
+                    obj_tptr+=4; /* get to the start of the parameter list */
+                    obj_tlen-=4;
+
+                    while (intserv_serv_tlen>=4) {
+                        processed = rsvp_intserv_print(ndo, obj_tptr, obj_tlen);
+                        if (processed == 0)
+                            break;
+                        obj_tlen-=processed;
+                        intserv_serv_tlen-=processed;
+                        obj_tptr+=processed;
+                    }
+                }
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_FILTERSPEC:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, Source Port: %u",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 6)));
+                obj_t
+
+
+*** Evaluate model ****
+
+Accuracy: 0.668
+
+Classification Report:
+              precision    recall  f1-score   support
+
+        Safe       0.66      0.70      0.68       549
+  Vulnerable       0.68      0.63      0.66       549
+
+   micro avg       0.67      0.67      0.67      1098
+   macro avg       0.67      0.67      0.67      1098
+weighted avg       0.67      0.67      0.67      1098
+
+
+Confusion Matrix:
+[[386 162]
+ [200 348]]
+
+ (See plots in 'plots' folder)
+
+JOB FINISHED

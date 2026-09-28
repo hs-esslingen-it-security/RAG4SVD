@@ -1,0 +1,18 @@
+文件: D:\program\Code Vulnerability Detection\control_flow\control_flow\test_snippets\vuln_01_stack_bof.c
+图构建模式: heuristic_c
+【AST】
+- 类型/结构定义：typedef struct {@L12
+- 函数 global@L1：保留 10/10 个语义节点；调用=gets；分支=0；返回=0。
+- 函数 init_user@L17：保留 4/4 个语义节点；调用=memset；分支=0；返回=0。
+- 函数 greet@L22：保留 7/7 个语义节点；调用=printf；分支=1；返回=0。
+- 函数 read_username@L31：保留 6/6 个语义节点；调用=gets, printf, strcpy；分支=0；返回=0。
+- 函数 check_admin@L38：保留 5/5 个语义节点；调用=无；分支=2；返回=3。
+- 函数 process_login@L44：保留 7/7 个语义节点；调用=greet, read_username；分支=1；返回=0。
+- 函数 main@L52：保留 7/7 个语义节点；调用=init_user, printf, process_login；分支=0；返回=1。
+
+【CFG】
+- 函数 global：保留控制点 8/48；分支节点 4；调用节点 0；线性段折叠 40。
+  - 路径1: Entry -> /* -> * vuln_01_stack_bof.c -> if (u->privilege > 0) { -> ... -> return 0; -> } -> global EXIT
+
+【DFG】
+- 函数 global：边保留 0/0；参数源 0 个；抽取链路 0 条。

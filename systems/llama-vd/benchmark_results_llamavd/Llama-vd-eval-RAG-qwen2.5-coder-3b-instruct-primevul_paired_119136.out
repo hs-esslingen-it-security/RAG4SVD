@@ -1,0 +1,174 @@
+JOB ID 119136
+qwen2.5-coder-3b-instruct   Qwen/Qwen2.5-Coder-3B-Instruct
+--- Running with Model: qwen2.5-coder-3b-instruct Qwen/Qwen2.5-Coder-3B-Instruct | Dataset: primevul_paired ---
+
+
+*** Load model and tokenizer ***
+
+
+*** Load and preprocess dataset ***
+
+
+ Label distribution in Train set : 
+ label_text
+Vulnerable    3789
+Safe          3789
+Name: count, dtype: int64
+
+ Label distribution in Eval set : 
+ label_text
+Vulnerable    480
+Safe          480
+Name: count, dtype: int64
+
+ Label distribution in Test set : 
+ label_text
+Vulnerable    435
+Safe          435
+Name: count, dtype: int64
+
+*** Load embedding model and tokenizer ***
+
+
+*** Load index ***
+
+FAISS index and metadata loaded successfully.
+
+
+*** Generate prompts and Predict ***
+
+Out of scope prediction :  %u",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_24BITS(obj_tptr + 17)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                break;
+            case RSVP_CTYPE_TUNNEL_IPV6:
+                if (obj_tlen < 20)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, LSP-ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 18)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                break;
+            case RSVP_CTYPE_13: /* IPv6 p2mp LSP tunnel */
+                if (obj_tlen < 40)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv6 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+18),
+                       ident,
+                       ip6addr_string(ndo, obj_tptr+20),
+                       EXTRACT_16BITS(obj_tptr + 38)));
+                obj_tlen-=40;
+                obj_tptr+=40;
+                break;
+            case RSVP_CTYPE_TUNNEL_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv4 Tunnel Sender Address: %s, LSP-ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 6)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                break;
+            case RSVP_CTYPE_12: /* IPv4 p2mp LSP tunnel */
+                if (obj_tlen < 16)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv4 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+6),
+                       ident,
+                       ipaddr_string(ndo, obj_tptr+8),
+                       EXTRACT_16BITS(obj_tptr + 12)));
+                obj_tlen-=16;
+                obj_tptr+=16;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_FLOW_SPEC:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_2:
+                if (obj_tlen < 4)
+                    return-1;
+                ND_PRINT((ndo, "%s  Msg-Version: %u, length: %u",
+                       ident,
+                       (*obj_tptr & 0xf0) >> 4,
+                       EXTRACT_16BITS(obj_tptr + 2) << 2));
+                obj_tptr+=4; /* get to the start of the service header */
+                obj_tlen-=4;
+
+                while (obj_tlen >= 4) {
+                    intserv_serv_tlen=EXTRACT_16BITS(obj_tptr+2)<<2;
+                    ND_PRINT((ndo, "%s  Service Type: %s (%u), break bit %s set, Service length: %
+Out of scope prediction :  %u",
+                               ident,
+                               EXTRACT_32BITS(obj_tptr+4)));
+                        break;
+
+                    case RSVP_GEN_UNI_SUBOBJ_LABEL_REQUEST_RANGE:
+                        if (subobj_len < 8)
+                            return -1;
+                        ND_PRINT((ndo, "%s    Requested Label Range: %u-%u",
+                               ident,
+                               EXTRACT_32BITS(obj_tptr+4),
+                               EXTRACT_32BITS(obj_tptr+8)));
+                        break;
+
+                    case RSVP_GEN_UNI_SUBOBJ_LABEL_REQUEST_LIST:
+                        if (subobj_len < 4)
+                            return -1;
+                        ND_PRINT((ndo, "%s    Label Request List: %u",
+                               ident,
+                               EXTRACT_32BITS(obj_tptr+4)));
+                        break;
+
+                    case RSVP_GEN_UNI_SUBOBJ_LABEL_REQUEST_LIST_RANGE:
+                        if (subobj_len < 8)
+                            return -1;
+                        ND_PRINT((ndo, "%s    Label Request List Range: %u-%u",
+Out of scope prediction :  
+Out of scope prediction :  Vulner
+Out of scope prediction :  
+Out of scope prediction :  Vulner
+Out of scope prediction :  Vulner
+Out of scope prediction :  Vulner
+Out of scope prediction :  Vulner
+Out of scope prediction :  Vulner
+Out of scope prediction :  Vulner
+
+
+*** Evaluate model ****
+
+y_true: 870, y_pred: 870, pair_ids: 870
+Overall Accuracy: 0.4989
+Pairwise Accuracy: 0.0690
+Pairs where both were correct: 30
+Total complete pairs evaluated: 435
+
+Classification Report:
+              precision    recall  f1-score   support
+
+        Safe       0.50      0.81      0.62       435
+  Vulnerable       0.51      0.18      0.27       435
+
+   micro avg       0.51      0.50      0.50       870
+   macro avg       0.51      0.50      0.45       870
+weighted avg       0.51      0.50      0.45       870
+
+
+Confusion Matrix:
+[[354  77]
+ [348  80]]
+JOB FINISHED

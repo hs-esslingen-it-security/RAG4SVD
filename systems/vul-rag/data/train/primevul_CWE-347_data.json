@@ -1,0 +1,202 @@
+[
+  {
+    "id": 11,
+    "cve_id": "CVE-2017-16852",
+    "code_before_change": " DynamicMetadataProvider::DynamicMetadataProvider(const DOMElement* e)\n    : saml2md::DynamicMetadataProvider(e),\n         m_verifyHost(XMLHelper::getAttrBool(e, true, verifyHost)),\n         m_ignoreTransport(XMLHelper::getAttrBool(e, false, ignoreTransport)),\n         m_encoded(true), m_trust(nullptr)\n{\n    const DOMElement* child = XMLHelper::getFirstChildElement(e, Subst);\n    if (child && child->hasChildNodes()) {\n        auto_ptr_char s(child->getFirstChild()->getNodeValue());\n        if (s.get() && *s.get()) {\n            m_subst = s.get();\n            m_encoded = XMLHelper::getAttrBool(child, true, encoded);\n            m_hashed = XMLHelper::getAttrString(child, nullptr, hashed);\n        }\n    }\n\n    if (m_subst.empty()) {\n        child = XMLHelper::getFirstChildElement(e, Regex);\n        if (child && child->hasChildNodes() && child->hasAttributeNS(nullptr, match)) {\n            m_match = XMLHelper::getAttrString(child, nullptr, match);\n            auto_ptr_char repl(child->getFirstChild()->getNodeValue());\n            if (repl.get() && *repl.get())\n                m_regex = repl.get();\n        }\n    }\n\n    if (!m_ignoreTransport) {\n        child = XMLHelper::getFirstChildElement(e, _TrustEngine);\n        string t = XMLHelper::getAttrString(child, nullptr, _type);\n        if (!t.empty()) {\n            TrustEngine* trust = XMLToolingConfig::getConfig().TrustEngineManager.newPlugin(t.c_str(), child);\n            if (!dynamic_cast<X509TrustEngine*>(trust)) {\n                delete trust;\n                throw ConfigurationException(\"DynamicMetadataProvider requires an X509TrustEngine plugin.\");\n            }\n            m_trust.reset(dynamic_cast<X509TrustEngine*>(trust));\n            m_dummyCR.reset(XMLToolingConfig::getConfig().CredentialResolverManager.newPlugin(DUMMY_CREDENTIAL_RESOLVER, nullptr));\n        }\n\n        if (!m_trust.get() || !m_dummyCR.get())\n            throw ConfigurationException(\"DynamicMetadataProvider requires an X509TrustEngine plugin unless ignoreTransport is true.\");\n    }\n}\n",
+    "code_after_change": " DynamicMetadataProvider::DynamicMetadataProvider(const DOMElement* e)\n    : saml2md::DynamicMetadataProvider(e), MetadataProvider(e),\n         m_verifyHost(XMLHelper::getAttrBool(e, true, verifyHost)),\n         m_ignoreTransport(XMLHelper::getAttrBool(e, false, ignoreTransport)),\n         m_encoded(true), m_trust(nullptr)\n{\n    const DOMElement* child = XMLHelper::getFirstChildElement(e, Subst);\n    if (child && child->hasChildNodes()) {\n        auto_ptr_char s(child->getFirstChild()->getNodeValue());\n        if (s.get() && *s.get()) {\n            m_subst = s.get();\n            m_encoded = XMLHelper::getAttrBool(child, true, encoded);\n            m_hashed = XMLHelper::getAttrString(child, nullptr, hashed);\n        }\n    }\n\n    if (m_subst.empty()) {\n        child = XMLHelper::getFirstChildElement(e, Regex);\n        if (child && child->hasChildNodes() && child->hasAttributeNS(nullptr, match)) {\n            m_match = XMLHelper::getAttrString(child, nullptr, match);\n            auto_ptr_char repl(child->getFirstChild()->getNodeValue());\n            if (repl.get() && *repl.get())\n                m_regex = repl.get();\n        }\n    }\n\n    if (!m_ignoreTransport) {\n        child = XMLHelper::getFirstChildElement(e, _TrustEngine);\n        string t = XMLHelper::getAttrString(child, nullptr, _type);\n        if (!t.empty()) {\n            TrustEngine* trust = XMLToolingConfig::getConfig().TrustEngineManager.newPlugin(t.c_str(), child);\n            if (!dynamic_cast<X509TrustEngine*>(trust)) {\n                delete trust;\n                throw ConfigurationException(\"DynamicMetadataProvider requires an X509TrustEngine plugin.\");\n            }\n            m_trust.reset(dynamic_cast<X509TrustEngine*>(trust));\n            m_dummyCR.reset(XMLToolingConfig::getConfig().CredentialResolverManager.newPlugin(DUMMY_CREDENTIAL_RESOLVER, nullptr));\n        }\n\n        if (!m_trust.get() || !m_dummyCR.get())\n            throw ConfigurationException(\"DynamicMetadataProvider requires an X509TrustEngine plugin unless ignoreTransport is true.\");\n    }\n}\n",
+    "cwe": [
+      "CWE-347"
+    ],
+    "cve_description": "shibsp/metadata/DynamicMetadataProvider.cpp in the Dynamic MetadataProvider plugin in Shibboleth Service Provider before 2.6.1 fails to properly configure itself with the MetadataFilter plugins and does not perform critical security checks such as signature verification, enforcement of validity periods, and other checks specific to deployments, aka SSPCPP-763.",
+    "patch": "--- code before\n+++ code after\n@@ -1,5 +1,5 @@\n  DynamicMetadataProvider::DynamicMetadataProvider(const DOMElement* e)\n-    : saml2md::DynamicMetadataProvider(e),\n+    : saml2md::DynamicMetadataProvider(e), MetadataProvider(e),\n          m_verifyHost(XMLHelper::getAttrBool(e, true, verifyHost)),\n          m_ignoreTransport(XMLHelper::getAttrBool(e, false, ignoreTransport)),\n          m_encoded(true), m_trust(nullptr)",
+    "function_modified_lines": {
+      "added": [
+        "    : saml2md::DynamicMetadataProvider(e), MetadataProvider(e),"
+      ],
+      "deleted": [
+        "    : saml2md::DynamicMetadataProvider(e),"
+      ]
+    }
+  },
+  {
+    "id": 975,
+    "cve_id": "CVE-2018-16253",
+    "code_before_change": "static bigint *sig_verify(BI_CTX *ctx, const uint8_t *sig, int sig_len,\n         bigint *modulus, bigint *pub_exp)\n {\n    int i, size;\n     bigint *decrypted_bi, *dat_bi;\n     bigint *bir = NULL;\n     uint8_t *block = (uint8_t *)malloc(sig_len);\n \n     /* decrypt */\n     dat_bi = bi_import(ctx, sig, sig_len);\n     ctx->mod_offset = BIGINT_M_OFFSET;\n\n    /* convert to a normal block */\n    decrypted_bi = bi_mod_power2(ctx, dat_bi, modulus, pub_exp);\n\n     bi_export(ctx, decrypted_bi, block, sig_len);\n     ctx->mod_offset = BIGINT_M_OFFSET;\n \n    i = 10; /* start at the first possible non-padded byte */\n    while (block[i++] && i < sig_len);\n    size = sig_len - i;\n    /* get only the bit we want */\n    if (size > 0)\n    {\n        int len;\n        const uint8_t *sig_ptr = get_signature(&block[i], &len);\n \n        if (sig_ptr)\n        {\n            bir = bi_import(ctx, sig_ptr, len);\n        }\n     }\n     free(block);\n     /* save a few bytes of memory */\n     bi_clear_cache(ctx);\n    return bir;\n}\n",
+    "code_after_change": "static bigint *sig_verify(BI_CTX *ctx, const uint8_t *sig, int sig_len,\nstatic bigint *sig_verify(BI_CTX *ctx, const uint8_t *sig, int sig_len, uint8_t sig_type,\n         bigint *modulus, bigint *pub_exp)\n {\n    int i;\n     bigint *decrypted_bi, *dat_bi;\n     bigint *bir = NULL;\n     uint8_t *block = (uint8_t *)malloc(sig_len);\n \n    const uint8_t *sig_prefix = NULL;\n    uint8_t sig_prefix_size = 0, hash_len = 0;\n    /* adjust our expections */\n    switch (sig_type)\n    {\n        case SIG_TYPE_MD5:\n            sig_prefix = sig_prefix_md5;\n            sig_prefix_size = sizeof(sig_prefix_md5);\n        break;\n        case SIG_TYPE_SHA1:\n            sig_prefix = sig_prefix_sha1;\n            sig_prefix_size = sizeof(sig_prefix_sha1);\n        break;\n        case SIG_TYPE_SHA256:\n            sig_prefix = sig_prefix_sha256;\n            sig_prefix_size = sizeof(sig_prefix_sha256);\n        break;\n        case SIG_TYPE_SHA384:\n            sig_prefix = sig_prefix_sha384;\n            sig_prefix_size = sizeof(sig_prefix_sha384);\n        break;\n        case SIG_TYPE_SHA512:\n            sig_prefix = sig_prefix_sha512;\n            sig_prefix_size = sizeof(sig_prefix_sha512);\n        break;\n    }\n    if (sig_prefix)\n        hash_len = sig_prefix[sig_prefix_size - 1];\n\n    /* check length (#A) */\n    if (sig_len < 2 + 8 + 1 + sig_prefix_size + hash_len)\n        goto err;\n\n     /* decrypt */\n     dat_bi = bi_import(ctx, sig, sig_len);\n     ctx->mod_offset = BIGINT_M_OFFSET;\n\n    /* convert to a normal block */\n    decrypted_bi = bi_mod_power2(ctx, dat_bi, modulus, pub_exp);\n\n     bi_export(ctx, decrypted_bi, block, sig_len);\n     ctx->mod_offset = BIGINT_M_OFFSET;\n \n    /* check the first 2 bytes */\n    if (block[0] != 0 || block[1] != 1)\n        goto err;\n \n    /* check the padding */\n    i = 2; /* start at the first padding byte */\n    while (i < sig_len - 1 - sig_prefix_size - hash_len)\n    { /* together with (#A), we require at least 8 bytes of padding */\n        if (block[i++] != 0xFF)\n            goto err;\n     }\n\n    /* check end of padding */\n    if (block[i++] != 0)\n        goto err;\n\n    /* check the ASN.1 metadata */\n    if (memcmp_P(block+i, sig_prefix, sig_prefix_size))\n        goto err;\n\n    /* now we can get the hash we need */\n    bir = bi_import(ctx, block + i + sig_prefix_size, hash_len);\n\nerr:\n     free(block);\n     /* save a few bytes of memory */\n     bi_clear_cache(ctx);\n    return bir;\n}\n",
+    "cwe": [
+      "CWE-347"
+    ],
+    "cve_description": "In sig_verify() in x509.c in axTLS version 2.1.3 and before, the PKCS#1 v1.5 signature verification does not properly verify the ASN.1 metadata. Consequently, a remote attacker can forge signatures when small public exponents are being used, which could lead to impersonation through fake X.509 certificates. This is an even more permissive variant of CVE-2006-4790 and CVE-2014-1568.",
+    "patch": "--- code before\n+++ code after\n@@ -1,11 +1,45 @@\n static bigint *sig_verify(BI_CTX *ctx, const uint8_t *sig, int sig_len,\n+static bigint *sig_verify(BI_CTX *ctx, const uint8_t *sig, int sig_len, uint8_t sig_type,\n          bigint *modulus, bigint *pub_exp)\n  {\n-    int i, size;\n+    int i;\n      bigint *decrypted_bi, *dat_bi;\n      bigint *bir = NULL;\n      uint8_t *block = (uint8_t *)malloc(sig_len);\n  \n+    const uint8_t *sig_prefix = NULL;\n+    uint8_t sig_prefix_size = 0, hash_len = 0;\n+    /* adjust our expections */\n+    switch (sig_type)\n+    {\n+        case SIG_TYPE_MD5:\n+            sig_prefix = sig_prefix_md5;\n+            sig_prefix_size = sizeof(sig_prefix_md5);\n+        break;\n+        case SIG_TYPE_SHA1:\n+            sig_prefix = sig_prefix_sha1;\n+            sig_prefix_size = sizeof(sig_prefix_sha1);\n+        break;\n+        case SIG_TYPE_SHA256:\n+            sig_prefix = sig_prefix_sha256;\n+            sig_prefix_size = sizeof(sig_prefix_sha256);\n+        break;\n+        case SIG_TYPE_SHA384:\n+            sig_prefix = sig_prefix_sha384;\n+            sig_prefix_size = sizeof(sig_prefix_sha384);\n+        break;\n+        case SIG_TYPE_SHA512:\n+            sig_prefix = sig_prefix_sha512;\n+            sig_prefix_size = sizeof(sig_prefix_sha512);\n+        break;\n+    }\n+    if (sig_prefix)\n+        hash_len = sig_prefix[sig_prefix_size - 1];\n+\n+    /* check length (#A) */\n+    if (sig_len < 2 + 8 + 1 + sig_prefix_size + hash_len)\n+        goto err;\n+\n      /* decrypt */\n      dat_bi = bi_import(ctx, sig, sig_len);\n      ctx->mod_offset = BIGINT_M_OFFSET;\n@@ -16,20 +50,30 @@\n      bi_export(ctx, decrypted_bi, block, sig_len);\n      ctx->mod_offset = BIGINT_M_OFFSET;\n  \n-    i = 10; /* start at the first possible non-padded byte */\n-    while (block[i++] && i < sig_len);\n-    size = sig_len - i;\n-    /* get only the bit we want */\n-    if (size > 0)\n-    {\n-        int len;\n-        const uint8_t *sig_ptr = get_signature(&block[i], &len);\n+    /* check the first 2 bytes */\n+    if (block[0] != 0 || block[1] != 1)\n+        goto err;\n  \n-        if (sig_ptr)\n-        {\n-            bir = bi_import(ctx, sig_ptr, len);\n-        }\n+    /* check the padding */\n+    i = 2; /* start at the first padding byte */\n+    while (i < sig_len - 1 - sig_prefix_size - hash_len)\n+    { /* together with (#A), we require at least 8 bytes of padding */\n+        if (block[i++] != 0xFF)\n+            goto err;\n      }\n+\n+    /* check end of padding */\n+    if (block[i++] != 0)\n+        goto err;\n+\n+    /* check the ASN.1 metadata */\n+    if (memcmp_P(block+i, sig_prefix, sig_prefix_size))\n+        goto err;\n+\n+    /* now we can get the hash we need */\n+    bir = bi_import(ctx, block + i + sig_prefix_size, hash_len);\n+\n+err:\n      free(block);\n      /* save a few bytes of memory */\n      bi_clear_cache(ctx);",
+    "function_modified_lines": {
+      "added": [
+        "static bigint *sig_verify(BI_CTX *ctx, const uint8_t *sig, int sig_len, uint8_t sig_type,",
+        "    int i;",
+        "    const uint8_t *sig_prefix = NULL;",
+        "    uint8_t sig_prefix_size = 0, hash_len = 0;",
+        "    /* adjust our expections */",
+        "    switch (sig_type)",
+        "    {",
+        "        case SIG_TYPE_MD5:",
+        "            sig_prefix = sig_prefix_md5;",
+        "            sig_prefix_size = sizeof(sig_prefix_md5);",
+        "        break;",
+        "        case SIG_TYPE_SHA1:",
+        "            sig_prefix = sig_prefix_sha1;",
+        "            sig_prefix_size = sizeof(sig_prefix_sha1);",
+        "        break;",
+        "        case SIG_TYPE_SHA256:",
+        "            sig_prefix = sig_prefix_sha256;",
+        "            sig_prefix_size = sizeof(sig_prefix_sha256);",
+        "        break;",
+        "        case SIG_TYPE_SHA384:",
+        "            sig_prefix = sig_prefix_sha384;",
+        "            sig_prefix_size = sizeof(sig_prefix_sha384);",
+        "        break;",
+        "        case SIG_TYPE_SHA512:",
+        "            sig_prefix = sig_prefix_sha512;",
+        "            sig_prefix_size = sizeof(sig_prefix_sha512);",
+        "        break;",
+        "    }",
+        "    if (sig_prefix)",
+        "        hash_len = sig_prefix[sig_prefix_size - 1];",
+        "",
+        "    /* check length (#A) */",
+        "    if (sig_len < 2 + 8 + 1 + sig_prefix_size + hash_len)",
+        "        goto err;",
+        "",
+        "    /* check the first 2 bytes */",
+        "    if (block[0] != 0 || block[1] != 1)",
+        "        goto err;",
+        "    /* check the padding */",
+        "    i = 2; /* start at the first padding byte */",
+        "    while (i < sig_len - 1 - sig_prefix_size - hash_len)",
+        "    { /* together with (#A), we require at least 8 bytes of padding */",
+        "        if (block[i++] != 0xFF)",
+        "            goto err;",
+        "",
+        "    /* check end of padding */",
+        "    if (block[i++] != 0)",
+        "        goto err;",
+        "",
+        "    /* check the ASN.1 metadata */",
+        "    if (memcmp_P(block+i, sig_prefix, sig_prefix_size))",
+        "        goto err;",
+        "",
+        "    /* now we can get the hash we need */",
+        "    bir = bi_import(ctx, block + i + sig_prefix_size, hash_len);",
+        "",
+        "err:"
+      ],
+      "deleted": [
+        "    int i, size;",
+        "    i = 10; /* start at the first possible non-padded byte */",
+        "    while (block[i++] && i < sig_len);",
+        "    size = sig_len - i;",
+        "    /* get only the bit we want */",
+        "    if (size > 0)",
+        "    {",
+        "        int len;",
+        "        const uint8_t *sig_ptr = get_signature(&block[i], &len);",
+        "        if (sig_ptr)",
+        "        {",
+        "            bir = bi_import(ctx, sig_ptr, len);",
+        "        }"
+      ]
+    }
+  },
+  {
+    "id": 982,
+    "cve_id": "CVE-2018-15836",
+    "code_before_change": "err_t verify_signed_hash(const struct RSA_public_key *k\n                         , u_char *s, unsigned int s_max_octets\n                         , u_char **psig\n                         , size_t hash_len\n                         , const u_char *sig_val, size_t sig_len)\n{\n    unsigned int padlen;\n\n    /* actual exponentiation; see PKCS#1 v2.0 5.1 */\n    {\n\tchunk_t temp_s;\n\tMP_INT c;\n\n\tn_to_mpz(&c, sig_val, sig_len);\n\toswcrypto.mod_exp(&c, &c, &k->e, &k->n);\n\n\ttemp_s = mpz_to_n(&c, sig_len);\t/* back to octets */\n        if(s_max_octets < sig_len) {\n            return \"2\"\"exponentiation failed; too many octets\";\n        }\n\tmemcpy(s, temp_s.ptr, sig_len);\n\tpfree(temp_s.ptr);\n\tmpz_clear(&c);\n    }\n\n    /* check signature contents */\n    /* verify padding (not including any DER digest info! */\n    padlen = sig_len - 3 - hash_len;\n    /* now check padding */\n\n    DBG(DBG_CRYPT,\n\tDBG_dump(\"verify_sh decrypted SIG1:\", s, sig_len));\n    DBG(DBG_CRYPT, DBG_log(\"pad_len calculated: %d hash_len: %d\", padlen, (int)hash_len));\n\n    /* skip padding */\n    if(s[0]    != 0x00\n       || s[1] != 0x01\n       || s[padlen+2] != 0x00) {\n \treturn \"3\"\"SIG padding does not check out\";\n     }\n \n    s += padlen + 3;\n    (*psig) = s;\n \n     /* return SUCCESS */\n     return NULL;\n}\n",
+    "code_after_change": "err_t verify_signed_hash(const struct RSA_public_key *k\n                         , u_char *s, unsigned int s_max_octets\n                         , u_char **psig\n                         , size_t hash_len\n                         , const u_char *sig_val, size_t sig_len)\n{\n    unsigned int padlen;\n\n    /* actual exponentiation; see PKCS#1 v2.0 5.1 */\n    {\n\tchunk_t temp_s;\n\tMP_INT c;\n\n\tn_to_mpz(&c, sig_val, sig_len);\n\toswcrypto.mod_exp(&c, &c, &k->e, &k->n);\n\n\ttemp_s = mpz_to_n(&c, sig_len);\t/* back to octets */\n        if(s_max_octets < sig_len) {\n            return \"2\"\"exponentiation failed; too many octets\";\n        }\n\tmemcpy(s, temp_s.ptr, sig_len);\n\tpfree(temp_s.ptr);\n\tmpz_clear(&c);\n    }\n\n    /* check signature contents */\n    /* verify padding (not including any DER digest info! */\n    padlen = sig_len - 3 - hash_len;\n    /* now check padding */\n\n    DBG(DBG_CRYPT,\n\tDBG_dump(\"verify_sh decrypted SIG1:\", s, sig_len));\n    DBG(DBG_CRYPT, DBG_log(\"pad_len calculated: %d hash_len: %d\", padlen, (int)hash_len));\n\n    /* skip padding */\n    if(s[0]    != 0x00\n       || s[1] != 0x01\n       || s[padlen+2] != 0x00) {\n \treturn \"3\"\"SIG padding does not check out\";\n     }\n \n    /* signature starts after ASN wrapped padding [00,01,FF..FF,00] */\n    (*psig) = s + padlen + 3;\n\n    /* verify padding contents */\n    {\n        const u_char *p;\n        size_t cnt_ffs = 0;\n\n        for (p = s+2; p < s+padlen+2; p++)\n            if (*p == 0xFF)\n                cnt_ffs ++;\n\n        if (cnt_ffs != padlen)\n            return \"4\" \"invalid Padding String\";\n    }\n \n     /* return SUCCESS */\n     return NULL;\n}\n",
+    "cwe": [
+      "CWE-347"
+    ],
+    "cve_description": "In verify_signed_hash() in lib/liboswkeys/signatures.c in Openswan before 2.6.50.1, the RSA implementation does not verify the value of padding string during PKCS#1 v1.5 signature verification. Consequently, a remote attacker can forge signatures when small public exponents are being used. IKEv2 signature verification is affected when RAW RSA keys are used.",
+    "patch": "--- code before\n+++ code after\n@@ -39,8 +39,21 @@\n  \treturn \"3\"\"SIG padding does not check out\";\n      }\n  \n-    s += padlen + 3;\n-    (*psig) = s;\n+    /* signature starts after ASN wrapped padding [00,01,FF..FF,00] */\n+    (*psig) = s + padlen + 3;\n+\n+    /* verify padding contents */\n+    {\n+        const u_char *p;\n+        size_t cnt_ffs = 0;\n+\n+        for (p = s+2; p < s+padlen+2; p++)\n+            if (*p == 0xFF)\n+                cnt_ffs ++;\n+\n+        if (cnt_ffs != padlen)\n+            return \"4\" \"invalid Padding String\";\n+    }\n  \n      /* return SUCCESS */\n      return NULL;",
+    "function_modified_lines": {
+      "added": [
+        "    /* signature starts after ASN wrapped padding [00,01,FF..FF,00] */",
+        "    (*psig) = s + padlen + 3;",
+        "",
+        "    /* verify padding contents */",
+        "    {",
+        "        const u_char *p;",
+        "        size_t cnt_ffs = 0;",
+        "",
+        "        for (p = s+2; p < s+padlen+2; p++)",
+        "            if (*p == 0xFF)",
+        "                cnt_ffs ++;",
+        "",
+        "        if (cnt_ffs != padlen)",
+        "            return \"4\" \"invalid Padding String\";",
+        "    }"
+      ],
+      "deleted": [
+        "    s += padlen + 3;",
+        "    (*psig) = s;"
+      ]
+    }
+  },
+  {
+    "id": 1605,
+    "cve_id": "CVE-2017-16853",
+    "code_before_change": " DynamicMetadataProvider::DynamicMetadataProvider(const DOMElement* e)\n    : AbstractMetadataProvider(e),\n       m_validate(XMLHelper::getAttrBool(e, false, validate)),\n         m_id(XMLHelper::getAttrString(e, \"Dynamic\", id)),\n         m_lock(RWLock::create()),\n        m_refreshDelayFactor(0.75),\n        m_minCacheDuration(XMLHelper::getAttrInt(e, 600, minCacheDuration)),\n        m_maxCacheDuration(XMLHelper::getAttrInt(e, 28800, maxCacheDuration)),\n        m_shutdown(false),\n        m_cleanupInterval(XMLHelper::getAttrInt(e, 1800, cleanupInterval)),\n        m_cleanupTimeout(XMLHelper::getAttrInt(e, 1800, cleanupTimeout)),\n         m_cleanup_wait(nullptr), m_cleanup_thread(nullptr)\n {\n     if (m_minCacheDuration > m_maxCacheDuration) {\n        Category::getInstance(SAML_LOGCAT \".MetadataProvider.Dynamic\").error(\n             \"minCacheDuration setting exceeds maxCacheDuration setting, lowering to match it\"\n             );\n         m_minCacheDuration = m_maxCacheDuration;\n    }\n\n    const XMLCh* delay = e ? e->getAttributeNS(nullptr, refreshDelayFactor) : nullptr;\n    if (delay && *delay) {\n        auto_ptr_char temp(delay);\n        m_refreshDelayFactor = atof(temp.get());\n        if (m_refreshDelayFactor <= 0.0 || m_refreshDelayFactor >= 1.0) {\n            Category::getInstance(SAML_LOGCAT \".MetadataProvider.Dynamic\").error(\n                \"invalid refreshDelayFactor setting, using default\"\n                );\n            m_refreshDelayFactor = 0.75;\n        }\n    }\n\n    if (m_cleanupInterval > 0) {\n        if (m_cleanupTimeout < 0)\n            m_cleanupTimeout = 0;\n        m_cleanup_wait = CondWait::create();\n        m_cleanup_thread = Thread::create(&cleanup_fn, this);\n    }\n}\n",
+    "code_after_change": " DynamicMetadataProvider::DynamicMetadataProvider(const DOMElement* e)\n    : AbstractMetadataProvider(e), MetadataProvider(e),\n       m_validate(XMLHelper::getAttrBool(e, false, validate)),\n         m_id(XMLHelper::getAttrString(e, \"Dynamic\", id)),\n         m_lock(RWLock::create()),\n        m_refreshDelayFactor(0.75),\n        m_minCacheDuration(XMLHelper::getAttrInt(e, 600, minCacheDuration)),\n        m_maxCacheDuration(XMLHelper::getAttrInt(e, 28800, maxCacheDuration)),\n        m_shutdown(false),\n        m_cleanupInterval(XMLHelper::getAttrInt(e, 1800, cleanupInterval)),\n        m_cleanupTimeout(XMLHelper::getAttrInt(e, 1800, cleanupTimeout)),\n         m_cleanup_wait(nullptr), m_cleanup_thread(nullptr)\n {\n     if (m_minCacheDuration > m_maxCacheDuration) {\n        Category::getInstance(SAML_LOGCAT \".Metadata.Dynamic\").error(\n             \"minCacheDuration setting exceeds maxCacheDuration setting, lowering to match it\"\n             );\n         m_minCacheDuration = m_maxCacheDuration;\n    }\n\n    const XMLCh* delay = e ? e->getAttributeNS(nullptr, refreshDelayFactor) : nullptr;\n    if (delay && *delay) {\n        auto_ptr_char temp(delay);\n        m_refreshDelayFactor = atof(temp.get());\n        if (m_refreshDelayFactor <= 0.0 || m_refreshDelayFactor >= 1.0) {\n            Category::getInstance(SAML_LOGCAT \".MetadataProvider.Dynamic\").error(\n                \"invalid refreshDelayFactor setting, using default\"\n                );\n            m_refreshDelayFactor = 0.75;\n        }\n    }\n\n    if (m_cleanupInterval > 0) {\n        if (m_cleanupTimeout < 0)\n            m_cleanupTimeout = 0;\n        m_cleanup_wait = CondWait::create();\n        m_cleanup_thread = Thread::create(&cleanup_fn, this);\n    }\n}\n",
+    "cwe": [
+      "CWE-347"
+    ],
+    "cve_description": "The DynamicMetadataProvider class in saml/saml2/metadata/impl/DynamicMetadataProvider.cpp in OpenSAML-C in OpenSAML before 2.6.1 fails to properly configure itself with the MetadataFilter plugins and does not perform critical security checks such as signature verification, enforcement of validity periods, and other checks specific to deployments, aka CPPOST-105.",
+    "patch": "--- code before\n+++ code after\n@@ -1,5 +1,5 @@\n  DynamicMetadataProvider::DynamicMetadataProvider(const DOMElement* e)\n-    : AbstractMetadataProvider(e),\n+    : AbstractMetadataProvider(e), MetadataProvider(e),\n        m_validate(XMLHelper::getAttrBool(e, false, validate)),\n          m_id(XMLHelper::getAttrString(e, \"Dynamic\", id)),\n          m_lock(RWLock::create()),\n@@ -12,7 +12,7 @@\n          m_cleanup_wait(nullptr), m_cleanup_thread(nullptr)\n  {\n      if (m_minCacheDuration > m_maxCacheDuration) {\n-        Category::getInstance(SAML_LOGCAT \".MetadataProvider.Dynamic\").error(\n+        Category::getInstance(SAML_LOGCAT \".Metadata.Dynamic\").error(\n              \"minCacheDuration setting exceeds maxCacheDuration setting, lowering to match it\"\n              );\n          m_minCacheDuration = m_maxCacheDuration;",
+    "function_modified_lines": {
+      "added": [
+        "    : AbstractMetadataProvider(e), MetadataProvider(e),",
+        "        Category::getInstance(SAML_LOGCAT \".Metadata.Dynamic\").error("
+      ],
+      "deleted": [
+        "    : AbstractMetadataProvider(e),",
+        "        Category::getInstance(SAML_LOGCAT \".MetadataProvider.Dynamic\").error("
+      ]
+    }
+  },
+  {
+    "id": 1725,
+    "cve_id": "CVE-2019-1010279",
+    "code_before_change": "static void DetectRunCleanup(DetectEngineThreadCtx *det_ctx,\n        Packet *p, Flow * const pflow)\n{\n    PACKET_PROFILING_DETECT_START(p, PROF_DETECT_CLEANUP);\n    /* cleanup pkt specific part of the patternmatcher */\n    PacketPatternCleanup(det_ctx);\n \n     if (pflow != NULL) {\n         /* update inspected tracker for raw reassembly */\n        if (p->proto == IPPROTO_TCP && pflow->protoctx != NULL) {\n             StreamReassembleRawUpdateProgress(pflow->protoctx, p,\n                     det_ctx->raw_stream_progress);\n \n            DetectEngineCleanHCBDBuffers(det_ctx);\n        }\n    }\n    PACKET_PROFILING_DETECT_END(p, PROF_DETECT_CLEANUP);\n    SCReturn;\n}\n",
+    "code_after_change": "static void DetectRunCleanup(DetectEngineThreadCtx *det_ctx,\n        Packet *p, Flow * const pflow)\n{\n    PACKET_PROFILING_DETECT_START(p, PROF_DETECT_CLEANUP);\n    /* cleanup pkt specific part of the patternmatcher */\n    PacketPatternCleanup(det_ctx);\n \n     if (pflow != NULL) {\n         /* update inspected tracker for raw reassembly */\n        if (p->proto == IPPROTO_TCP && pflow->protoctx != NULL &&\n            (p->flags & PKT_STREAM_EST))\n        {\n             StreamReassembleRawUpdateProgress(pflow->protoctx, p,\n                     det_ctx->raw_stream_progress);\n \n            DetectEngineCleanHCBDBuffers(det_ctx);\n        }\n    }\n    PACKET_PROFILING_DETECT_END(p, PROF_DETECT_CLEANUP);\n    SCReturn;\n}\n",
+    "cwe": [
+      "CWE-347"
+    ],
+    "cve_description": "Open Information Security Foundation Suricata prior to version 4.1.3 is affected by: Denial of Service - TCP/HTTP detection bypass. The impact is: An attacker can evade a signature detection with a specialy formed sequence of network packets. The component is: detect.c (https://github.com/OISF/suricata/pull/3625/commits/d8634daf74c882356659addb65fb142b738a186b). The attack vector is: An attacker can trigger the vulnerability by a specifically crafted network TCP session. The fixed version is: 4.1.3.",
+    "patch": "--- code before\n+++ code after\n@@ -7,7 +7,9 @@\n  \n      if (pflow != NULL) {\n          /* update inspected tracker for raw reassembly */\n-        if (p->proto == IPPROTO_TCP && pflow->protoctx != NULL) {\n+        if (p->proto == IPPROTO_TCP && pflow->protoctx != NULL &&\n+            (p->flags & PKT_STREAM_EST))\n+        {\n              StreamReassembleRawUpdateProgress(pflow->protoctx, p,\n                      det_ctx->raw_stream_progress);\n  ",
+    "function_modified_lines": {
+      "added": [
+        "        if (p->proto == IPPROTO_TCP && pflow->protoctx != NULL &&",
+        "            (p->flags & PKT_STREAM_EST))",
+        "        {"
+      ],
+      "deleted": [
+        "        if (p->proto == IPPROTO_TCP && pflow->protoctx != NULL) {"
+      ]
+    }
+  },
+  {
+    "id": 2464,
+    "cve_id": "CVE-2018-15587",
+    "code_before_change": "mail_parser_run (EMailParser *parser,\n                 EMailPartList *part_list,\n                 GCancellable *cancellable)\n{\n\tEMailExtensionRegistry *reg;\n\tCamelMimeMessage *message;\n\tEMailPart *mail_part;\n\tGQueue *parsers;\n\tGQueue mail_part_queue = G_QUEUE_INIT;\n\tGList *iter;\n\tGString *part_id;\n\n\tif (cancellable)\n\t\tg_object_ref (cancellable);\n\telse\n\t\tcancellable = g_cancellable_new ();\n\n\tg_mutex_lock (&parser->priv->mutex);\n\tg_hash_table_insert (parser->priv->ongoing_part_lists, cancellable, part_list);\n\tg_mutex_unlock (&parser->priv->mutex);\n\n\tmessage = e_mail_part_list_get_message (part_list);\n\n\treg = e_mail_parser_get_extension_registry (parser);\n\n\tparsers = e_mail_extension_registry_get_for_mime_type (\n\t\treg, \"application/vnd.evolution.message\");\n\n\tif (parsers == NULL)\n\t\tparsers = e_mail_extension_registry_get_for_mime_type (\n\t\t\treg, \"message/*\");\n\n\t/* No parsers means the internal Evolution parser\n\t * extensions were not loaded. Something is terribly wrong! */\n\tg_return_if_fail (parsers != NULL);\n\n\tpart_id = g_string_new (\".message\");\n\n\tmail_part = e_mail_part_new (CAMEL_MIME_PART (message), \".message\");\n\te_mail_part_list_add_part (part_list, mail_part);\n\tg_object_unref (mail_part);\n\n\tfor (iter = parsers->head; iter; iter = iter->next) {\n\t\tEMailParserExtension *extension;\n\t\tgboolean message_handled;\n\n\t\tif (g_cancellable_is_cancelled (cancellable))\n\t\t\tbreak;\n\n\t\textension = iter->data;\n\t\tif (!extension)\n\t\t\tcontinue;\n\n\t\tmessage_handled = e_mail_parser_extension_parse (\n\t\t\textension, parser,\n\t\t\tCAMEL_MIME_PART (message),\n\t\t\tpart_id, cancellable, &mail_part_queue);\n\n\t\tif (message_handled)\n\t\t\tbreak;\n\t}\n\n\twhile (!g_queue_is_empty (&mail_part_queue)) {\n\t\tmail_part = g_queue_pop_head (&mail_part_queue);\n\t\te_mail_part_list_add_part (part_list, mail_part);\n\t\tg_object_unref (mail_part);\n\t}\n\n\tg_mutex_lock (&parser->priv->mutex);\n\tg_hash_table_remove (parser->priv->ongoing_part_lists, cancellable);\n\tg_mutex_unlock (&parser->priv->mutex);\n\n\tg_clear_object (&cancellable);\n\tg_string_free (part_id, TRUE);\n}",
+    "code_after_change": "mail_parser_run (EMailParser *parser,\n                 EMailPartList *part_list,\n                 GCancellable *cancellable)\n{\n\tEMailExtensionRegistry *reg;\n\tCamelMimeMessage *message;\n\tEMailPart *mail_part;\n\tGQueue *parsers;\n\tGQueue mail_part_queue = G_QUEUE_INIT;\n\tGList *iter;\n\tGString *part_id;\n\n\tif (cancellable)\n\t\tg_object_ref (cancellable);\n\telse\n\t\tcancellable = g_cancellable_new ();\n\n\tg_mutex_lock (&parser->priv->mutex);\n\tg_hash_table_insert (parser->priv->ongoing_part_lists, cancellable, part_list);\n\tg_mutex_unlock (&parser->priv->mutex);\n\n\tmessage = e_mail_part_list_get_message (part_list);\n\n\treg = e_mail_parser_get_extension_registry (parser);\n\n\tparsers = e_mail_extension_registry_get_for_mime_type (\n\t\treg, \"application/vnd.evolution.message\");\n\n\tif (parsers == NULL)\n\t\tparsers = e_mail_extension_registry_get_for_mime_type (\n\t\t\treg, \"message/*\");\n\n\t/* No parsers means the internal Evolution parser\n\t * extensions were not loaded. Something is terribly wrong! */\n\tg_return_if_fail (parsers != NULL);\n\n\tpart_id = g_string_new (\".message\");\n\n\tmail_part = e_mail_part_new (CAMEL_MIME_PART (message), \".message\");\n\te_mail_part_list_add_part (part_list, mail_part);\n\tg_object_unref (mail_part);\n\n\tfor (iter = parsers->head; iter; iter = iter->next) {\n\t\tEMailParserExtension *extension;\n\t\tgboolean message_handled;\n\n\t\tif (g_cancellable_is_cancelled (cancellable))\n\t\t\tbreak;\n\n\t\textension = iter->data;\n\t\tif (!extension)\n\t\t\tcontinue;\n\n\t\tmessage_handled = e_mail_parser_extension_parse (\n\t\t\textension, parser,\n\t\t\tCAMEL_MIME_PART (message),\n\t\t\tpart_id, cancellable, &mail_part_queue);\n\n\t\tif (message_handled)\n\t\t\tbreak;\n\t}\n\n\tmail_parser_move_security_before_headers (&mail_part_queue);\n\n\twhile (!g_queue_is_empty (&mail_part_queue)) {\n\t\tmail_part = g_queue_pop_head (&mail_part_queue);\n\t\te_mail_part_list_add_part (part_list, mail_part);\n\t\tg_object_unref (mail_part);\n\t}\n\n\tg_mutex_lock (&parser->priv->mutex);\n\tg_hash_table_remove (parser->priv->ongoing_part_lists, cancellable);\n\tg_mutex_unlock (&parser->priv->mutex);\n\n\tg_clear_object (&cancellable);\n\tg_string_free (part_id, TRUE);\n}",
+    "cwe": [
+      "CWE-347"
+    ],
+    "cve_description": "GNOME Evolution through 3.28.2 is prone to OpenPGP signatures being spoofed for arbitrary messages using a specially crafted email that contains a valid signature from the entity to be impersonated as an attachment.",
+    "patch": "--- code before\n+++ code after\n@@ -60,6 +60,8 @@\n \t\t\tbreak;\n \t}\n \n+\tmail_parser_move_security_before_headers (&mail_part_queue);\n+\n \twhile (!g_queue_is_empty (&mail_part_queue)) {\n \t\tmail_part = g_queue_pop_head (&mail_part_queue);\n \t\te_mail_part_list_add_part (part_list, mail_part);",
+    "function_modified_lines": {
+      "added": [
+        "\tmail_parser_move_security_before_headers (&mail_part_queue);",
+        ""
+      ],
+      "deleted": []
+    }
+  }
+]

@@ -1,0 +1,436 @@
+JOB ID 120778
+gemma-3-4b-it   google/gemma-3-4b-it
+--- Running with Model: gemma-3-4b-it google/gemma-3-4b-it | Dataset: primevul_paired ---
+
+
+*** Load model and tokenizer ***
+
+
+*** Load and preprocess dataset ***
+
+
+ Label distribution in Train set : 
+ label_text
+Vulnerable    3789
+Safe          3789
+Name: count, dtype: int64
+
+ Label distribution in Eval set : 
+ label_text
+Vulnerable    480
+Safe          480
+Name: count, dtype: int64
+
+ Label distribution in Test set : 
+ label_text
+Vulnerable    435
+Safe          435
+Name: count, dtype: int64
+
+*** Load embedding model and tokenizer ***
+
+
+*** Load index ***
+
+FAISS index and metadata loaded successfully.
+
+
+*** Generate prompts and Predict ***
+
+Out of scope prediction :  
+Out of scope prediction :  
+Out of scope prediction :  Vulnerous
+Code: bool SampleInterleavedLSScan::ParseMCU(void)
+{
+#if ACCUSOFT_CODE
+  int lines             = m_ulRemaining[0]; // total number of MCU lines processed.
+  UBYTE preshift        = m_ucLowBit + FractionalColorBitsOf();
+  struct Line *line[4];
+  UBYTE cx;
+
+  //
+  // If a DNL marker is present, the number of remaining lines is zero. Fix it.
+  if (m_pFrame->HeightOf() == 0) {
+    assert(lines == 0);
+    lines = 8;
+  }
+  //
+  // A "MCU" in respect to the code organization is eight lines.
+  if (lines > 8) {
+    lines = 8;
+  }
+  if (m_pFrame->HeightOf() > 0)
+    m_ulRemaining[0] -= lines;
+  assert(lines >
+Out of scope prediction :  Vulnerous
+Code: CotpConnection_readToTpktBuffer(CotpConnection* self)
+{
+    uint8_t* buffer = self->readBuffer->buffer;
+    int bufferSize = self->readBuffer->maxSize;
+    int bufPos = self->readBuffer->size;
+
+    assert (bufferSize > 4);
+
+    int readBytes;
+
+    if (bufPos < 4) {
+
+        readBytes = readFromSocket(self, buffer + bufPos, 4 - bufPos);
+
+        if (readBytes < 0)
+            goto exit_closed;
+
+        if (DEBUG_COTP) {
+            if (readBytes > 0)
+                printf("TPKT: read %i bytes from socket\n", readBytes);
+        }
+
+        bufPos += readBytes;
+
+        if (bufPos == 4) {
+            if ((buffer[0] == 3) && (buffer[1] == 0)) {
+                self->packetSize = (buffer[2] * 0x100) + buffer[3];
+
+                if (DEBUG_COTP)
+                    printf("TPKT: header complete (msg size = %i)\n", self->packetSize);
+
+                if (self->packetSize > bufferSize) {
+                    if (DEBUG_COTP) printf("TPKT: packet too large\n");
+                    goto exit_error;
+                }
+            }
+            else {
+                if (DEBUG_COTP) printf("TPKT: failed to decode TPKT header.\n");
+                goto exit_error;
+            }
+        }
+        else
+            goto exit_waiting;
+    }
+
+    if (self->packetSize <= bufPos)
+        goto exit_error;
+
+    readBytes =
+Out of scope prediction :  Vulnerous
+Code: CotpConnection_readToTpktBuffer(CotpConnection* self)
+{
+    uint8_t* buffer = self->readBuffer->buffer;
+    int bufferSize = self->readBuffer->maxSize;
+    int bufPos = self->readBuffer->size;
+
+    assert (bufferSize > 4);
+
+    int readBytes;
+
+    if (bufPos < 4) {
+
+        readBytes = readFromSocket(self, buffer + bufPos, 4 - bufPos);
+
+        if (readBytes < 0)
+            goto exit_closed;
+
+        if (DEBUG_COTP) {
+            if (readBytes > 0)
+                printf("TPKT: read %i bytes from socket\n", readBytes);
+        }
+
+        bufPos += readBytes;
+
+        if (bufPos == 4) {
+            if ((buffer[0] == 3) && (buffer[1] == 0)) {
+                self->packetSize = (buffer[2] * 0x100) + buffer[3];
+
+                if (DEBUG_COTP)
+                    printf("TPKT: header complete (msg size = %i)\n", self->packetSize);
+
+                if (self->packetSize > bufferSize) {
+                    if (DEBUG_COTP) printf("TPKT: packet too large\n");
+                    goto exit_error;
+                }
+            }
+            else {
+                if (DEBUG_COTP) printf("TPKT: failed to decode TPKT header.\n");
+                goto exit_error;
+            }
+        }
+        else
+            goto exit_waiting;
+    }
+
+    if (
+Out of scope prediction :  %u",
+                       ident,
+                       EXTRACT_32BITS(obj_tptr),
+                       ident,
+                       EXTRACT_32BITS(obj_tptr+4),
+                       EXTRACT_32BITS(obj_tptr + 8)));
+                obj_tlen-=12;
+                obj_tptr+=12;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_STYLE:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1:
+                if (obj_tlen < 4)
+                    return-1;
+                ND_PRINT((ndo, "%s  Reservation Style: %s, Flags: [0x%02x]",
+                       ident,
+                       tok2str(rsvp_resstyle_values,
+                               "Unknown",
+                               EXTRACT_24BITS(obj_tptr+1)),
+                       *(obj_tptr)));
+                obj_tlen-=4;
+                obj_tptr+=4;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_SENDER_TEMPLATE:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, Source Port: %u",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 6)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                break;
+            case RSVP_CTYPE_IPV6:
+                if (obj_tlen < 20)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, Source Port: %u",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 18)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                break;
+            case RSVP_CTYPE_13: /* IPv6 p2mp LSP tunnel */
+                if (obj_tlen < 40)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv6 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+18),
+                       ident,
+                       ip6addr_string(ndo, obj_tptr+20),
+                       EXTRACT_16BITS(obj_tptr + 38)));
+                obj_tlen-=40;
+                obj_tptr+=40;
+                break;
+            case RSVP_CTYPE_TUNNEL_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv4 Tunnel Sender Address: %s, LSP-ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 6)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                break;
+            case RSVP_CTYPE_12: /* IPv4 p2mp LSP tunnel */
+                if (obj_tlen < 16)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv4 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+6),
+                       ident,
+                       ipaddr_string(ndo, obj_tptr+8),
+                       EXTRACT_16BITS(obj_tptr + 12)));
+                obj_tlen-=16;
+                obj_tptr+=16;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_LABEL_REQ:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1:
+                while(obj_tlen >= 4 ) {
+                    ND_PRINT((ndo, "%s  L3 Protocol ID: %s",
+                           ident,
+                           tok2str(ethertype_values,
+                                   "Unknown Protocol (0x%04x)",
+                                   EXTRACT_16BITS(obj_tptr + 2))));
+                    obj_tlen-=4;
+                    obj_tptr+=4;
+                }
+                break;
+            case RSVP_CTYPE_2:
+                if (obj_tlen < 12)
+                    return-1;
+                ND_PRINT((ndo, "%s  L3 Protocol ID: %s",
+                       ident,
+                       tok2str(ethertype_values,
+                               "Unknown Protocol (0x%04x)",
+                               EXTRACT_16BITS(obj_tptr + 2))));
+                ND_PRINT((ndo, ",%s merge capability",((*(obj_tptr + 4)) & 0x80) ? "no" : "" ));
+                ND_PRINT((ndo, "%s  Minimum VPI/VCI: %u/%u",
+                       ident,
+                       (EXTRACT_16BITS(obj_tptr+4))&0xfff,
+                       (EXTRACT_16BITS(obj_tptr + 6)) & 0xfff));
+                ND_PRINT((ndo, "%s  Maximum VPI/VCI: %u/%u",
+                       ident,
+                       (EXTRACT_16BITS(obj_tptr+8))&0xfff,
+                       (EXTRACT_16BITS(obj_tptr + 10)) & 0xfff));
+                obj_tlen-=12;
+                obj_tptr+=12;
+                break;
+            case RSVP_CTYPE_3:
+                if (obj_tlen < 12)
+                    return-1;
+                ND_PRINT((ndo, "%s  L3 Protocol ID: %s",
+                       ident,
+                       tok2str(ethertype_values,
+                               "Unknown Protocol (0x%04x)",
+                               EXTRACT_16BITS(obj_tptr + 2))));
+                ND_PRINT((ndo, "%s  Minimum/Maximum DLCI: %u/%u, %s%s bit DLCI",
+                       ident,
+                       (EXTRACT_32BITS(obj_tptr+4))&0x7fffff,
+                       (EXTRACT_32BITS(obj_tptr+8))&0x7fffff,
+                       (((EXTRACT_16BITS(obj_tptr+4)>>7)&3) == 0 ) ? "10" : "",
+                       (((EXTRACT_16BITS(obj_tptr + 4) >> 7) & 3) == 2 ) ? "23" : ""));
+                obj_tlen-=12;
+                obj_tptr+=12;
+                break;
+            case RSVP_CTYPE_4:
+                if (obj_tlen < 4)
+                    return-1;
+                ND_PRINT((ndo, "%s  LSP Encoding Type: %s (%u)",
+                       ident,
+                       tok2str(gmpls_encoding_values,
+                               "Unknown",
+                               *obj_tptr),
+		       *obj_tptr));
+                ND_PRINT((ndo, "%s  Switching Type: %s (%u), Payload ID: %s (0x%04x)",
+                       ident,
+                       tok2str(gmpls_switch_cap_values,
+                               "Unknown",
+                               *(obj_tptr+1)),
+		       *(obj_tptr+1),
+                       tok2str(gmpls_payload_values,
+                               "Unknown",
+                               EXTRACT_16BITS(obj_tptr+2)),
+		       EXTRACT_16BITS(obj_tptr + 2)));
+                obj_tlen-=4;
+                obj_tptr+=4;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_RRO:
+        case RSVP_OBJ_ERO:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_IPV4:
+                while(obj_tlen >= 4 ) {
+		    u_char length;
+
+		    ND_TCHECK2(*obj_tptr, 4);
+		    length = *(obj_tptr + 1);
+                    ND_PRINT((ndo, "%s  Subobject Type: %s, length %u",
+                           ident,
+                           tok2str(rsvp_obj_xro_values,
+                                   "Unknown %u",
+                                   RSVP_OBJ_XRO_MASK_SUBOBJ(*obj_tptr)),
+                           length));
+
+                    if (length == 0) { /* prevent infinite loops */
+                        ND_PRINT((ndo, "%s  ERROR: zero length ERO subtype", ident));
+                        break;
+                    }
+
+                    switch(RSVP_OBJ_XRO_SUBOBJ(*obj_tptr)) {
+                    case RSVP_OBJ_XRO_RTR:
+                        ND_PRINT((ndo, "%s  RTR: %s",
+                               ident,
+                               ipaddr_string(ndo, obj_tptr + 2)));
+                        break;
+                    case RSVP_OBJ_XRO_ERO:
+                        ND_PRINT((ndo, "%s  ERO: %s",
+                               ident,
+                               ipaddr_string(ndo, obj_tptr + 2)));
+                        break;
+                    case RSVP_OBJ_XRO_L3P:
+                        ND_PRINT((ndo, "%s  L3P: %s",
+                               ident,
+                               ipaddr_string(ndo, obj_tptr + 2)));
+                        break;
+                    case RSVP_OBJ_XRO_L3S:
+                        ND_PRINT((ndo, "%s  L3S: %s",
+                               ident,
+                               ipaddr_string(ndo, obj_tptr + 2)));
+                        break;
+                    case RSVP_OBJ_XRO_L3M:
+                        ND_PRINT((ndo, "%s  L3M: %s",
+                               ident,
+                               ipaddr_string(ndo, obj_tptr + 2)));
+                        break;
+                    case RSVP_OBJ_XRO_L3N:
+                        ND_PRINT((ndo, "%s  L3N: %s",
+                               ident,
+                               ipaddr_string(ndo, obj_tptr + 2)));
+                        break;
+                    case RSVP_OBJ_XRO_L3D:
+                        ND_PRINT((ndo, "%s  L3D: %s",
+                               ident,
+                               ipaddr_string(ndo, obj_tptr + 2)));
+                        break;
+                    default:
+                        ND_PRINT((ndo, "%s  Unknown subobject type %u",
+                               ident,
+                               RSVP_OBJ_XRO_SUBOBJ(*obj_tptr)));
+                        break;
+                    }
+                    obj_tlen-=4;
+                    obj_tptr+=4;
+                }
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        default:
+            hexdump
+Out of scope prediction :  
+
+
+*** Evaluate model ****
+
+y_true: 870, y_pred: 870, pair_ids: 870
+Overall Accuracy: 0.5115
+Pairwise Accuracy: 0.1471
+Pairs where both were correct: 64
+Total complete pairs evaluated: 435
+
+Classification Report:
+              precision    recall  f1-score   support
+
+        Safe       0.51      0.55      0.53       435
+  Vulnerable       0.52      0.47      0.49       435
+
+   micro avg       0.52      0.51      0.51       870
+   macro avg       0.52      0.51      0.51       870
+weighted avg       0.52      0.51      0.51       870
+
+
+Confusion Matrix:
+[[241 190]
+ [228 204]]
+JOB FINISHED

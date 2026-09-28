@@ -1,0 +1,763 @@
+{
+  "mode": "heuristic_c",
+  "language": "c",
+  "detail_level": "B",
+  "filtered_ast": {
+    "level": "B",
+    "typedefs": [],
+    "functions": [
+      {
+        "func": "global",
+        "line": 1,
+        "node_count_raw": 8,
+        "node_count_kept": 8,
+        "types_kept": [
+          "Stmt"
+        ],
+        "calls": [],
+        "calls_uniq": [],
+        "conditions": [],
+        "returns": [],
+        "declarations": [],
+        "assignments": [],
+        "constants": []
+      },
+      {
+        "func": "swap",
+        "line": 10,
+        "node_count_raw": 5,
+        "node_count_kept": 5,
+        "types_kept": [
+          "CallOrDecl",
+          "Stmt"
+        ],
+        "calls": [],
+        "calls_uniq": [],
+        "conditions": [],
+        "returns": [],
+        "declarations": [
+          "int tmp = *a;",
+          "*a = *b;",
+          "*b = tmp;"
+        ],
+        "assignments": [
+          "int tmp = *a;",
+          "*a = *b;",
+          "*b = tmp;"
+        ],
+        "constants": []
+      },
+      {
+        "func": "insertion_sort",
+        "line": 17,
+        "node_count_raw": 11,
+        "node_count_kept": 11,
+        "types_kept": [
+          "CallOrDecl",
+          "Loop",
+          "Stmt"
+        ],
+        "calls": [],
+        "calls_uniq": [],
+        "conditions": [
+          "for (int i = 1; i < n; i++) {",
+          "while (j >= 0 && arr[j] > key) {"
+        ],
+        "returns": [],
+        "declarations": [
+          "int key = arr[i];",
+          "int j = i - 1;",
+          "arr[j + 1] = arr[j];",
+          "j--;",
+          "arr[j + 1] = key;"
+        ],
+        "assignments": [
+          "for (int i = 1; i < n; i++) {",
+          "int key = arr[i];",
+          "int j = i - 1;",
+          "while (j >= 0 && arr[j] > key) {",
+          "arr[j + 1] = arr[j];",
+          "arr[j + 1] = key;"
+        ],
+        "constants": []
+      },
+      {
+        "func": "selection_sort",
+        "line": 30,
+        "node_count_raw": 13,
+        "node_count_kept": 13,
+        "types_kept": [
+          "CallOrDecl",
+          "If",
+          "Loop",
+          "Stmt"
+        ],
+        "calls": [
+          "swap"
+        ],
+        "calls_uniq": [
+          "swap"
+        ],
+        "conditions": [
+          "for (int i = 0; i < n - 1; i++) {",
+          "for (int j = i + 1; j < n; j++) {",
+          "if (arr[j] < arr[min_idx]) {",
+          "if (min_idx != i) {"
+        ],
+        "returns": [],
+        "declarations": [
+          "int min_idx = i;",
+          "min_idx = j;"
+        ],
+        "assignments": [
+          "for (int i = 0; i < n - 1; i++) {",
+          "int min_idx = i;",
+          "for (int j = i + 1; j < n; j++) {",
+          "min_idx = j;",
+          "if (min_idx != i) {"
+        ],
+        "constants": []
+      },
+      {
+        "func": "binary_search",
+        "line": 45,
+        "node_count_raw": 10,
+        "node_count_kept": 10,
+        "types_kept": [
+          "CallOrDecl",
+          "If",
+          "Loop",
+          "Return",
+          "Stmt"
+        ],
+        "calls": [],
+        "calls_uniq": [],
+        "conditions": [
+          "while (lo <= hi) {",
+          "if (arr[mid] == target) return mid;",
+          "if (arr[mid] < target) lo = mid + 1;"
+        ],
+        "returns": [
+          "if (arr[mid] == target) return mid;",
+          "return -1;"
+        ],
+        "declarations": [
+          "int lo = 0, hi = n - 1;",
+          "else hi = mid - 1;"
+        ],
+        "assignments": [
+          "int lo = 0, hi = n - 1;",
+          "while (lo <= hi) {",
+          "int mid = lo + (hi - lo) / 2;",
+          "if (arr[mid] == target) return mid;",
+          "if (arr[mid] < target) lo = mid + 1;",
+          "else hi = mid - 1;"
+        ],
+        "constants": []
+      },
+      {
+        "func": "print_array",
+        "line": 56,
+        "node_count_raw": 6,
+        "node_count_kept": 6,
+        "types_kept": [
+          "CallOrDecl",
+          "Loop",
+          "Stmt"
+        ],
+        "calls": [
+          "printf",
+          "printf"
+        ],
+        "calls_uniq": [
+          "printf"
+        ],
+        "conditions": [
+          "for (int i = 0; i < n; i++) {"
+        ],
+        "returns": [],
+        "declarations": [],
+        "assignments": [
+          "for (int i = 0; i < n; i++) {"
+        ],
+        "constants": []
+      },
+      {
+        "func": "main",
+        "line": 63,
+        "node_count_raw": 16,
+        "node_count_kept": 16,
+        "types_kept": [
+          "CallOrDecl",
+          "Loop",
+          "Return",
+          "Stmt"
+        ],
+        "calls": [
+          "printf",
+          "insertion_sort",
+          "printf",
+          "selection_sort",
+          "printf",
+          "binary_search",
+          "printf",
+          "binary_search",
+          "printf"
+        ],
+        "calls_uniq": [
+          "binary_search",
+          "insertion_sort",
+          "printf",
+          "selection_sort"
+        ],
+        "conditions": [
+          "for (int i = 0; i < ARRAY_SIZE; i++) data2[i] = data1[i];"
+        ],
+        "returns": [
+          "return 0;"
+        ],
+        "declarations": [
+          "90, 4, 67, 11, 73, 28, 50, 19, 61, 8};",
+          "int data2[ARRAY_SIZE];"
+        ],
+        "assignments": [
+          "int data1[ARRAY_SIZE] = {39, 12, 7, 45, 2, 88, 16, 55, 33, 21,",
+          "for (int i = 0; i < ARRAY_SIZE; i++) data2[i] = data1[i];",
+          "int idx = binary_search(data1, ARRAY_SIZE, 45);",
+          "printf(\"Search 45: index=%d\\n\", idx);",
+          "idx = binary_search(data1, ARRAY_SIZE, 99);",
+          "printf(\"Search 99: index=%d\\n\", idx);"
+        ],
+        "constants": []
+      }
+    ],
+    "collapsed_isomorphic_functions": []
+  },
+  "filtered_cfg": {
+    "global": {
+      "entry": "entry_global",
+      "exit": "exit_global",
+      "node_count_raw": 71,
+      "node_count_kept": 15,
+      "branches": [
+        {
+          "label": "for (int i = 1; i < n; i++) {",
+          "line": 18
+        },
+        {
+          "label": "while (j >= 0 && arr[j] > key) {",
+          "line": 21
+        },
+        {
+          "label": "for (int i = 0; i < n - 1; i++) {",
+          "line": 31
+        },
+        {
+          "label": "for (int j = i + 1; j < n; j++) {",
+          "line": 33
+        },
+        {
+          "label": "if (arr[j] < arr[min_idx]) {",
+          "line": 34
+        },
+        {
+          "label": "if (min_idx != i) {",
+          "line": 38
+        },
+        {
+          "label": "while (lo <= hi) {",
+          "line": 47
+        },
+        {
+          "label": "if (arr[mid] == target) return mid;",
+          "line": 49
+        },
+        {
+          "label": "if (arr[mid] < target) lo = mid + 1;",
+          "line": 50
+        },
+        {
+          "label": "for (int i = 0; i < n; i++) {",
+          "line": 57
+        },
+        {
+          "label": "for (int i = 0; i < ARRAY_SIZE; i++) data2[i] = data1[i];",
+          "line": 67
+        }
+      ],
+      "calls": [],
+      "merged_linear_segments": 56,
+      "paths": [
+        [
+          [
+            "line_1",
+            ""
+          ],
+          [
+            "line_2",
+            ""
+          ],
+          [
+            "line_3",
+            ""
+          ],
+          [
+            "line_4",
+            ""
+          ],
+          [
+            "line_5",
+            ""
+          ],
+          [
+            "line_10",
+            ""
+          ],
+          [
+            "line_11",
+            ""
+          ],
+          [
+            "line_12",
+            ""
+          ],
+          [
+            "line_13",
+            ""
+          ],
+          [
+            "line_14",
+            ""
+          ],
+          [
+            "line_16",
+            ""
+          ],
+          [
+            "line_17",
+            ""
+          ],
+          [
+            "line_18",
+            ""
+          ],
+          [
+            "line_19",
+            ""
+          ],
+          [
+            "line_20",
+            ""
+          ],
+          [
+            "line_21",
+            ""
+          ],
+          [
+            "line_22",
+            ""
+          ],
+          [
+            "line_23",
+            ""
+          ],
+          [
+            "line_24",
+            ""
+          ],
+          [
+            "line_25",
+            ""
+          ],
+          [
+            "line_26",
+            ""
+          ],
+          [
+            "line_27",
+            ""
+          ],
+          [
+            "line_29",
+            ""
+          ],
+          [
+            "line_30",
+            ""
+          ],
+          [
+            "line_31",
+            ""
+          ],
+          [
+            "line_32",
+            ""
+          ],
+          [
+            "line_33",
+            ""
+          ],
+          [
+            "line_34",
+            ""
+          ],
+          [
+            "line_35",
+            ""
+          ],
+          [
+            "line_36",
+            ""
+          ],
+          [
+            "line_37",
+            ""
+          ],
+          [
+            "line_38",
+            ""
+          ],
+          [
+            "line_39",
+            ""
+          ],
+          [
+            "line_40",
+            ""
+          ],
+          [
+            "line_41",
+            ""
+          ],
+          [
+            "line_42",
+            ""
+          ],
+          [
+            "line_44",
+            ""
+          ],
+          [
+            "line_45",
+            ""
+          ],
+          [
+            "line_46",
+            ""
+          ],
+          [
+            "line_47",
+            ""
+          ],
+          [
+            "line_48",
+            ""
+          ],
+          [
+            "line_49",
+            ""
+          ],
+          [
+            "line_50",
+            ""
+          ],
+          [
+            "line_51",
+            ""
+          ],
+          [
+            "line_52",
+            ""
+          ],
+          [
+            "line_53",
+            ""
+          ],
+          [
+            "line_54",
+            ""
+          ],
+          [
+            "line_56",
+            ""
+          ],
+          [
+            "line_57",
+            ""
+          ],
+          [
+            "line_58",
+            ""
+          ],
+          [
+            "line_59",
+            ""
+          ],
+          [
+            "line_60",
+            ""
+          ],
+          [
+            "line_61",
+            ""
+          ],
+          [
+            "line_63",
+            ""
+          ],
+          [
+            "line_64",
+            ""
+          ],
+          [
+            "line_65",
+            ""
+          ],
+          [
+            "line_66",
+            ""
+          ],
+          [
+            "line_67",
+            ""
+          ],
+          [
+            "line_69",
+            ""
+          ],
+          [
+            "line_71",
+            ""
+          ],
+          [
+            "line_72",
+            ""
+          ],
+          [
+            "line_74",
+            ""
+          ],
+          [
+            "line_75",
+            ""
+          ],
+          [
+            "line_77",
+            ""
+          ],
+          [
+            "line_78",
+            ""
+          ],
+          [
+            "line_80",
+            ""
+          ],
+          [
+            "line_81",
+            ""
+          ],
+          [
+            "line_83",
+            ""
+          ],
+          [
+            "line_84",
+            ""
+          ],
+          [
+            "exit_global",
+            ""
+          ]
+        ]
+      ]
+    }
+  },
+  "filtered_dfg": {
+    "global": {
+      "node_count_raw": 69,
+      "edge_count_raw": 28,
+      "edge_count_kept": 21,
+      "parameters": [],
+      "edges": [
+        {
+          "from": "line_11",
+          "to": "line_13",
+          "var": "tmp"
+        },
+        {
+          "from": "line_20",
+          "to": "line_21",
+          "var": "j"
+        },
+        {
+          "from": "line_19",
+          "to": "line_21",
+          "var": "key"
+        },
+        {
+          "from": "line_20",
+          "to": "line_22",
+          "var": "j"
+        },
+        {
+          "from": "line_20",
+          "to": "line_23",
+          "var": "j"
+        },
+        {
+          "from": "line_20",
+          "to": "line_25",
+          "var": "j"
+        },
+        {
+          "from": "line_19",
+          "to": "line_25",
+          "var": "key"
+        },
+        {
+          "from": "line_20",
+          "to": "line_33",
+          "var": "j"
+        },
+        {
+          "from": "line_20",
+          "to": "line_34",
+          "var": "j"
+        },
+        {
+          "from": "line_32",
+          "to": "line_34",
+          "var": "min_idx"
+        },
+        {
+          "from": "line_20",
+          "to": "line_35",
+          "var": "j"
+        },
+        {
+          "from": "line_35",
+          "to": "line_38",
+          "var": "min_idx"
+        },
+        {
+          "from": "line_35",
+          "to": "line_39",
+          "var": "min_idx"
+        },
+        {
+          "from": "line_46",
+          "to": "line_47",
+          "var": "lo"
+        },
+        {
+          "from": "line_46",
+          "to": "line_48",
+          "var": "lo"
+        },
+        {
+          "from": "line_48",
+          "to": "line_49",
+          "var": "mid"
+        },
+        {
+          "from": "line_48",
+          "to": "line_50",
+          "var": "mid"
+        },
+        {
+          "from": "line_46",
+          "to": "line_50",
+          "var": "lo"
+        },
+        {
+          "from": "line_48",
+          "to": "line_51",
+          "var": "mid"
+        },
+        {
+          "from": "line_77",
+          "to": "line_78",
+          "var": "idx"
+        },
+        {
+          "from": "line_80",
+          "to": "line_81",
+          "var": "idx"
+        }
+      ],
+      "chains": [],
+      "node_labels": {
+        "line_1": "/*",
+        "line_2": "* safe_05_sorting.c",
+        "line_3": "* 安全的排序算法实现 —— 无漏洞",
+        "line_4": "* 数组固定大小，所有索引均经过边界验证。",
+        "line_5": "*/",
+        "line_10": "void swap(int *a, int *b) {",
+        "line_11": "int tmp = *a;",
+        "line_12": "*a = *b;",
+        "line_13": "*b = tmp;",
+        "line_14": "}",
+        "line_16": "/* 插入排序 */",
+        "line_17": "void insertion_sort(int arr[], int n) {",
+        "line_18": "for (int i = 1; i < n; i++) {",
+        "line_19": "int key = arr[i];",
+        "line_20": "int j = i - 1;",
+        "line_21": "while (j >= 0 && arr[j] > key) {",
+        "line_22": "arr[j + 1] = arr[j];",
+        "line_23": "j--;",
+        "line_24": "}",
+        "line_25": "arr[j + 1] = key;",
+        "line_26": "}",
+        "line_27": "}",
+        "line_29": "/* 选择排序 */",
+        "line_30": "void selection_sort(int arr[], int n) {",
+        "line_31": "for (int i = 0; i < n - 1; i++) {",
+        "line_32": "int min_idx = i;",
+        "line_33": "for (int j = i + 1; j < n; j++) {",
+        "line_34": "if (arr[j] < arr[min_idx]) {",
+        "line_35": "min_idx = j;",
+        "line_36": "}",
+        "line_37": "}",
+        "line_38": "if (min_idx != i) {",
+        "line_39": "swap(&arr[i], &arr[min_idx]);",
+        "line_40": "}",
+        "line_41": "}",
+        "line_42": "}",
+        "line_44": "/* 二分查找（前提：已排序） */",
+        "line_45": "int binary_search(const int arr[], int n, int target) {",
+        "line_46": "int lo = 0, hi = n - 1;",
+        "line_47": "while (lo <= hi) {",
+        "line_48": "int mid = lo + (hi - lo) / 2;",
+        "line_49": "if (arr[mid] == target) return mid;",
+        "line_50": "if (arr[mid] < target) lo = mid + 1;",
+        "line_51": "else hi = mid - 1;",
+        "line_52": "}",
+        "line_53": "return -1;",
+        "line_54": "}",
+        "line_56": "void print_array(const int arr[], int n) {",
+        "line_57": "for (int i = 0; i < n; i++) {",
+        "line_58": "printf(\"%d \", arr[i]);",
+        "line_59": "}",
+        "line_60": "printf(\"\\n\");",
+        "line_61": "}",
+        "line_63": "int main(void) {",
+        "line_64": "int data1[ARRAY_SIZE] = {39, 12, 7, 45, 2, 88, 16, 55, 33, 21,",
+        "line_65": "90, 4, 67, 11, 73, 28, 50, 19, 61, 8};",
+        "line_66": "int data2[ARRAY_SIZE];",
+        "line_67": "for (int i = 0; i < ARRAY_SIZE; i++) data2[i] = data1[i];",
+        "line_69": "printf(\"Original:  \"); print_array(data1, ARRAY_SIZE);",
+        "line_71": "insertion_sort(data1, ARRAY_SIZE);",
+        "line_72": "printf(\"Insertion: \"); print_array(data1, ARRAY_SIZE);",
+        "line_74": "selection_sort(data2, ARRAY_SIZE);",
+        "line_75": "printf(\"Selection: \"); print_array(data2, ARRAY_SIZE);",
+        "line_77": "int idx = binary_search(data1, ARRAY_SIZE, 45);",
+        "line_78": "printf(\"Search 45: index=%d\\n\", idx);",
+        "line_80": "idx = binary_search(data1, ARRAY_SIZE, 99);",
+        "line_81": "printf(\"Search 99: index=%d\\n\", idx);",
+        "line_83": "return 0;",
+        "line_84": "}"
+      }
+    }
+  }
+}

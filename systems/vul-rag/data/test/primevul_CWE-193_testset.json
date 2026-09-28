@@ -1,0 +1,28 @@
+[
+  {
+    "id": 236,
+    "cve_id": "CVE-2022-3103",
+    "code_before_change": "static int __io_sync_cancel(struct io_uring_task *tctx,\n\t\t\t    struct io_cancel_data *cd, int fd)\n{\n\tstruct io_ring_ctx *ctx = cd->ctx;\n\n\t/* fixed must be grabbed every time since we drop the uring_lock */\n\tif ((cd->flags & IORING_ASYNC_CANCEL_FD) &&\n\t    (cd->flags & IORING_ASYNC_CANCEL_FD_FIXED)) {\n\t\tunsigned long file_ptr;\n\n\t\tif (unlikely(fd > ctx->nr_user_files))\n\t\t\treturn -EBADF;\n\t\tfd = array_index_nospec(fd, ctx->nr_user_files);\n\t\tfile_ptr = io_fixed_file_slot(&ctx->file_table, fd)->file_ptr;\n\t\tcd->file = (struct file *) (file_ptr & FFS_MASK);\n\t\tif (!cd->file)\n\t\t\treturn -EBADF;\n\t}\n\n\treturn __io_async_cancel(cd, tctx, 0);\n}",
+    "code_after_change": "static int __io_sync_cancel(struct io_uring_task *tctx,\n\t\t\t    struct io_cancel_data *cd, int fd)\n{\n\tstruct io_ring_ctx *ctx = cd->ctx;\n\n\t/* fixed must be grabbed every time since we drop the uring_lock */\n\tif ((cd->flags & IORING_ASYNC_CANCEL_FD) &&\n\t    (cd->flags & IORING_ASYNC_CANCEL_FD_FIXED)) {\n\t\tunsigned long file_ptr;\n\n\t\tif (unlikely(fd >= ctx->nr_user_files))\n\t\t\treturn -EBADF;\n\t\tfd = array_index_nospec(fd, ctx->nr_user_files);\n\t\tfile_ptr = io_fixed_file_slot(&ctx->file_table, fd)->file_ptr;\n\t\tcd->file = (struct file *) (file_ptr & FFS_MASK);\n\t\tif (!cd->file)\n\t\t\treturn -EBADF;\n\t}\n\n\treturn __io_async_cancel(cd, tctx, 0);\n}",
+    "cwe": [
+      "CWE-193"
+    ],
+    "cve_description": "off-by-one in io_uring module.",
+    "patch": null,
+    "original_vulnerable_label": 1,
+    "project": "linux"
+  },
+  {
+    "id": 331,
+    "cve_id": "CVE-2019-3813",
+    "code_before_change": "void *memslot_get_virt(RedMemSlotInfo *info, QXLPHYSICAL addr, uint32_t add_size,\n                       int group_id)\n{\n    int slot_id;\n    int generation;\n    unsigned long h_virt;\n\n    MemSlot *slot;\n\n    if (group_id > info->num_memslots_groups) {\n        spice_critical(\"group_id too big\");\n        return NULL;\n    }\n\n    slot_id = memslot_get_id(info, addr);\n    if (slot_id > info->num_memslots) {\n        print_memslots(info);\n        spice_critical(\"slot_id %d too big, addr=%\" PRIx64, slot_id, addr);\n        return NULL;\n    }\n\n    slot = &info->mem_slots[group_id][slot_id];\n\n    generation = memslot_get_generation(info, addr);\n    if (generation != slot->generation) {\n        print_memslots(info);\n        spice_critical(\"address generation is not valid, group_id %d, slot_id %d, \"\n                       \"gen %d, slot_gen %d\",\n                       group_id, slot_id,\n                       generation, slot->generation);\n        return NULL;\n    }\n\n    h_virt = __get_clean_virt(info, addr);\n    h_virt += slot->address_delta;\n\n    if (!memslot_validate_virt(info, h_virt, slot_id, add_size, group_id)) {\n        return NULL;\n    }\n\n    return (void*)(uintptr_t)h_virt;\n}",
+    "code_after_change": "void *memslot_get_virt(RedMemSlotInfo *info, QXLPHYSICAL addr, uint32_t add_size,\n                       int group_id)\n{\n    int slot_id;\n    int generation;\n    unsigned long h_virt;\n\n    MemSlot *slot;\n\n    if (group_id >= info->num_memslots_groups) {\n        spice_critical(\"group_id too big\");\n        return NULL;\n    }\n\n    slot_id = memslot_get_id(info, addr);\n    if (slot_id >= info->num_memslots) {\n        print_memslots(info);\n        spice_critical(\"slot_id %d too big, addr=%\" PRIx64, slot_id, addr);\n        return NULL;\n    }\n\n    slot = &info->mem_slots[group_id][slot_id];\n\n    generation = memslot_get_generation(info, addr);\n    if (generation != slot->generation) {\n        print_memslots(info);\n        spice_critical(\"address generation is not valid, group_id %d, slot_id %d, \"\n                       \"gen %d, slot_gen %d\",\n                       group_id, slot_id,\n                       generation, slot->generation);\n        return NULL;\n    }\n\n    h_virt = __get_clean_virt(info, addr);\n    h_virt += slot->address_delta;\n\n    if (!memslot_validate_virt(info, h_virt, slot_id, add_size, group_id)) {\n        return NULL;\n    }\n\n    return (void*)(uintptr_t)h_virt;\n}",
+    "cwe": [
+      "CWE-193"
+    ],
+    "cve_description": "Spice, versions 0.5.2 through 0.14.1, are vulnerable to an out-of-bounds read due to an off-by-one error in memslot_get_virt. This may lead to a denial of service, or, in the worst case, code-execution by unauthenticated attackers.",
+    "patch": null,
+    "original_vulnerable_label": 1,
+    "project": "spice"
+  }
+]

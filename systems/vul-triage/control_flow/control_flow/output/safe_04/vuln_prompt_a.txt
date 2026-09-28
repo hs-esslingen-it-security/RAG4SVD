@@ -1,0 +1,45 @@
+文件: /Users/vinsontang/Desktop/test/graph_demo/control_flow/test_snippets/safe_04_file_reader.c
+图构建模式: precise_c
+【AST】
+- 类型/结构定义：Typedef@L17
+- 函数 init_stats@L19：保留 7/31 个语义节点；调用=无；分支=0；返回=0。
+- 函数 is_blank_line@L26：保留 9/41 个语义节点；调用=isspace；分支=2；返回=2。
+- 函数 count_chars@L33：保留 9/56 个语义节点；调用=isalpha；分支=2；返回=0。
+- 函数 read_file_stats@L40：保留 19/90 个语义节点；调用=count_chars, fclose, fgets, fopen；分支=3；返回=2。
+- 函数 print_stats@L62：保留 9/59 个语义节点；调用=printf；分支=1；返回=0。
+- 函数 main@L73：保留 13/51 个语义节点；调用=print_stats, printf, read_file_stats；分支=2；返回=2。
+
+【CFG】
+- 函数 init_stats：保留控制点 2/6；分支节点 0；调用节点 0；线性段折叠 4。
+  - 路径1: Entry -> s->total_lines = ... -> s->blank_lines = ... -> s->alpha_chars = ... -> init_stats EXIT
+- 函数 is_blank_line：保留控制点 6/8；分支节点 2；调用节点 0；线性段折叠 2。
+- 函数 count_chars：保留控制点 4/8；分支节点 2；调用节点 0；线性段折叠 3。
+  - 路径1: Entry -> DeclList -> for_cond (line[i] != '\0' && line[i] != '\n') -> count_chars EXIT
+  - 路径2: Entry -> DeclList -> for_cond (line[i] != '\0' && line[i] != '\n') -> if (isalpha(...)) -> [back] for_cond (line[i] != '\0' && line[i] != '\n') -> count_chars EXIT
+- 函数 read_file_stats：保留控制点 9/11；分支节点 2；调用节点 3；线性段折叠 2。
+- 函数 print_stats：保留控制点 8/8；分支节点 1；调用节点 5；线性段折叠 0。
+  - 路径1: Entry -> call printf(...) -> call printf(...) -> call printf(...) -> call printf(...) -> if (s->total_chars > 0) -> print_stats EXIT
+  - 路径2: Entry -> call printf(...) -> call printf(...) -> call printf(...) -> ... -> if (s->total_chars > 0) -> [True] call printf(...) -> print_stats EXIT
+- 函数 main：保留控制点 8/9；分支节点 2；调用节点 2；线性段折叠 1。
+
+【DFG】
+- 函数 init_stats：边保留 0/0；参数源 1 个；抽取链路 0 条。
+- 函数 is_blank_line：边保留 2/2；参数源 1 个；抽取链路 2 条。
+  - 数据链：param: line -> for_cond
+  - 数据链：param: line -> if(...)
+- 函数 count_chars：边保留 3/4；参数源 3 个；抽取链路 3 条。
+  - 数据链：param: line -> for_cond
+  - 数据链：param: line -> if(...)
+  - 数据链：param: total -> UnaryOp
+- 函数 read_file_stats：边保留 4/5；参数源 2 个；抽取链路 3 条。
+  - 数据链：param: path -> call fprintf
+  - 数据链：param: path -> decl fp -> call fclose
+  - 数据链：param: stats -> call init_stats
+- 函数 print_stats：边保留 6/7；参数源 1 个；抽取链路 4 条。
+  - 数据链：param: s -> call printf
+  - 数据链：param: s -> call printf
+  - 数据链：param: s -> call printf
+- 函数 main：边保留 4/5；参数源 2 个；抽取链路 3 条。
+  - 数据链：param: argc -> if(...)
+  - 数据链：param: argv -> call printf
+  - 数据链：param: argv -> if(...)

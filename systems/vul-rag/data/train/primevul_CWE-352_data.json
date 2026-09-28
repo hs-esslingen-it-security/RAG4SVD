@@ -1,0 +1,48 @@
+[
+  {
+    "id": 1053,
+    "cve_id": "CVE-2018-6651",
+    "code_before_change": "UNCURL_EXPORT int32_t uncurl_ws_accept(struct uncurl_conn *ucc, char **origins, int32_t n_origins)\n{\n\tint32_t e;\n\n\te = uncurl_read_header(ucc);\n\tif (e != UNCURL_OK) return e;\n\n\tuncurl_set_header_str(ucc, \"Upgrade\", \"websocket\");\n\tuncurl_set_header_str(ucc, \"Connection\", \"Upgrade\");\n\n\tchar *origin = NULL;\n \te = uncurl_get_header_str(ucc, \"Origin\", &origin);\n \tif (e != UNCURL_OK) return e;\n \n \tbool origin_ok = false;\n\tfor (int32_t x = 0; x < n_origins; x++)\n\t\tif (strstr(origin, origins[x])) {origin_ok = true; break;}\n \n \tif (!origin_ok) return UNCURL_WS_ERR_ORIGIN;\n \n\tchar *sec_key = NULL;\n\te = uncurl_get_header_str(ucc, \"Sec-WebSocket-Key\", &sec_key);\n\tif (e != UNCURL_OK) return e;\n\n\tchar *accept_key = ws_create_accept_key(sec_key);\n\tuncurl_set_header_str(ucc, \"Sec-WebSocket-Accept\", accept_key);\n\tfree(accept_key);\n\n\te = uncurl_write_header(ucc, \"101\", \"Switching Protocols\", UNCURL_RESPONSE);\n\tif (e != UNCURL_OK) return e;\n\n\tucc->ws_mask = 0;\n\n\treturn UNCURL_OK;\n}\n",
+    "code_after_change": "UNCURL_EXPORT int32_t uncurl_ws_accept(struct uncurl_conn *ucc, char **origins, int32_t n_origins)\n{\n\tint32_t e;\n\n\te = uncurl_read_header(ucc);\n\tif (e != UNCURL_OK) return e;\n\n\tuncurl_set_header_str(ucc, \"Upgrade\", \"websocket\");\n\tuncurl_set_header_str(ucc, \"Connection\", \"Upgrade\");\n\n\tchar *origin = NULL;\n \te = uncurl_get_header_str(ucc, \"Origin\", &origin);\n \tif (e != UNCURL_OK) return e;\n \n\t//the substring MUST came at the end of the origin header, thus a strstr AND a strcmp\n \tbool origin_ok = false;\n\tfor (int32_t x = 0; x < n_origins; x++) {\n\t\tchar *match = strstr(origin, origins[x]);\n\t\tif (match && !strcmp(match, origins[x])) {origin_ok = true; break;}\n\t}\n \n \tif (!origin_ok) return UNCURL_WS_ERR_ORIGIN;\n \n\tchar *sec_key = NULL;\n\te = uncurl_get_header_str(ucc, \"Sec-WebSocket-Key\", &sec_key);\n\tif (e != UNCURL_OK) return e;\n\n\tchar *accept_key = ws_create_accept_key(sec_key);\n\tuncurl_set_header_str(ucc, \"Sec-WebSocket-Accept\", accept_key);\n\tfree(accept_key);\n\n\te = uncurl_write_header(ucc, \"101\", \"Switching Protocols\", UNCURL_RESPONSE);\n\tif (e != UNCURL_OK) return e;\n\n\tucc->ws_mask = 0;\n\n\treturn UNCURL_OK;\n}\n",
+    "cwe": [
+      "CWE-352"
+    ],
+    "cve_description": "In the uncurl_ws_accept function in uncurl.c in uncurl before 0.07, as used in Parsec before 140-3, insufficient Origin header validation (accepting an arbitrary substring match) for WebSocket API requests allows remote attackers to bypass intended access restrictions. In Parsec, this means full control over the victim's computer.",
+    "patch": "--- code before\n+++ code after\n@@ -12,9 +12,12 @@\n  \te = uncurl_get_header_str(ucc, \"Origin\", &origin);\n  \tif (e != UNCURL_OK) return e;\n  \n+\t//the substring MUST came at the end of the origin header, thus a strstr AND a strcmp\n  \tbool origin_ok = false;\n-\tfor (int32_t x = 0; x < n_origins; x++)\n-\t\tif (strstr(origin, origins[x])) {origin_ok = true; break;}\n+\tfor (int32_t x = 0; x < n_origins; x++) {\n+\t\tchar *match = strstr(origin, origins[x]);\n+\t\tif (match && !strcmp(match, origins[x])) {origin_ok = true; break;}\n+\t}\n  \n  \tif (!origin_ok) return UNCURL_WS_ERR_ORIGIN;\n  ",
+    "function_modified_lines": {
+      "added": [
+        "\t//the substring MUST came at the end of the origin header, thus a strstr AND a strcmp",
+        "\tfor (int32_t x = 0; x < n_origins; x++) {",
+        "\t\tchar *match = strstr(origin, origins[x]);",
+        "\t\tif (match && !strcmp(match, origins[x])) {origin_ok = true; break;}",
+        "\t}"
+      ],
+      "deleted": [
+        "\tfor (int32_t x = 0; x < n_origins; x++)",
+        "\t\tif (strstr(origin, origins[x])) {origin_ok = true; break;}"
+      ]
+    }
+  },
+  {
+    "id": 2106,
+    "cve_id": "CVE-2017-12678",
+    "code_before_change": "void FrameFactory::rebuildAggregateFrames(ID3v2::Tag *tag) const\n{\n  if(tag->header()->majorVersion() < 4 &&\n     tag->frameList(\"TDRC\").size() == 1 &&\n     tag->frameList(\"TDAT\").size() == 1)\n  {\n    TextIdentificationFrame *tdrc =\n      static_cast<TextIdentificationFrame *>(tag->frameList(\"TDRC\").front());\n    UnknownFrame *tdat = static_cast<UnknownFrame *>(tag->frameList(\"TDAT\").front());\n\n    if(tdrc->fieldList().size() == 1 &&\n       tdrc->fieldList().front().size() == 4 &&\n       tdat->data().size() >= 5)\n    {\n      String date(tdat->data().mid(1), String::Type(tdat->data()[0]));\n      if(date.length() == 4) {\n        tdrc->setText(tdrc->toString() + '-' + date.substr(2, 2) + '-' + date.substr(0, 2));\n        if(tag->frameList(\"TIME\").size() == 1) {\n          UnknownFrame *timeframe = static_cast<UnknownFrame *>(tag->frameList(\"TIME\").front());\n          if(timeframe->data().size() >= 5) {\n            String time(timeframe->data().mid(1), String::Type(timeframe->data()[0]));\n            if(time.length() == 4) {\n              tdrc->setText(tdrc->toString() + 'T' + time.substr(0, 2) + ':' + time.substr(2, 2));\n            }\n          }\n        }\n      }\n    }\n  }\n}",
+    "code_after_change": "void FrameFactory::rebuildAggregateFrames(ID3v2::Tag *tag) const\n{\n  if(tag->header()->majorVersion() < 4 &&\n     tag->frameList(\"TDRC\").size() == 1 &&\n     tag->frameList(\"TDAT\").size() == 1)\n  {\n    TextIdentificationFrame *tdrc =\n      dynamic_cast<TextIdentificationFrame *>(tag->frameList(\"TDRC\").front());\n    UnknownFrame *tdat = static_cast<UnknownFrame *>(tag->frameList(\"TDAT\").front());\n\n    if(tdrc &&\n       tdrc->fieldList().size() == 1 &&\n       tdrc->fieldList().front().size() == 4 &&\n       tdat->data().size() >= 5)\n    {\n      String date(tdat->data().mid(1), String::Type(tdat->data()[0]));\n      if(date.length() == 4) {\n        tdrc->setText(tdrc->toString() + '-' + date.substr(2, 2) + '-' + date.substr(0, 2));\n        if(tag->frameList(\"TIME\").size() == 1) {\n          UnknownFrame *timeframe = static_cast<UnknownFrame *>(tag->frameList(\"TIME\").front());\n          if(timeframe->data().size() >= 5) {\n            String time(timeframe->data().mid(1), String::Type(timeframe->data()[0]));\n            if(time.length() == 4) {\n              tdrc->setText(tdrc->toString() + 'T' + time.substr(0, 2) + ':' + time.substr(2, 2));\n            }\n          }\n        }\n      }\n    }\n  }\n}",
+    "cwe": [
+      "CWE-352"
+    ],
+    "cve_description": "In TagLib 1.11.1, the rebuildAggregateFrames function in id3v2framefactory.cpp has a pointer to cast vulnerability, which allows remote attackers to cause a denial of service or possibly have unspecified other impact via a crafted audio file.",
+    "patch": "--- code before\n+++ code after\n@@ -5,10 +5,11 @@\n      tag->frameList(\"TDAT\").size() == 1)\n   {\n     TextIdentificationFrame *tdrc =\n-      static_cast<TextIdentificationFrame *>(tag->frameList(\"TDRC\").front());\n+      dynamic_cast<TextIdentificationFrame *>(tag->frameList(\"TDRC\").front());\n     UnknownFrame *tdat = static_cast<UnknownFrame *>(tag->frameList(\"TDAT\").front());\n \n-    if(tdrc->fieldList().size() == 1 &&\n+    if(tdrc &&\n+       tdrc->fieldList().size() == 1 &&\n        tdrc->fieldList().front().size() == 4 &&\n        tdat->data().size() >= 5)\n     {",
+    "function_modified_lines": {
+      "added": [
+        "      dynamic_cast<TextIdentificationFrame *>(tag->frameList(\"TDRC\").front());",
+        "    if(tdrc &&",
+        "       tdrc->fieldList().size() == 1 &&"
+      ],
+      "deleted": [
+        "      static_cast<TextIdentificationFrame *>(tag->frameList(\"TDRC\").front());",
+        "    if(tdrc->fieldList().size() == 1 &&"
+      ]
+    }
+  }
+]

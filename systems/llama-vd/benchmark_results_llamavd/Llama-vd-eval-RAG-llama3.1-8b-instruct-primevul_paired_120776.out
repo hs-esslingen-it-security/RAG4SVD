@@ -1,0 +1,295 @@
+JOB ID 120776
+llama3.1-8b-instruct   meta-llama/Llama-3.1-8B-Instruct
+--- Running with Model: llama3.1-8b-instruct meta-llama/Llama-3.1-8B-Instruct | Dataset: primevul_paired ---
+
+
+*** Load model and tokenizer ***
+
+
+*** Load and preprocess dataset ***
+
+
+ Label distribution in Train set : 
+ label_text
+Vulnerable    3789
+Safe          3789
+Name: count, dtype: int64
+
+ Label distribution in Eval set : 
+ label_text
+Vulnerable    480
+Safe          480
+Name: count, dtype: int64
+
+ Label distribution in Test set : 
+ label_text
+Vulnerable    435
+Safe          435
+Name: count, dtype: int64
+
+*** Load embedding model and tokenizer ***
+
+
+*** Load index ***
+
+FAISS index and metadata loaded successfully.
+
+
+*** Generate prompts and Predict ***
+
+Out of scope prediction :  %u",
+                               ident,
+                               ((EXTRACT_32BITS(obj_tptr+4))>>31),
+                               EXTRACT_32BITS(obj_tptr+4)&0x00FFFFFF,
+                               EXTRACT_32BITS(obj_tptr+8),
+                               EXTRACT_32BITS(obj_tptr+12)));
+
+                        break;
+
+                    case RSVP_GEN_UNI_SUBOBJ_LABEL_SET:
+                        if (subobj_len < 4) {
+                            return -1;
+                        }
+
+                        ND_PRINT((ndo, "%s    Label set: %u",
+                               ident,
+                               EXTRACT_32BITS(obj_tptr+4)));
+
+                        break;
+
+                    case RSVP_GEN_UNI_SUBOBJ_LABEL_SET_LIST:
+                        if (subobj_len < 4) {
+                            return -1;
+                        }
+
+                        ND_PRINT((ndo, "%s    Label set list: %u",
+                               ident,
+                               EXTRACT_32BITS(obj_tptr+4)));
+
+                        break;
+
+                    case RSVP_GEN_UNI_SUBOBJ_LABEL_SET_LIST_ENTRY:
+                        if (subobj_len < 4) {
+                            return -1;
+                        }
+
+                        ND_PRINT((ndo, "%s    Label set list entry: %u",
+                               ident,
+                               EXTRACT_32BITS(obj_tptr+4)));
+
+                        break;
+
+                    case RSVP_GEN_UNI_SUBOBJ_LABEL_SET_LIST_ENTRY_LABEL:
+                        if (subobj_len < 4) {
+                            return -1;
+                        }
+
+                        ND_PRINT((ndo, "%s    Label set list entry label: %u",
+                               ident,
+                               EXTRACT_32BITS(obj_tptr+4)));
+
+                        break;
+
+                    case RSVP_GEN_UNI_SUBOBJ_LABEL_SET_LIST_ENTRY_LABEL_LIST:
+                        if (subobj_len < 4) {
+                            return -1;
+                        }
+
+                        ND_PRINT((ndo, "%s    Label set list entry label list: %u",
+                               ident,
+                               EXTRACT_32BITS(obj_tptr+4)));
+
+                        break;
+
+                    case RSVP_GEN_UNI_SUBOBJ_LABEL_SET_LIST_ENTRY_LABEL
+Out of scope prediction :  %u",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_24BITS(obj_tptr + 17)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                break;
+            case RSVP_CTYPE_TUNNEL_IPV6:
+                if (obj_tlen < 20)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, LSP-ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 18)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                break;
+            case RSVP_CTYPE_13: /* IPv6 p2mp LSP tunnel */
+                if (obj_tlen < 40)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv6 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+18),
+                       ident,
+                       ip6addr_string(ndo, obj_tptr+20),
+                       EXTRACT_16BITS(obj_tptr + 38)));
+                obj_tlen-=40;
+                obj_tptr+=40;
+                break;
+            case RSVP_CTYPE_TUNNEL_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, LSP-ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 6)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                break;
+            case RSVP_CTYPE_12: /* IPv4 p2mp LSP tunnel */
+                if (obj_tlen < 16)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv4 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+6),
+                       ident,
+                       ipaddr_string(ndo, obj_tptr+8),
+                       EXTRACT_16BITS(obj_tptr + 12)));
+                obj_tlen-=16;
+                obj_tptr+=16;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_PATH:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv4 Path Address: %s, Protocol ID: 0x%02x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       *(obj_tptr + sizeof(struct in_addr))));
+                ND_PRINT((ndo, "%s  Flags: [0x%02x], DestPort %u",
+                       ident,
+                       *(obj_tptr+5),
+                       EXTRACT_16BITS(obj_tptr + 6)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                break;
+            case RSVP_CTYPE_IPV6:
+                if (obj_tlen < 20)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv6 Path Address: %s, Protocol ID: 0x%02x",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       *(obj_tptr + sizeof(struct in6_addr))));
+                ND_PRINT((ndo, "%s  Flags: [0x%02x], DestPort %u",
+                       ident,
+                       *(obj_tptr+sizeof(struct in6_addr)+1),
+                       EXTRACT_16BITS(obj_tptr + sizeof(struct in6_addr) + 2)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                break;
+
+            case RSVP_CTYPE_TUNNEL_IPV6:
+                if (obj_tlen < 36)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv6 Tunnel EndPoint: %s, Tunnel ID: 0x%04x, Extended Tunnel ID: %s",
+                       ident,
+Out of scope prediction :  
+Out of scope prediction :  %u",
+                               ident,
+                               ((EXTRACT_32BITS(obj_tptr+4))>>31),
+                               ((EXTRACT_32BITS(obj_tptr+4))&0xFF),
+                               EXTRACT_32BITS(obj_tptr+8),
+                               EXTRACT_32BITS(obj_tptr + 12)));
+                        break;
+
+                    case RSVP_GEN_UNI_SUBOBJ_LABEL_SET:
+                        if (subobj_len < 4) {
+                            return -1;
+                        }
+
+                        ND_PRINT((ndo, "%s    Label set: %u",
+                               ident,
+                               EXTRACT_32BITS(obj_tptr+4)));
+                        break;
+
+                    case RSVP_GEN_UNI_SUBOBJ_LABEL_RANGE:
+                        if (subobj_len < 8) {
+                            return -1;
+                        }
+
+                        ND_PRINT((ndo, "%s    Label range: %u, %u",
+                               ident,
+                               EXTRACT_32BITS(obj_tptr+4),
+                               EXTRACT_32BITS(obj_tptr + 8)));
+                        break;
+
+                    case RSVP_GEN_UNI_SUBOBJ_LABEL_LIST:
+                        if (subobj_len < 4) {
+                            return -1;
+                        }
+
+                        ND_PRINT((ndo, "%s    Label list: %u",
+                               ident,
+                               EXTRACT_32BITS(obj_tptr+4)));
+                        break;
+
+                    case RSVP_GEN_UNI_SUBOBJ_LABEL_STACK:
+                        if (subobj_len < 4) {
+                            return -1;
+                        }
+
+                        ND_PRINT((ndo, "%s    Label stack: %u",
+                               ident,
+                               EXTRACT_32BITS(obj_tptr+4)));
+                        break;
+
+                    case RSVP_GEN_UNI_SUBOBJ_LABEL_SET_LIST:
+                        if (subobj_len < 4) {
+                            return -1;
+                        }
+
+                        ND_PRINT((ndo, "%s    Label set list: %u",
+                               ident,
+                               EXTRACT_32BITS(obj_tptr+4)));
+                        break;
+
+                    case RSVP_GEN_UNI_SUBOBJ_LABEL_RANGE_LIST:
+                        if (subobj_len < 8) {
+                            return -1;
+                        }
+
+                        ND_PRINT((ndo, "%s    Label range list: %u, %u",
+                               ident,
+                               EX
+Out of scope prediction :  
+Out of scope prediction :  
+
+
+*** Evaluate model ****
+
+y_true: 870, y_pred: 870, pair_ids: 870
+Overall Accuracy: 0.4966
+Pairwise Accuracy: 0.1172
+Pairs where both were correct: 51
+Total complete pairs evaluated: 435
+
+Classification Report:
+              precision    recall  f1-score   support
+
+        Safe       0.50      0.59      0.54       435
+  Vulnerable       0.50      0.40      0.45       435
+
+   micro avg       0.50      0.50      0.50       870
+   macro avg       0.50      0.50      0.49       870
+weighted avg       0.50      0.50      0.49       870
+
+
+Confusion Matrix:
+[[257 174]
+ [258 175]]
+JOB FINISHED

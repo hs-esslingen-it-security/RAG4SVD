@@ -1,0 +1,40 @@
+文件: /Users/vinsontang/Desktop/test/graph_demo/control_flow/test_snippets/safe_03_matrix_ops.c
+图构建模式: heuristic_c
+【AST】
+- 类型/结构定义：typedef struct {@L9
+- 函数 global@L1：
+  - 声明：int rows;；int cols;；int *data;；} Matrix;；m->rows = rows;；m->cols = cols;
+  - 赋值：if (rows <= 0 || cols <= 0) return NULL;；Matrix *m = (Matrix *)malloc(sizeof(Matrix));；m->rows = rows;；m->cols = cols;；m->data = (int *)calloc((size_t)rows * cols, sizeof(int));；if (!a || !b || a->rows != b->rows || a->cols != b->cols) return NULL;；Matrix *c = matrix_create(a->rows, a->cols);；for (int i = 0; i < a->rows; i++) {；for (int j = 0; j < a->cols; j++) {；Matrix *t = matrix_create(m->cols, m->rows);；for (int i = 0; i < m->rows; i++) {；for (int j = 0; j < m->cols; j++) {
+  - 调用：matrix_create；malloc；calloc；matrix_add；matrix_create；matrix_set；matrix_transpose；matrix_create；matrix_set
+  - 条件/循环：if (rows <= 0 || cols <= 0) return NULL;；if (!m) return NULL;；if (!m->data) { free(m); return NULL; }；if (!a || !b || a->rows != b->rows || a->cols != b->cols) return NULL;；if (!c) return NULL;；for (int i = 0; i < a->rows; i++) {；for (int j = 0; j < a->cols; j++) {；if (!m) return NULL;；if (!t) return NULL;；for (int i = 0; i < m->rows; i++) {；for (int j = 0; j < m->cols; j++) {
+  - 返回：if (rows <= 0 || cols <= 0) return NULL;；if (!m) return NULL;；if (!m->data) { free(m); return NULL; }；return m;；if (!a || !b || a->rows != b->rows || a->cols != b->cols) return NULL;；if (!c) return NULL;；return c;；if (!m) return NULL;；if (!t) return NULL;；return t;
+- 函数 matrix_free@L26：
+  - 调用：free；free
+  - 条件/循环：if (m) {
+- 函数 matrix_get@L33：
+  - 赋值：if (!m || r < 0 || r >= m->rows || c < 0 || c >= m->cols) return 0;
+  - 条件/循环：if (!m || r < 0 || r >= m->rows || c < 0 || c >= m->cols) return 0;
+  - 返回：if (!m || r < 0 || r >= m->rows || c < 0 || c >= m->cols) return 0;；return m->data[r * m->cols + c];
+- 函数 matrix_set@L38：
+  - 声明：m->data[r * m->cols + c] = val;
+  - 赋值：if (!m || r < 0 || r >= m->rows || c < 0 || c >= m->cols) return;；m->data[r * m->cols + c] = val;
+  - 条件/循环：if (!m || r < 0 || r >= m->rows || c < 0 || c >= m->cols) return;
+  - 返回：if (!m || r < 0 || r >= m->rows || c < 0 || c >= m->cols) return;
+- 函数 matrix_print@L67：
+  - 赋值：for (int i = 0; i < m->rows; i++) {；for (int j = 0; j < m->cols; j++) {
+  - 调用：printf；printf
+  - 条件/循环：if (!m) return;；for (int i = 0; i < m->rows; i++) {；for (int j = 0; j < m->cols; j++) {
+  - 返回：if (!m) return;
+- 函数 main@L77：
+  - 赋值：Matrix *a = matrix_create(3, 3);；Matrix *b = matrix_create(3, 3);；for (int i = 0; i < 3; i++)；for (int j = 0; j < 3; j++) {；Matrix *c = matrix_add(a, b);；Matrix *t = matrix_transpose(a);
+  - 调用：matrix_create；matrix_create；matrix_set；matrix_set；matrix_add；matrix_transpose；printf；printf；matrix_free；matrix_free
+  - 条件/循环：for (int i = 0; i < 3; i++)；for (int j = 0; j < 3; j++) {
+  - 返回：return 0;
+
+【CFG】
+- 函数 global：保留控制点 83/83；分支节点 19；调用节点 1；线性段折叠 0。
+  - 分支/循环节点：if (rows <= 0 || cols <= 0) return NULL;@L16；if (!m) return NULL;@L18；if (!m->data) { free(m); return NULL; }@L22；if (m) {@L27；if (!m || r < 0 || r >= m->rows || c < 0 || c >= m->cols) return 0;@L34；if (!m || r < 0 || r >= m->rows || c < 0 || c >= m->cols) return;@L39；if (!a || !b || a->rows != b->rows || a->cols != b->cols) return NULL;@L44；if (!c) return NULL;@L46；for (int i = 0; i < a->rows; i++) {@L47；for (int j = 0; j < a->cols; j++) {@L48；if (!m) return NULL;@L56；if (!t) return NULL;@L58
+  - 路径1: Entry -> /* -> * safe_03_matrix_ops.c -> if (rows <= 0 || cols <= 0) return NULL; -> if (!m) return NULL; -> m->data = (int *)calloc((size_t)rows * cols, sizeof(int)); -> if (!m->data) { free(m); return NULL; } -> return m; -> if (m) { -> if (!m || r < 0 || r >= m->rows || c < 0 || c >= m->cols) return 0; -> return m->data[r * m->cols + c]; -> if (!m || r < 0 || r >= m->rows || c < 0 || c >= m->cols) return; -> if (!a || !b || a->rows != b->rows || a->cols != b->cols) return NULL; -> ... -> if (!t) return NULL; -> for (int i = 0; i < m->rows; i++) { -> for (int j = 0; j < m->cols; j++) { -> return t; -> if (!m) return; -> for (int i = 0; i < m->rows; i++) { -> for (int j = 0; j < m->cols; j++) { -> for (int i = 0; i < 3; i++) -> for (int j = 0; j < 3; j++) { -> return 0; -> } -> global EXIT
+
+【DFG】
+- 函数 global：边保留 0/0；参数源 0 个；抽取链路 0 条。

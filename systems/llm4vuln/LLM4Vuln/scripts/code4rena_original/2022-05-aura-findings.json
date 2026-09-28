@@ -1,0 +1,10 @@
+[
+    {
+        "title": "User can forfeit other user rewards",
+        "link": "https://github.com/code-423n4/2022-05-aura-findings/issues/50",
+        "detail": "\n# Vulnerability details\n\n## Impact\nUser can forfeit other user rewards by giving a higher _startIndex in getReward function\n\n## Proof of Concept\n1. Assume User B has not received any reward yet so that his userClaims[_token][User B]=0\n2. User A calls getReward function with _account as User B and _startIndex as 5\n3. This eventually calls _allClaimableRewards at ExtraRewardsDistributor.sol#L213 which computes epochIndex =5>0?5:0 = 5\n4. Assuming tokenEpochs is 10 and latestEpoch is 8, so reward will computed from epoch 5 till epoch index 7 and _allClaimableRewards will return index as 7\n5. _getReward will simply update userClaims[_token][User B] with 7 \n6. This is incorrect because as per contract User B has received reward from epoch 0-7 even though he only received reward for epoch 5-7\n\n\n## Recommended Mitigation Steps\nDo not allow users to call getReward function for other users\n\n",
+        "code": [
+            "    function getReward(\n        address _account,\n        address _token,\n        uint256 _startIndex\n    ) public {\n        _getReward(_account, _token, _startIndex);\n    }"
+        ]
+    }
+]

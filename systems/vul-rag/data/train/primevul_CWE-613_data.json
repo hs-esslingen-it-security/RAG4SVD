@@ -1,0 +1,31 @@
+[
+  {
+    "id": 3771,
+    "cve_id": "CVE-2022-24732",
+    "code_before_change": "struct error_obj run_pam_auth(const char *username, char *password) {\n    // PAM frees pam_response for us.\n    struct pam_response *reply = malloc(sizeof(struct pam_response));\n    if (reply == NULL) {\n        struct error_obj ret_val;\n        ret_val.status = 2;\n        ret_val.func_name = \"malloc\";\n        ret_val.error_msg = \"Out of memory\";\n        return ret_val;\n    }\n    reply->resp = password;\n    reply->resp_retcode = 0;\n\n    const struct pam_conv local_conv = { conv_func, reply };\n    pam_handle_t *local_auth = NULL;\n    int status = pam_start(\"maddy\", username, &local_conv, &local_auth);\n    if (status != PAM_SUCCESS) {\n        struct error_obj ret_val;\n        ret_val.status = 2;\n        ret_val.func_name = \"pam_start\";\n        ret_val.error_msg = pam_strerror(local_auth, status);\n        return ret_val;\n    }\n\n    status = pam_authenticate(local_auth, PAM_SILENT|PAM_DISALLOW_NULL_AUTHTOK);\n    if (status != PAM_SUCCESS) {\n        struct error_obj ret_val;\n        if (status == PAM_AUTH_ERR || status == PAM_USER_UNKNOWN) {\n            ret_val.status = 1;\n        } else {\n            ret_val.status = 2;\n        }\n        ret_val.func_name = \"pam_authenticate\";\n        ret_val.error_msg = pam_strerror(local_auth, status);\n        return ret_val;\n    }\n\n    status = pam_end(local_auth, status);\n    if (status != PAM_SUCCESS) {\n        struct error_obj ret_val;\n        ret_val.status = 2;\n        ret_val.func_name = \"pam_end\";\n        ret_val.error_msg = pam_strerror(local_auth, status);\n        return ret_val;\n    }\n\n    struct error_obj ret_val;\n    ret_val.status = 0;\n    ret_val.func_name = NULL;\n    ret_val.error_msg = NULL;\n    return ret_val;\n}",
+    "code_after_change": "struct error_obj run_pam_auth(const char *username, char *password) {\n    // PAM frees pam_response for us.\n    struct pam_response *reply = malloc(sizeof(struct pam_response));\n    if (reply == NULL) {\n        struct error_obj ret_val;\n        ret_val.status = 2;\n        ret_val.func_name = \"malloc\";\n        ret_val.error_msg = \"Out of memory\";\n        return ret_val;\n    }\n    reply->resp = password;\n    reply->resp_retcode = 0;\n\n    const struct pam_conv local_conv = { conv_func, reply };\n    pam_handle_t *local_auth = NULL;\n    int status = pam_start(\"maddy\", username, &local_conv, &local_auth);\n    if (status != PAM_SUCCESS) {\n        struct error_obj ret_val;\n        ret_val.status = 2;\n        ret_val.func_name = \"pam_start\";\n        ret_val.error_msg = pam_strerror(local_auth, status);\n        return ret_val;\n    }\n\n    status = pam_authenticate(local_auth, PAM_SILENT|PAM_DISALLOW_NULL_AUTHTOK);\n    if (status != PAM_SUCCESS) {\n        struct error_obj ret_val;\n        if (status == PAM_AUTH_ERR || status == PAM_USER_UNKNOWN) {\n            ret_val.status = 1;\n        } else {\n            ret_val.status = 2;\n        }\n        ret_val.func_name = \"pam_authenticate\";\n        ret_val.error_msg = pam_strerror(local_auth, status);\n        return ret_val;\n    }\n\n    status = pam_acct_mgmt(local_auth, PAM_SILENT|PAM_DISALLOW_NULL_AUTHTOK);\n    if (status != PAM_SUCCESS) {\n        struct error_obj ret_val;\n        if (status == PAM_AUTH_ERR || status == PAM_USER_UNKNOWN || status == PAM_NEW_AUTHTOK_REQD) {\n            ret_val.status = 1;\n        } else {\n            ret_val.status = 2;\n        }\n        ret_val.func_name = \"pam_acct_mgmt\";\n        ret_val.error_msg = pam_strerror(local_auth, status);\n        return ret_val;\n    }\n\n    status = pam_end(local_auth, status);\n    if (status != PAM_SUCCESS) {\n        struct error_obj ret_val;\n        ret_val.status = 2;\n        ret_val.func_name = \"pam_end\";\n        ret_val.error_msg = pam_strerror(local_auth, status);\n        return ret_val;\n    }\n\n    struct error_obj ret_val;\n    ret_val.status = 0;\n    ret_val.func_name = NULL;\n    ret_val.error_msg = NULL;\n    return ret_val;\n}",
+    "cwe": [
+      "CWE-613"
+    ],
+    "cve_description": "Maddy Mail Server is an open source SMTP compatible email server. Versions of maddy prior to 0.5.4 do not implement password expiry or account expiry checking when authenticating using PAM. Users are advised to upgrade. Users unable to upgrade should manually remove expired accounts via existing filtering mechanisms.",
+    "patch": "--- code before\n+++ code after\n@@ -35,6 +35,19 @@\n         return ret_val;\n     }\n \n+    status = pam_acct_mgmt(local_auth, PAM_SILENT|PAM_DISALLOW_NULL_AUTHTOK);\n+    if (status != PAM_SUCCESS) {\n+        struct error_obj ret_val;\n+        if (status == PAM_AUTH_ERR || status == PAM_USER_UNKNOWN || status == PAM_NEW_AUTHTOK_REQD) {\n+            ret_val.status = 1;\n+        } else {\n+            ret_val.status = 2;\n+        }\n+        ret_val.func_name = \"pam_acct_mgmt\";\n+        ret_val.error_msg = pam_strerror(local_auth, status);\n+        return ret_val;\n+    }\n+\n     status = pam_end(local_auth, status);\n     if (status != PAM_SUCCESS) {\n         struct error_obj ret_val;",
+    "function_modified_lines": {
+      "added": [
+        "    status = pam_acct_mgmt(local_auth, PAM_SILENT|PAM_DISALLOW_NULL_AUTHTOK);",
+        "    if (status != PAM_SUCCESS) {",
+        "        struct error_obj ret_val;",
+        "        if (status == PAM_AUTH_ERR || status == PAM_USER_UNKNOWN || status == PAM_NEW_AUTHTOK_REQD) {",
+        "            ret_val.status = 1;",
+        "        } else {",
+        "            ret_val.status = 2;",
+        "        }",
+        "        ret_val.func_name = \"pam_acct_mgmt\";",
+        "        ret_val.error_msg = pam_strerror(local_auth, status);",
+        "        return ret_val;",
+        "    }",
+        ""
+      ],
+      "deleted": []
+    }
+  }
+]

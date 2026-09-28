@@ -1,0 +1,159 @@
+[
+    {
+        "cve_id": "CVE-2013-1772",
+        "code_before_change": "static ssize_t kmsg_writev(struct kiocb *iocb, const struct iovec *iv,\n\t\t\t   unsigned long count, loff_t pos)\n{\n\tchar *line, *p;\n\tint i;\n\tssize_t ret = -EFAULT;\n\tsize_t len = iov_length(iv, count);\n\n\tline = kmalloc(len + 1, GFP_KERNEL);\n\tif (line == NULL)\n\t\treturn -ENOMEM;\n\n\t/*\n\t * copy all vectors into a single string, to ensure we do\n\t * not interleave our log line with other printk calls\n\t */\n\tp = line;\n\tfor (i = 0; i < count; i++) {\n\t\tif (copy_from_user(p, iv[i].iov_base, iv[i].iov_len))\n\t\t\tgoto out;\n\t\tp += iv[i].iov_len;\n\t}\n\tp[0] = '\\0';\n\n\tret = printk(\"%s\", line);\n\t/* printk can add a prefix */\n\tif (ret > len)\n\t\tret = len;\nout:\n\tkfree(line);\n\treturn ret;\n}",
+        "code_after_change": "static ssize_t kmsg_writev(struct kiocb *iocb, const struct iovec *iv,\n\t\t\t   unsigned long count, loff_t pos)\n{\n\tchar *buf, *line;\n\tint i;\n\tint level = default_message_loglevel;\n\tint facility = 1;\t/* LOG_USER */\n\tsize_t len = iov_length(iv, count);\n\tssize_t ret = len;\n\n\tif (len > 1024)\n\t\treturn -EINVAL;\n\tbuf = kmalloc(len+1, GFP_KERNEL);\n\tif (buf == NULL)\n\t\treturn -ENOMEM;\n\n\tline = buf;\n\tfor (i = 0; i < count; i++) {\n\t\tif (copy_from_user(line, iv[i].iov_base, iv[i].iov_len))\n\t\t\tgoto out;\n\t\tline += iv[i].iov_len;\n\t}\n\n\t/*\n\t * Extract and skip the syslog prefix <[0-9]*>. Coming from userspace\n\t * the decimal value represents 32bit, the lower 3 bit are the log\n\t * level, the rest are the log facility.\n\t *\n\t * If no prefix or no userspace facility is specified, we\n\t * enforce LOG_USER, to be able to reliably distinguish\n\t * kernel-generated messages from userspace-injected ones.\n\t */\n\tline = buf;\n\tif (line[0] == '<') {\n\t\tchar *endp = NULL;\n\n\t\ti = simple_strtoul(line+1, &endp, 10);\n\t\tif (endp && endp[0] == '>') {\n\t\t\tlevel = i & 7;\n\t\t\tif (i >> 3)\n\t\t\t\tfacility = i >> 3;\n\t\t\tendp++;\n\t\t\tlen -= endp - line;\n\t\t\tline = endp;\n\t\t}\n\t}\n\tline[len] = '\\0';\n\n\tprintk_emit(facility, level, NULL, 0, \"%s\", line);\nout:\n\tkfree(buf);\n\treturn ret;\n}",
+        "patch": "--- code before\n+++ code after\n@@ -1,32 +1,53 @@\n static ssize_t kmsg_writev(struct kiocb *iocb, const struct iovec *iv,\n \t\t\t   unsigned long count, loff_t pos)\n {\n-\tchar *line, *p;\n+\tchar *buf, *line;\n \tint i;\n-\tssize_t ret = -EFAULT;\n+\tint level = default_message_loglevel;\n+\tint facility = 1;\t/* LOG_USER */\n \tsize_t len = iov_length(iv, count);\n+\tssize_t ret = len;\n \n-\tline = kmalloc(len + 1, GFP_KERNEL);\n-\tif (line == NULL)\n+\tif (len > 1024)\n+\t\treturn -EINVAL;\n+\tbuf = kmalloc(len+1, GFP_KERNEL);\n+\tif (buf == NULL)\n \t\treturn -ENOMEM;\n \n+\tline = buf;\n+\tfor (i = 0; i < count; i++) {\n+\t\tif (copy_from_user(line, iv[i].iov_base, iv[i].iov_len))\n+\t\t\tgoto out;\n+\t\tline += iv[i].iov_len;\n+\t}\n+\n \t/*\n-\t * copy all vectors into a single string, to ensure we do\n-\t * not interleave our log line with other printk calls\n+\t * Extract and skip the syslog prefix <[0-9]*>. Coming from userspace\n+\t * the decimal value represents 32bit, the lower 3 bit are the log\n+\t * level, the rest are the log facility.\n+\t *\n+\t * If no prefix or no userspace facility is specified, we\n+\t * enforce LOG_USER, to be able to reliably distinguish\n+\t * kernel-generated messages from userspace-injected ones.\n \t */\n-\tp = line;\n-\tfor (i = 0; i < count; i++) {\n-\t\tif (copy_from_user(p, iv[i].iov_base, iv[i].iov_len))\n-\t\t\tgoto out;\n-\t\tp += iv[i].iov_len;\n+\tline = buf;\n+\tif (line[0] == '<') {\n+\t\tchar *endp = NULL;\n+\n+\t\ti = simple_strtoul(line+1, &endp, 10);\n+\t\tif (endp && endp[0] == '>') {\n+\t\t\tlevel = i & 7;\n+\t\t\tif (i >> 3)\n+\t\t\t\tfacility = i >> 3;\n+\t\t\tendp++;\n+\t\t\tlen -= endp - line;\n+\t\t\tline = endp;\n+\t\t}\n \t}\n-\tp[0] = '\\0';\n+\tline[len] = '\\0';\n \n-\tret = printk(\"%s\", line);\n-\t/* printk can add a prefix */\n-\tif (ret > len)\n-\t\tret = len;\n+\tprintk_emit(facility, level, NULL, 0, \"%s\", line);\n out:\n-\tkfree(line);\n+\tkfree(buf);\n \treturn ret;\n }",
+        "function_modified_lines": {
+            "added": [
+                "\tchar *buf, *line;",
+                "\tint level = default_message_loglevel;",
+                "\tint facility = 1;\t/* LOG_USER */",
+                "\tssize_t ret = len;",
+                "\tif (len > 1024)",
+                "\t\treturn -EINVAL;",
+                "\tbuf = kmalloc(len+1, GFP_KERNEL);",
+                "\tif (buf == NULL)",
+                "\tline = buf;",
+                "\tfor (i = 0; i < count; i++) {",
+                "\t\tif (copy_from_user(line, iv[i].iov_base, iv[i].iov_len))",
+                "\t\t\tgoto out;",
+                "\t\tline += iv[i].iov_len;",
+                "\t}",
+                "",
+                "\t * Extract and skip the syslog prefix <[0-9]*>. Coming from userspace",
+                "\t * the decimal value represents 32bit, the lower 3 bit are the log",
+                "\t * level, the rest are the log facility.",
+                "\t *",
+                "\t * If no prefix or no userspace facility is specified, we",
+                "\t * enforce LOG_USER, to be able to reliably distinguish",
+                "\t * kernel-generated messages from userspace-injected ones.",
+                "\tline = buf;",
+                "\tif (line[0] == '<') {",
+                "\t\tchar *endp = NULL;",
+                "",
+                "\t\ti = simple_strtoul(line+1, &endp, 10);",
+                "\t\tif (endp && endp[0] == '>') {",
+                "\t\t\tlevel = i & 7;",
+                "\t\t\tif (i >> 3)",
+                "\t\t\t\tfacility = i >> 3;",
+                "\t\t\tendp++;",
+                "\t\t\tlen -= endp - line;",
+                "\t\t\tline = endp;",
+                "\t\t}",
+                "\tline[len] = '\\0';",
+                "\tprintk_emit(facility, level, NULL, 0, \"%s\", line);",
+                "\tkfree(buf);"
+            ],
+            "deleted": [
+                "\tchar *line, *p;",
+                "\tssize_t ret = -EFAULT;",
+                "\tline = kmalloc(len + 1, GFP_KERNEL);",
+                "\tif (line == NULL)",
+                "\t * copy all vectors into a single string, to ensure we do",
+                "\t * not interleave our log line with other printk calls",
+                "\tp = line;",
+                "\tfor (i = 0; i < count; i++) {",
+                "\t\tif (copy_from_user(p, iv[i].iov_base, iv[i].iov_len))",
+                "\t\t\tgoto out;",
+                "\t\tp += iv[i].iov_len;",
+                "\tp[0] = '\\0';",
+                "\tret = printk(\"%s\", line);",
+                "\t/* printk can add a prefix */",
+                "\tif (ret > len)",
+                "\t\tret = len;",
+                "\tkfree(line);"
+            ]
+        },
+        "cwe": [
+            "CWE-119"
+        ],
+        "cve_description": "The log_prefix function in kernel/printk.c in the Linux kernel 3.x before 3.4.33 does not properly remove a prefix string from a syslog header, which allows local users to cause a denial of service (buffer overflow and system crash) by leveraging /dev/kmsg write access and triggering a call_console_drivers function call.",
+        "id": 170
+    },
+    {
+        "cve_id": "CVE-2021-4204",
+        "code_before_change": "static int btf_check_func_arg_match(struct bpf_verifier_env *env,\n\t\t\t\t    const struct btf *btf, u32 func_id,\n\t\t\t\t    struct bpf_reg_state *regs,\n\t\t\t\t    bool ptr_to_mem_ok)\n{\n\tstruct bpf_verifier_log *log = &env->log;\n\tbool is_kfunc = btf_is_kernel(btf);\n\tconst char *func_name, *ref_tname;\n\tconst struct btf_type *t, *ref_t;\n\tconst struct btf_param *args;\n\tu32 i, nargs, ref_id;\n\n\tt = btf_type_by_id(btf, func_id);\n\tif (!t || !btf_type_is_func(t)) {\n\t\t/* These checks were already done by the verifier while loading\n\t\t * struct bpf_func_info or in add_kfunc_call().\n\t\t */\n\t\tbpf_log(log, \"BTF of func_id %u doesn't point to KIND_FUNC\\n\",\n\t\t\tfunc_id);\n\t\treturn -EFAULT;\n\t}\n\tfunc_name = btf_name_by_offset(btf, t->name_off);\n\n\tt = btf_type_by_id(btf, t->type);\n\tif (!t || !btf_type_is_func_proto(t)) {\n\t\tbpf_log(log, \"Invalid BTF of func %s\\n\", func_name);\n\t\treturn -EFAULT;\n\t}\n\targs = (const struct btf_param *)(t + 1);\n\tnargs = btf_type_vlen(t);\n\tif (nargs > MAX_BPF_FUNC_REG_ARGS) {\n\t\tbpf_log(log, \"Function %s has %d > %d args\\n\", func_name, nargs,\n\t\t\tMAX_BPF_FUNC_REG_ARGS);\n\t\treturn -EINVAL;\n\t}\n\n\t/* check that BTF function arguments match actual types that the\n\t * verifier sees.\n\t */\n\tfor (i = 0; i < nargs; i++) {\n\t\tu32 regno = i + 1;\n\t\tstruct bpf_reg_state *reg = &regs[regno];\n\n\t\tt = btf_type_skip_modifiers(btf, args[i].type, NULL);\n\t\tif (btf_type_is_scalar(t)) {\n\t\t\tif (reg->type == SCALAR_VALUE)\n\t\t\t\tcontinue;\n\t\t\tbpf_log(log, \"R%d is not a scalar\\n\", regno);\n\t\t\treturn -EINVAL;\n\t\t}\n\n\t\tif (!btf_type_is_ptr(t)) {\n\t\t\tbpf_log(log, \"Unrecognized arg#%d type %s\\n\",\n\t\t\t\ti, btf_type_str(t));\n\t\t\treturn -EINVAL;\n\t\t}\n\n\t\tref_t = btf_type_skip_modifiers(btf, t->type, &ref_id);\n\t\tref_tname = btf_name_by_offset(btf, ref_t->name_off);\n\t\tif (btf_get_prog_ctx_type(log, btf, t,\n\t\t\t\t\t  env->prog->type, i)) {\n\t\t\t/* If function expects ctx type in BTF check that caller\n\t\t\t * is passing PTR_TO_CTX.\n\t\t\t */\n\t\t\tif (reg->type != PTR_TO_CTX) {\n\t\t\t\tbpf_log(log,\n\t\t\t\t\t\"arg#%d expected pointer to ctx, but got %s\\n\",\n\t\t\t\t\ti, btf_type_str(t));\n\t\t\t\treturn -EINVAL;\n\t\t\t}\n\t\t\tif (check_ctx_reg(env, reg, regno))\n\t\t\t\treturn -EINVAL;\n\t\t} else if (is_kfunc && (reg->type == PTR_TO_BTF_ID || reg2btf_ids[reg->type])) {\n\t\t\tconst struct btf_type *reg_ref_t;\n\t\t\tconst struct btf *reg_btf;\n\t\t\tconst char *reg_ref_tname;\n\t\t\tu32 reg_ref_id;\n\n\t\t\tif (!btf_type_is_struct(ref_t)) {\n\t\t\t\tbpf_log(log, \"kernel function %s args#%d pointer type %s %s is not supported\\n\",\n\t\t\t\t\tfunc_name, i, btf_type_str(ref_t),\n\t\t\t\t\tref_tname);\n\t\t\t\treturn -EINVAL;\n\t\t\t}\n\n\t\t\tif (reg->type == PTR_TO_BTF_ID) {\n\t\t\t\treg_btf = reg->btf;\n\t\t\t\treg_ref_id = reg->btf_id;\n\t\t\t} else {\n\t\t\t\treg_btf = btf_vmlinux;\n\t\t\t\treg_ref_id = *reg2btf_ids[reg->type];\n\t\t\t}\n\n\t\t\treg_ref_t = btf_type_skip_modifiers(reg_btf, reg_ref_id,\n\t\t\t\t\t\t\t    &reg_ref_id);\n\t\t\treg_ref_tname = btf_name_by_offset(reg_btf,\n\t\t\t\t\t\t\t   reg_ref_t->name_off);\n\t\t\tif (!btf_struct_ids_match(log, reg_btf, reg_ref_id,\n\t\t\t\t\t\t  reg->off, btf, ref_id)) {\n\t\t\t\tbpf_log(log, \"kernel function %s args#%d expected pointer to %s %s but R%d has a pointer to %s %s\\n\",\n\t\t\t\t\tfunc_name, i,\n\t\t\t\t\tbtf_type_str(ref_t), ref_tname,\n\t\t\t\t\tregno, btf_type_str(reg_ref_t),\n\t\t\t\t\treg_ref_tname);\n\t\t\t\treturn -EINVAL;\n\t\t\t}\n\t\t} else if (ptr_to_mem_ok) {\n\t\t\tconst struct btf_type *resolve_ret;\n\t\t\tu32 type_size;\n\n\t\t\tif (is_kfunc) {\n\t\t\t\t/* Permit pointer to mem, but only when argument\n\t\t\t\t * type is pointer to scalar, or struct composed\n\t\t\t\t * (recursively) of scalars.\n\t\t\t\t */\n\t\t\t\tif (!btf_type_is_scalar(ref_t) &&\n\t\t\t\t    !__btf_type_is_scalar_struct(log, btf, ref_t, 0)) {\n\t\t\t\t\tbpf_log(log,\n\t\t\t\t\t\t\"arg#%d pointer type %s %s must point to scalar or struct with scalar\\n\",\n\t\t\t\t\t\ti, btf_type_str(ref_t), ref_tname);\n\t\t\t\t\treturn -EINVAL;\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tresolve_ret = btf_resolve_size(btf, ref_t, &type_size);\n\t\t\tif (IS_ERR(resolve_ret)) {\n\t\t\t\tbpf_log(log,\n\t\t\t\t\t\"arg#%d reference type('%s %s') size cannot be determined: %ld\\n\",\n\t\t\t\t\ti, btf_type_str(ref_t), ref_tname,\n\t\t\t\t\tPTR_ERR(resolve_ret));\n\t\t\t\treturn -EINVAL;\n\t\t\t}\n\n\t\t\tif (check_mem_reg(env, reg, regno, type_size))\n\t\t\t\treturn -EINVAL;\n\t\t} else {\n\t\t\tbpf_log(log, \"reg type unsupported for arg#%d %sfunction %s#%d\\n\", i,\n\t\t\t\tis_kfunc ? \"kernel \" : \"\", func_name, func_id);\n\t\t\treturn -EINVAL;\n\t\t}\n\t}\n\n\treturn 0;\n}",
+        "code_after_change": "static int btf_check_func_arg_match(struct bpf_verifier_env *env,\n\t\t\t\t    const struct btf *btf, u32 func_id,\n\t\t\t\t    struct bpf_reg_state *regs,\n\t\t\t\t    bool ptr_to_mem_ok)\n{\n\tstruct bpf_verifier_log *log = &env->log;\n\tbool is_kfunc = btf_is_kernel(btf);\n\tconst char *func_name, *ref_tname;\n\tconst struct btf_type *t, *ref_t;\n\tconst struct btf_param *args;\n\tu32 i, nargs, ref_id;\n\n\tt = btf_type_by_id(btf, func_id);\n\tif (!t || !btf_type_is_func(t)) {\n\t\t/* These checks were already done by the verifier while loading\n\t\t * struct bpf_func_info or in add_kfunc_call().\n\t\t */\n\t\tbpf_log(log, \"BTF of func_id %u doesn't point to KIND_FUNC\\n\",\n\t\t\tfunc_id);\n\t\treturn -EFAULT;\n\t}\n\tfunc_name = btf_name_by_offset(btf, t->name_off);\n\n\tt = btf_type_by_id(btf, t->type);\n\tif (!t || !btf_type_is_func_proto(t)) {\n\t\tbpf_log(log, \"Invalid BTF of func %s\\n\", func_name);\n\t\treturn -EFAULT;\n\t}\n\targs = (const struct btf_param *)(t + 1);\n\tnargs = btf_type_vlen(t);\n\tif (nargs > MAX_BPF_FUNC_REG_ARGS) {\n\t\tbpf_log(log, \"Function %s has %d > %d args\\n\", func_name, nargs,\n\t\t\tMAX_BPF_FUNC_REG_ARGS);\n\t\treturn -EINVAL;\n\t}\n\n\t/* check that BTF function arguments match actual types that the\n\t * verifier sees.\n\t */\n\tfor (i = 0; i < nargs; i++) {\n\t\tu32 regno = i + 1;\n\t\tstruct bpf_reg_state *reg = &regs[regno];\n\n\t\tt = btf_type_skip_modifiers(btf, args[i].type, NULL);\n\t\tif (btf_type_is_scalar(t)) {\n\t\t\tif (reg->type == SCALAR_VALUE)\n\t\t\t\tcontinue;\n\t\t\tbpf_log(log, \"R%d is not a scalar\\n\", regno);\n\t\t\treturn -EINVAL;\n\t\t}\n\n\t\tif (!btf_type_is_ptr(t)) {\n\t\t\tbpf_log(log, \"Unrecognized arg#%d type %s\\n\",\n\t\t\t\ti, btf_type_str(t));\n\t\t\treturn -EINVAL;\n\t\t}\n\n\t\tref_t = btf_type_skip_modifiers(btf, t->type, &ref_id);\n\t\tref_tname = btf_name_by_offset(btf, ref_t->name_off);\n\t\tif (btf_get_prog_ctx_type(log, btf, t,\n\t\t\t\t\t  env->prog->type, i)) {\n\t\t\t/* If function expects ctx type in BTF check that caller\n\t\t\t * is passing PTR_TO_CTX.\n\t\t\t */\n\t\t\tif (reg->type != PTR_TO_CTX) {\n\t\t\t\tbpf_log(log,\n\t\t\t\t\t\"arg#%d expected pointer to ctx, but got %s\\n\",\n\t\t\t\t\ti, btf_type_str(t));\n\t\t\t\treturn -EINVAL;\n\t\t\t}\n\t\t\tif (check_ptr_off_reg(env, reg, regno))\n\t\t\t\treturn -EINVAL;\n\t\t} else if (is_kfunc && (reg->type == PTR_TO_BTF_ID || reg2btf_ids[reg->type])) {\n\t\t\tconst struct btf_type *reg_ref_t;\n\t\t\tconst struct btf *reg_btf;\n\t\t\tconst char *reg_ref_tname;\n\t\t\tu32 reg_ref_id;\n\n\t\t\tif (!btf_type_is_struct(ref_t)) {\n\t\t\t\tbpf_log(log, \"kernel function %s args#%d pointer type %s %s is not supported\\n\",\n\t\t\t\t\tfunc_name, i, btf_type_str(ref_t),\n\t\t\t\t\tref_tname);\n\t\t\t\treturn -EINVAL;\n\t\t\t}\n\n\t\t\tif (reg->type == PTR_TO_BTF_ID) {\n\t\t\t\treg_btf = reg->btf;\n\t\t\t\treg_ref_id = reg->btf_id;\n\t\t\t} else {\n\t\t\t\treg_btf = btf_vmlinux;\n\t\t\t\treg_ref_id = *reg2btf_ids[reg->type];\n\t\t\t}\n\n\t\t\treg_ref_t = btf_type_skip_modifiers(reg_btf, reg_ref_id,\n\t\t\t\t\t\t\t    &reg_ref_id);\n\t\t\treg_ref_tname = btf_name_by_offset(reg_btf,\n\t\t\t\t\t\t\t   reg_ref_t->name_off);\n\t\t\tif (!btf_struct_ids_match(log, reg_btf, reg_ref_id,\n\t\t\t\t\t\t  reg->off, btf, ref_id)) {\n\t\t\t\tbpf_log(log, \"kernel function %s args#%d expected pointer to %s %s but R%d has a pointer to %s %s\\n\",\n\t\t\t\t\tfunc_name, i,\n\t\t\t\t\tbtf_type_str(ref_t), ref_tname,\n\t\t\t\t\tregno, btf_type_str(reg_ref_t),\n\t\t\t\t\treg_ref_tname);\n\t\t\t\treturn -EINVAL;\n\t\t\t}\n\t\t} else if (ptr_to_mem_ok) {\n\t\t\tconst struct btf_type *resolve_ret;\n\t\t\tu32 type_size;\n\n\t\t\tif (is_kfunc) {\n\t\t\t\t/* Permit pointer to mem, but only when argument\n\t\t\t\t * type is pointer to scalar, or struct composed\n\t\t\t\t * (recursively) of scalars.\n\t\t\t\t */\n\t\t\t\tif (!btf_type_is_scalar(ref_t) &&\n\t\t\t\t    !__btf_type_is_scalar_struct(log, btf, ref_t, 0)) {\n\t\t\t\t\tbpf_log(log,\n\t\t\t\t\t\t\"arg#%d pointer type %s %s must point to scalar or struct with scalar\\n\",\n\t\t\t\t\t\ti, btf_type_str(ref_t), ref_tname);\n\t\t\t\t\treturn -EINVAL;\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tresolve_ret = btf_resolve_size(btf, ref_t, &type_size);\n\t\t\tif (IS_ERR(resolve_ret)) {\n\t\t\t\tbpf_log(log,\n\t\t\t\t\t\"arg#%d reference type('%s %s') size cannot be determined: %ld\\n\",\n\t\t\t\t\ti, btf_type_str(ref_t), ref_tname,\n\t\t\t\t\tPTR_ERR(resolve_ret));\n\t\t\t\treturn -EINVAL;\n\t\t\t}\n\n\t\t\tif (check_mem_reg(env, reg, regno, type_size))\n\t\t\t\treturn -EINVAL;\n\t\t} else {\n\t\t\tbpf_log(log, \"reg type unsupported for arg#%d %sfunction %s#%d\\n\", i,\n\t\t\t\tis_kfunc ? \"kernel \" : \"\", func_name, func_id);\n\t\t\treturn -EINVAL;\n\t\t}\n\t}\n\n\treturn 0;\n}",
+        "patch": "--- code before\n+++ code after\n@@ -68,7 +68,7 @@\n \t\t\t\t\ti, btf_type_str(t));\n \t\t\t\treturn -EINVAL;\n \t\t\t}\n-\t\t\tif (check_ctx_reg(env, reg, regno))\n+\t\t\tif (check_ptr_off_reg(env, reg, regno))\n \t\t\t\treturn -EINVAL;\n \t\t} else if (is_kfunc && (reg->type == PTR_TO_BTF_ID || reg2btf_ids[reg->type])) {\n \t\t\tconst struct btf_type *reg_ref_t;",
+        "function_modified_lines": {
+            "added": [
+                "\t\t\tif (check_ptr_off_reg(env, reg, regno))"
+            ],
+            "deleted": [
+                "\t\t\tif (check_ctx_reg(env, reg, regno))"
+            ]
+        },
+        "cwe": [
+            "CWE-119"
+        ],
+        "cve_description": "An out-of-bounds (OOB) memory access flaw was found in the Linux kernel's eBPF due to an Improper Input Validation. This flaw allows a local attacker with a special privilege to crash the system or leak internal information.",
+        "id": 3151
+    },
+    {
+        "cve_id": "CVE-2017-8062",
+        "code_before_change": "static int su3000_power_ctrl(struct dvb_usb_device *d, int i)\n{\n\tstruct dw2102_state *state = (struct dw2102_state *)d->priv;\n\tu8 obuf[] = {0xde, 0};\n\n\tinfo(\"%s: %d, initialized %d\", __func__, i, state->initialized);\n\n\tif (i && !state->initialized) {\n\t\tstate->initialized = 1;\n\t\t/* reset board */\n\t\treturn dvb_usb_generic_rw(d, obuf, 2, NULL, 0, 0);\n\t}\n\n\treturn 0;\n}",
+        "code_after_change": "static int su3000_power_ctrl(struct dvb_usb_device *d, int i)\n{\n\tstruct dw2102_state *state = (struct dw2102_state *)d->priv;\n\tint ret = 0;\n\n\tinfo(\"%s: %d, initialized %d\", __func__, i, state->initialized);\n\n\tif (i && !state->initialized) {\n\t\tmutex_lock(&d->data_mutex);\n\n\t\tstate->data[0] = 0xde;\n\t\tstate->data[1] = 0;\n\n\t\tstate->initialized = 1;\n\t\t/* reset board */\n\t\tret = dvb_usb_generic_rw(d, state->data, 2, NULL, 0, 0);\n\t\tmutex_unlock(&d->data_mutex);\n\t}\n\n\treturn ret;\n}",
+        "patch": "--- code before\n+++ code after\n@@ -1,15 +1,21 @@\n static int su3000_power_ctrl(struct dvb_usb_device *d, int i)\n {\n \tstruct dw2102_state *state = (struct dw2102_state *)d->priv;\n-\tu8 obuf[] = {0xde, 0};\n+\tint ret = 0;\n \n \tinfo(\"%s: %d, initialized %d\", __func__, i, state->initialized);\n \n \tif (i && !state->initialized) {\n+\t\tmutex_lock(&d->data_mutex);\n+\n+\t\tstate->data[0] = 0xde;\n+\t\tstate->data[1] = 0;\n+\n \t\tstate->initialized = 1;\n \t\t/* reset board */\n-\t\treturn dvb_usb_generic_rw(d, obuf, 2, NULL, 0, 0);\n+\t\tret = dvb_usb_generic_rw(d, state->data, 2, NULL, 0, 0);\n+\t\tmutex_unlock(&d->data_mutex);\n \t}\n \n-\treturn 0;\n+\treturn ret;\n }",
+        "function_modified_lines": {
+            "added": [
+                "\tint ret = 0;",
+                "\t\tmutex_lock(&d->data_mutex);",
+                "",
+                "\t\tstate->data[0] = 0xde;",
+                "\t\tstate->data[1] = 0;",
+                "",
+                "\t\tret = dvb_usb_generic_rw(d, state->data, 2, NULL, 0, 0);",
+                "\t\tmutex_unlock(&d->data_mutex);",
+                "\treturn ret;"
+            ],
+            "deleted": [
+                "\tu8 obuf[] = {0xde, 0};",
+                "\t\treturn dvb_usb_generic_rw(d, obuf, 2, NULL, 0, 0);",
+                "\treturn 0;"
+            ]
+        },
+        "cwe": [
+            "CWE-119"
+        ],
+        "cve_description": "drivers/media/usb/dvb-usb/dw2102.c in the Linux kernel 4.9.x and 4.10.x before 4.10.4 interacts incorrectly with the CONFIG_VMAP_STACK option, which allows local users to cause a denial of service (system crash or memory corruption) or possibly have unspecified other impact by leveraging use of more than one virtual page for a DMA scatterlist.",
+        "id": 1537
+    },
+    {
+        "cve_id": "CVE-2020-10757",
+        "code_before_change": "unsigned long move_page_tables(struct vm_area_struct *vma,\n\t\tunsigned long old_addr, struct vm_area_struct *new_vma,\n\t\tunsigned long new_addr, unsigned long len,\n\t\tbool need_rmap_locks)\n{\n\tunsigned long extent, next, old_end;\n\tstruct mmu_notifier_range range;\n\tpmd_t *old_pmd, *new_pmd;\n\n\told_end = old_addr + len;\n\tflush_cache_range(vma, old_addr, old_end);\n\n\tmmu_notifier_range_init(&range, MMU_NOTIFY_UNMAP, 0, vma, vma->vm_mm,\n\t\t\t\told_addr, old_end);\n\tmmu_notifier_invalidate_range_start(&range);\n\n\tfor (; old_addr < old_end; old_addr += extent, new_addr += extent) {\n\t\tcond_resched();\n\t\tnext = (old_addr + PMD_SIZE) & PMD_MASK;\n\t\t/* even if next overflowed, extent below will be ok */\n\t\textent = next - old_addr;\n\t\tif (extent > old_end - old_addr)\n\t\t\textent = old_end - old_addr;\n\t\told_pmd = get_old_pmd(vma->vm_mm, old_addr);\n\t\tif (!old_pmd)\n\t\t\tcontinue;\n\t\tnew_pmd = alloc_new_pmd(vma->vm_mm, vma, new_addr);\n\t\tif (!new_pmd)\n\t\t\tbreak;\n\t\tif (is_swap_pmd(*old_pmd) || pmd_trans_huge(*old_pmd)) {\n\t\t\tif (extent == HPAGE_PMD_SIZE) {\n\t\t\t\tbool moved;\n\t\t\t\t/* See comment in move_ptes() */\n\t\t\t\tif (need_rmap_locks)\n\t\t\t\t\ttake_rmap_locks(vma);\n\t\t\t\tmoved = move_huge_pmd(vma, old_addr, new_addr,\n\t\t\t\t\t\t    old_end, old_pmd, new_pmd);\n\t\t\t\tif (need_rmap_locks)\n\t\t\t\t\tdrop_rmap_locks(vma);\n\t\t\t\tif (moved)\n\t\t\t\t\tcontinue;\n\t\t\t}\n\t\t\tsplit_huge_pmd(vma, old_pmd, old_addr);\n\t\t\tif (pmd_trans_unstable(old_pmd))\n\t\t\t\tcontinue;\n\t\t} else if (extent == PMD_SIZE) {\n#ifdef CONFIG_HAVE_MOVE_PMD\n\t\t\t/*\n\t\t\t * If the extent is PMD-sized, try to speed the move by\n\t\t\t * moving at the PMD level if possible.\n\t\t\t */\n\t\t\tbool moved;\n\n\t\t\tif (need_rmap_locks)\n\t\t\t\ttake_rmap_locks(vma);\n\t\t\tmoved = move_normal_pmd(vma, old_addr, new_addr,\n\t\t\t\t\told_end, old_pmd, new_pmd);\n\t\t\tif (need_rmap_locks)\n\t\t\t\tdrop_rmap_locks(vma);\n\t\t\tif (moved)\n\t\t\t\tcontinue;\n#endif\n\t\t}\n\n\t\tif (pte_alloc(new_vma->vm_mm, new_pmd))\n\t\t\tbreak;\n\t\tnext = (new_addr + PMD_SIZE) & PMD_MASK;\n\t\tif (extent > next - new_addr)\n\t\t\textent = next - new_addr;\n\t\tmove_ptes(vma, old_pmd, old_addr, old_addr + extent, new_vma,\n\t\t\t  new_pmd, new_addr, need_rmap_locks);\n\t}\n\n\tmmu_notifier_invalidate_range_end(&range);\n\n\treturn len + old_addr - old_end;\t/* how much done */\n}",
+        "code_after_change": "unsigned long move_page_tables(struct vm_area_struct *vma,\n\t\tunsigned long old_addr, struct vm_area_struct *new_vma,\n\t\tunsigned long new_addr, unsigned long len,\n\t\tbool need_rmap_locks)\n{\n\tunsigned long extent, next, old_end;\n\tstruct mmu_notifier_range range;\n\tpmd_t *old_pmd, *new_pmd;\n\n\told_end = old_addr + len;\n\tflush_cache_range(vma, old_addr, old_end);\n\n\tmmu_notifier_range_init(&range, MMU_NOTIFY_UNMAP, 0, vma, vma->vm_mm,\n\t\t\t\told_addr, old_end);\n\tmmu_notifier_invalidate_range_start(&range);\n\n\tfor (; old_addr < old_end; old_addr += extent, new_addr += extent) {\n\t\tcond_resched();\n\t\tnext = (old_addr + PMD_SIZE) & PMD_MASK;\n\t\t/* even if next overflowed, extent below will be ok */\n\t\textent = next - old_addr;\n\t\tif (extent > old_end - old_addr)\n\t\t\textent = old_end - old_addr;\n\t\told_pmd = get_old_pmd(vma->vm_mm, old_addr);\n\t\tif (!old_pmd)\n\t\t\tcontinue;\n\t\tnew_pmd = alloc_new_pmd(vma->vm_mm, vma, new_addr);\n\t\tif (!new_pmd)\n\t\t\tbreak;\n\t\tif (is_swap_pmd(*old_pmd) || pmd_trans_huge(*old_pmd) || pmd_devmap(*old_pmd)) {\n\t\t\tif (extent == HPAGE_PMD_SIZE) {\n\t\t\t\tbool moved;\n\t\t\t\t/* See comment in move_ptes() */\n\t\t\t\tif (need_rmap_locks)\n\t\t\t\t\ttake_rmap_locks(vma);\n\t\t\t\tmoved = move_huge_pmd(vma, old_addr, new_addr,\n\t\t\t\t\t\t    old_end, old_pmd, new_pmd);\n\t\t\t\tif (need_rmap_locks)\n\t\t\t\t\tdrop_rmap_locks(vma);\n\t\t\t\tif (moved)\n\t\t\t\t\tcontinue;\n\t\t\t}\n\t\t\tsplit_huge_pmd(vma, old_pmd, old_addr);\n\t\t\tif (pmd_trans_unstable(old_pmd))\n\t\t\t\tcontinue;\n\t\t} else if (extent == PMD_SIZE) {\n#ifdef CONFIG_HAVE_MOVE_PMD\n\t\t\t/*\n\t\t\t * If the extent is PMD-sized, try to speed the move by\n\t\t\t * moving at the PMD level if possible.\n\t\t\t */\n\t\t\tbool moved;\n\n\t\t\tif (need_rmap_locks)\n\t\t\t\ttake_rmap_locks(vma);\n\t\t\tmoved = move_normal_pmd(vma, old_addr, new_addr,\n\t\t\t\t\told_end, old_pmd, new_pmd);\n\t\t\tif (need_rmap_locks)\n\t\t\t\tdrop_rmap_locks(vma);\n\t\t\tif (moved)\n\t\t\t\tcontinue;\n#endif\n\t\t}\n\n\t\tif (pte_alloc(new_vma->vm_mm, new_pmd))\n\t\t\tbreak;\n\t\tnext = (new_addr + PMD_SIZE) & PMD_MASK;\n\t\tif (extent > next - new_addr)\n\t\t\textent = next - new_addr;\n\t\tmove_ptes(vma, old_pmd, old_addr, old_addr + extent, new_vma,\n\t\t\t  new_pmd, new_addr, need_rmap_locks);\n\t}\n\n\tmmu_notifier_invalidate_range_end(&range);\n\n\treturn len + old_addr - old_end;\t/* how much done */\n}",
+        "patch": "--- code before\n+++ code after\n@@ -27,7 +27,7 @@\n \t\tnew_pmd = alloc_new_pmd(vma->vm_mm, vma, new_addr);\n \t\tif (!new_pmd)\n \t\t\tbreak;\n-\t\tif (is_swap_pmd(*old_pmd) || pmd_trans_huge(*old_pmd)) {\n+\t\tif (is_swap_pmd(*old_pmd) || pmd_trans_huge(*old_pmd) || pmd_devmap(*old_pmd)) {\n \t\t\tif (extent == HPAGE_PMD_SIZE) {\n \t\t\t\tbool moved;\n \t\t\t\t/* See comment in move_ptes() */",
+        "function_modified_lines": {
+            "added": [
+                "\t\tif (is_swap_pmd(*old_pmd) || pmd_trans_huge(*old_pmd) || pmd_devmap(*old_pmd)) {"
+            ],
+            "deleted": [
+                "\t\tif (is_swap_pmd(*old_pmd) || pmd_trans_huge(*old_pmd)) {"
+            ]
+        },
+        "cwe": [
+            "CWE-119",
+            "CWE-843"
+        ],
+        "cve_description": "A flaw was found in the Linux Kernel in versions after 4.5-rc1 in the way mremap handled DAX Huge Pages. This flaw allows a local attacker with access to a DAX enabled storage to escalate their privileges on the system.",
+        "id": 2414
+    },
+    {
+        "cve_id": "CVE-2013-2234",
+        "code_before_change": "static int key_notify_policy_flush(const struct km_event *c)\n{\n\tstruct sk_buff *skb_out;\n\tstruct sadb_msg *hdr;\n\n\tskb_out = alloc_skb(sizeof(struct sadb_msg) + 16, GFP_ATOMIC);\n\tif (!skb_out)\n\t\treturn -ENOBUFS;\n\thdr = (struct sadb_msg *) skb_put(skb_out, sizeof(struct sadb_msg));\n\thdr->sadb_msg_type = SADB_X_SPDFLUSH;\n\thdr->sadb_msg_seq = c->seq;\n\thdr->sadb_msg_pid = c->portid;\n\thdr->sadb_msg_version = PF_KEY_V2;\n\thdr->sadb_msg_errno = (uint8_t) 0;\n\thdr->sadb_msg_satype = SADB_SATYPE_UNSPEC;\n\thdr->sadb_msg_len = (sizeof(struct sadb_msg) / sizeof(uint64_t));\n\tpfkey_broadcast(skb_out, GFP_ATOMIC, BROADCAST_ALL, NULL, c->net);\n\treturn 0;\n\n}",
+        "code_after_change": "static int key_notify_policy_flush(const struct km_event *c)\n{\n\tstruct sk_buff *skb_out;\n\tstruct sadb_msg *hdr;\n\n\tskb_out = alloc_skb(sizeof(struct sadb_msg) + 16, GFP_ATOMIC);\n\tif (!skb_out)\n\t\treturn -ENOBUFS;\n\thdr = (struct sadb_msg *) skb_put(skb_out, sizeof(struct sadb_msg));\n\thdr->sadb_msg_type = SADB_X_SPDFLUSH;\n\thdr->sadb_msg_seq = c->seq;\n\thdr->sadb_msg_pid = c->portid;\n\thdr->sadb_msg_version = PF_KEY_V2;\n\thdr->sadb_msg_errno = (uint8_t) 0;\n\thdr->sadb_msg_satype = SADB_SATYPE_UNSPEC;\n\thdr->sadb_msg_len = (sizeof(struct sadb_msg) / sizeof(uint64_t));\n\thdr->sadb_msg_reserved = 0;\n\tpfkey_broadcast(skb_out, GFP_ATOMIC, BROADCAST_ALL, NULL, c->net);\n\treturn 0;\n\n}",
+        "patch": "--- code before\n+++ code after\n@@ -14,6 +14,7 @@\n \thdr->sadb_msg_errno = (uint8_t) 0;\n \thdr->sadb_msg_satype = SADB_SATYPE_UNSPEC;\n \thdr->sadb_msg_len = (sizeof(struct sadb_msg) / sizeof(uint64_t));\n+\thdr->sadb_msg_reserved = 0;\n \tpfkey_broadcast(skb_out, GFP_ATOMIC, BROADCAST_ALL, NULL, c->net);\n \treturn 0;\n ",
+        "function_modified_lines": {
+            "added": [
+                "\thdr->sadb_msg_reserved = 0;"
+            ],
+            "deleted": []
+        },
+        "cwe": [
+            "CWE-119"
+        ],
+        "cve_description": "The (1) key_notify_sa_flush and (2) key_notify_policy_flush functions in net/key/af_key.c in the Linux kernel before 3.10 do not initialize certain structure members, which allows local users to obtain sensitive information from kernel heap memory by reading a broadcast message from the notify interface of an IPSec key_socket.",
+        "id": 225
+    }
+]

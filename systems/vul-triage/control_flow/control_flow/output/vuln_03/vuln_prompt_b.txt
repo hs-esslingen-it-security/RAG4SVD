@@ -1,0 +1,55 @@
+文件: /Users/vinsontang/Desktop/test/graph_demo/control_flow/test_snippets/vuln_03_use_after_free.c
+图构建模式: precise_c
+【AST】
+- 类型/结构定义：Typedef@L17
+- 函数 default_close@L19：声明0个、赋值1个、分支0个、调用1个。
+  - 调用链要点：printf。
+- 函数 session_create@L24：声明0个、赋值4个、分支1个、调用2个。
+  - 调用链要点：malloc -> strncpy。
+  - 条件/循环：If
+- 函数 session_close@L35：声明0个、赋值0个、分支1个、调用0个。
+  - 条件/循环：If
+- 函数 session_destroy@L42：声明0个、赋值0个、分支0个、调用1个。
+  - 调用链要点：free。
+- 函数 print_session@L47：声明0个、赋值2个、分支1个、调用1个。
+  - 调用链要点：printf。
+  - 条件/循环：If
+- 函数 main@L52：声明0个、赋值2个、分支0个、调用13个。
+  - 调用链要点：print_session -> printf -> session_close -> session_create -> session_destroy。
+
+【CFG】
+- 函数 default_close：保留控制点 4/4；分支节点 0；调用节点 1；线性段折叠 0。
+  - 路径1: Entry -> call printf(...) -> s->is_active = ... -> default_close EXIT
+- 函数 session_create：保留控制点 11/11；分支节点 1；调用节点 1；线性段折叠 0。
+  - 分支/循环节点：if (!s)@L26
+- 函数 session_close：保留控制点 4/4；分支节点 1；调用节点 1；线性段折叠 0。
+  - 分支/循环节点：if (s && s->on_close)@L36
+  - 路径1: Entry -> if (s && s->on_close) -> session_close EXIT
+  - 路径2: Entry -> if (s && s->on_close) -> [True] call ? -> session_close EXIT
+- 函数 session_destroy：保留控制点 3/3；分支节点 0；调用节点 1；线性段折叠 0。
+  - 路径1: Entry -> call free(...) -> session_destroy EXIT
+- 函数 print_session：保留控制点 5/5；分支节点 1；调用节点 1；线性段折叠 0。
+  - 分支/循环节点：if (s == 0)@L48
+  - 路径1: Entry -> if (s == 0) -> call printf(...) -> print_session EXIT
+- 函数 main：保留控制点 14/17；分支节点 0；调用节点 10；线性段折叠 3。
+
+【DFG】
+- 函数 default_close：边保留 1/2；参数源 1 个；抽取链路 1 条。
+  - 参数源：param: s@L19
+  - 数据链：param: s -> call printf
+- 函数 session_create：边保留 5/5；参数源 2 个；抽取链路 2 条。
+  - 参数源：param: id@L24；param: name@L24
+  - 数据链：param: id -> assign s->id
+  - 数据链：param: name -> call strncpy
+- 函数 session_close：边保留 2/3；参数源 1 个；抽取链路 2 条。
+  - 参数源：param: s@L35
+  - 数据链：param: s -> if(...)
+  - 数据链：param: s -> FuncCall
+- 函数 session_destroy：边保留 1/1；参数源 1 个；抽取链路 1 条。
+  - 参数源：param: s@L42
+  - 数据链：param: s -> call free
+- 函数 print_session：边保留 2/4；参数源 1 个；抽取链路 2 条。
+  - 参数源：param: s@L47
+  - 数据链：param: s -> if(...)
+  - 数据链：param: s -> call printf
+- 函数 main：边保留 9/10；参数源 0 个；抽取链路 0 条。

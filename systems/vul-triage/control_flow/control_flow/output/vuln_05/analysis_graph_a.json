@@ -1,0 +1,953 @@
+{
+  "mode": "precise_c",
+  "language": "c",
+  "detail_level": "A",
+  "filtered_ast": {
+    "level": "A",
+    "typedefs": [
+      {
+        "label": "Typedef",
+        "line": 17
+      }
+    ],
+    "functions": [
+      {
+        "func": "packet_create",
+        "line": 19,
+        "node_count_raw": 109,
+        "node_count_kept": 20,
+        "types_kept": [
+          "Assignment",
+          "Decl",
+          "FuncCall",
+          "FuncDef",
+          "If",
+          "Return"
+        ],
+        "calls": [
+          "memcpy",
+          "malloc",
+          "malloc",
+          "free"
+        ],
+        "calls_uniq": [
+          "free",
+          "malloc",
+          "memcpy"
+        ],
+        "conditions": [
+          "If",
+          "If"
+        ],
+        "returns": [
+          "Return",
+          "Return",
+          "Return"
+        ],
+        "declarations": [],
+        "assignments": [
+          "Assign:=",
+          "Assign:=",
+          "Assign:=",
+          "Assign:=",
+          "Assign:="
+        ],
+        "constants": []
+      },
+      {
+        "func": "packet_addref",
+        "line": 35,
+        "node_count_raw": 17,
+        "node_count_kept": 4,
+        "types_kept": [
+          "Decl",
+          "FuncDef",
+          "If"
+        ],
+        "calls": [],
+        "calls_uniq": [],
+        "conditions": [
+          "If"
+        ],
+        "returns": [],
+        "declarations": [],
+        "assignments": [],
+        "constants": []
+      },
+      {
+        "func": "packet_release",
+        "line": 40,
+        "node_count_raw": 36,
+        "node_count_kept": 8,
+        "types_kept": [
+          "Decl",
+          "FuncCall",
+          "FuncDef",
+          "If",
+          "Return"
+        ],
+        "calls": [
+          "free",
+          "free"
+        ],
+        "calls_uniq": [
+          "free"
+        ],
+        "conditions": [
+          "If",
+          "If"
+        ],
+        "returns": [
+          "Return"
+        ],
+        "declarations": [],
+        "assignments": [],
+        "constants": []
+      },
+      {
+        "func": "packet_print",
+        "line": 50,
+        "node_count_raw": 36,
+        "node_count_kept": 6,
+        "types_kept": [
+          "Decl",
+          "FuncCall",
+          "FuncDef",
+          "If",
+          "Return"
+        ],
+        "calls": [
+          "printf"
+        ],
+        "calls_uniq": [
+          "printf"
+        ],
+        "conditions": [
+          "If"
+        ],
+        "returns": [
+          "Return"
+        ],
+        "declarations": [],
+        "assignments": [],
+        "constants": []
+      },
+      {
+        "func": "packet_clone",
+        "line": 57,
+        "node_count_raw": 30,
+        "node_count_kept": 7,
+        "types_kept": [
+          "Decl",
+          "FuncCall",
+          "FuncDef",
+          "If",
+          "Return"
+        ],
+        "calls": [
+          "packet_create"
+        ],
+        "calls_uniq": [
+          "packet_create"
+        ],
+        "conditions": [
+          "If"
+        ],
+        "returns": [
+          "Return",
+          "Return"
+        ],
+        "declarations": [],
+        "assignments": [],
+        "constants": []
+      },
+      {
+        "func": "process_packets",
+        "line": 62,
+        "node_count_raw": 48,
+        "node_count_kept": 11,
+        "types_kept": [
+          "Decl",
+          "FuncCall",
+          "FuncDef",
+          "If"
+        ],
+        "calls": [
+          "packet_print",
+          "packet_print",
+          "printf",
+          "packet_release",
+          "printf",
+          "packet_release"
+        ],
+        "calls_uniq": [
+          "packet_print",
+          "packet_release",
+          "printf"
+        ],
+        "conditions": [
+          "If"
+        ],
+        "returns": [],
+        "declarations": [],
+        "assignments": [],
+        "constants": []
+      },
+      {
+        "func": "main",
+        "line": 77,
+        "node_count_raw": 71,
+        "node_count_kept": 16,
+        "types_kept": [
+          "Decl",
+          "FuncCall",
+          "FuncDef",
+          "If",
+          "Return"
+        ],
+        "calls": [
+          "packet_print",
+          "process_packets",
+          "packet_release",
+          "packet_release",
+          "packet_create",
+          "packet_create",
+          "packet_clone",
+          "fprintf"
+        ],
+        "calls_uniq": [
+          "fprintf",
+          "packet_clone",
+          "packet_create",
+          "packet_print",
+          "packet_release",
+          "process_packets"
+        ],
+        "conditions": [
+          "If"
+        ],
+        "returns": [
+          "Return",
+          "Return"
+        ],
+        "declarations": [],
+        "assignments": [],
+        "constants": []
+      }
+    ],
+    "collapsed_isomorphic_functions": []
+  },
+  "filtered_cfg": {
+    "packet_create": {
+      "entry": "entry_packet_create",
+      "exit": "exit_packet_create",
+      "node_count_raw": 15,
+      "node_count_kept": 9,
+      "branches": [
+        {
+          "label": "if (!p)",
+          "line": 21
+        },
+        {
+          "label": "if (!p->payload)",
+          "line": 25
+        }
+      ],
+      "calls": [
+        {
+          "label": "call free(...)",
+          "line": 26
+        },
+        {
+          "label": "call memcpy(...)",
+          "line": 29
+        }
+      ],
+      "merged_linear_segments": 6,
+      "paths": []
+    },
+    "packet_addref": {
+      "entry": "entry_packet_addref",
+      "exit": "exit_packet_addref",
+      "node_count_raw": 4,
+      "node_count_kept": 3,
+      "branches": [
+        {
+          "label": "if (p)",
+          "line": 36
+        }
+      ],
+      "calls": [],
+      "merged_linear_segments": 1,
+      "paths": [
+        [
+          [
+            "If_4311898288",
+            ""
+          ],
+          [
+            "exit_packet_addref",
+            ""
+          ]
+        ],
+        [
+          [
+            "If_4311898288",
+            ""
+          ],
+          [
+            "UnaryOp_4311898208",
+            "True"
+          ],
+          [
+            "exit_packet_addref",
+            ""
+          ]
+        ]
+      ]
+    },
+    "packet_release": {
+      "entry": "entry_packet_release",
+      "exit": "exit_packet_release",
+      "node_count_raw": 8,
+      "node_count_kept": 7,
+      "branches": [
+        {
+          "label": "if (!p)",
+          "line": 41
+        },
+        {
+          "label": "if (p->ref_count <= 0)",
+          "line": 43
+        }
+      ],
+      "calls": [
+        {
+          "label": "call free(...)",
+          "line": 44
+        },
+        {
+          "label": "call free(...)",
+          "line": 46
+        }
+      ],
+      "merged_linear_segments": 1,
+      "paths": [
+        [
+          [
+            "If_4311898688",
+            ""
+          ],
+          [
+            "UnaryOp_4311898848",
+            ""
+          ],
+          [
+            "If_4311899408",
+            ""
+          ],
+          [
+            "exit_packet_release",
+            ""
+          ]
+        ],
+        [
+          [
+            "If_4311898688",
+            ""
+          ],
+          [
+            "UnaryOp_4311898848",
+            ""
+          ],
+          [
+            "If_4311899408",
+            ""
+          ],
+          [
+            "FuncCall_4311899248",
+            "True"
+          ],
+          [
+            "FuncCall_4311899328",
+            ""
+          ],
+          [
+            "exit_packet_release",
+            ""
+          ]
+        ]
+      ]
+    },
+    "packet_print": {
+      "entry": "entry_packet_print",
+      "exit": "exit_packet_print",
+      "node_count_raw": 5,
+      "node_count_kept": 5,
+      "branches": [
+        {
+          "label": "if (!p)",
+          "line": 51
+        }
+      ],
+      "calls": [
+        {
+          "label": "call printf(...)",
+          "line": 52
+        }
+      ],
+      "merged_linear_segments": 0,
+      "paths": [
+        [
+          [
+            "If_4311899808",
+            ""
+          ],
+          [
+            "FuncCall_4311900608",
+            ""
+          ],
+          [
+            "exit_packet_print",
+            ""
+          ]
+        ]
+      ]
+    },
+    "packet_clone": {
+      "entry": "entry_packet_clone",
+      "exit": "exit_packet_clone",
+      "node_count_raw": 5,
+      "node_count_kept": 5,
+      "branches": [
+        {
+          "label": "if (!src)",
+          "line": 58
+        }
+      ],
+      "calls": [],
+      "merged_linear_segments": 0,
+      "paths": []
+    },
+    "process_packets": {
+      "entry": "entry_process_packets",
+      "exit": "exit_process_packets",
+      "node_count_raw": 9,
+      "node_count_kept": 9,
+      "branches": [
+        {
+          "label": "if (p1->type == p2->type)",
+          "line": 67
+        }
+      ],
+      "calls": [
+        {
+          "label": "call packet_print(...)",
+          "line": 63
+        },
+        {
+          "label": "call packet_print(...)",
+          "line": 64
+        },
+        {
+          "label": "call printf(...)",
+          "line": 68
+        },
+        {
+          "label": "call packet_release(...)",
+          "line": 69
+        },
+        {
+          "label": "call printf(...)",
+          "line": 73
+        },
+        {
+          "label": "call packet_release(...)",
+          "line": 74
+        }
+      ],
+      "merged_linear_segments": 0,
+      "paths": [
+        [
+          [
+            "FuncCall_4311901888",
+            ""
+          ],
+          [
+            "FuncCall_4311901968",
+            ""
+          ],
+          [
+            "If_4311902608",
+            ""
+          ],
+          [
+            "FuncCall_4311902848",
+            ""
+          ],
+          [
+            "FuncCall_4311902928",
+            ""
+          ],
+          [
+            "exit_process_packets",
+            ""
+          ]
+        ],
+        [
+          [
+            "FuncCall_4311901888",
+            ""
+          ],
+          [
+            "FuncCall_4311901968",
+            ""
+          ],
+          [
+            "If_4311902608",
+            ""
+          ],
+          [
+            "FuncCall_4311902448",
+            "True"
+          ],
+          [
+            "FuncCall_4311902528",
+            ""
+          ],
+          [
+            "FuncCall_4311902848",
+            ""
+          ],
+          [
+            "FuncCall_4311902928",
+            ""
+          ],
+          [
+            "exit_process_packets",
+            ""
+          ]
+        ]
+      ]
+    },
+    "main": {
+      "entry": "entry_main",
+      "exit": "exit_main",
+      "node_count_raw": 13,
+      "node_count_kept": 10,
+      "branches": [
+        {
+          "label": "if (!pkt1 || !pkt2)",
+          "line": 81
+        }
+      ],
+      "calls": [
+        {
+          "label": "call fprintf(...)",
+          "line": 82
+        },
+        {
+          "label": "call packet_print(...)",
+          "line": 87
+        },
+        {
+          "label": "call process_packets(...)",
+          "line": 90
+        },
+        {
+          "label": "call packet_release(...)",
+          "line": 92
+        },
+        {
+          "label": "call packet_release(...)",
+          "line": 93
+        }
+      ],
+      "merged_linear_segments": 3,
+      "paths": []
+    }
+  },
+  "filtered_dfg": {
+    "packet_create": {
+      "node_count_raw": 15,
+      "edge_count_raw": 9,
+      "edge_count_kept": 5,
+      "parameters": [
+        {
+          "id": "param_type_packet_create",
+          "label": "param: type",
+          "line": 19
+        },
+        {
+          "id": "param_data_packet_create",
+          "label": "param: data",
+          "line": 19
+        },
+        {
+          "id": "param_len_packet_create",
+          "label": "param: len",
+          "line": 19
+        }
+      ],
+      "edges": [
+        {
+          "from": "param_type_packet_create",
+          "to": "Assignment_4311895408",
+          "var": "type"
+        },
+        {
+          "from": "Decl_4311380688",
+          "to": "FuncCall_4311896768",
+          "var": "p"
+        },
+        {
+          "from": "Decl_4311380688",
+          "to": "FuncCall_4311897168",
+          "var": "p"
+        },
+        {
+          "from": "param_data_packet_create",
+          "to": "FuncCall_4311897168",
+          "var": "data"
+        },
+        {
+          "from": "Decl_4311380688",
+          "to": "Return_4312248592",
+          "var": "p"
+        }
+      ],
+      "chains": [
+        [
+          "param_type_packet_create",
+          "Assignment_4311895408"
+        ],
+        [
+          "param_data_packet_create",
+          "FuncCall_4311897168"
+        ]
+      ],
+      "node_labels": {
+        "param_type_packet_create": "param: type",
+        "param_data_packet_create": "param: data",
+        "param_len_packet_create": "param: len",
+        "Decl_4311380688": "decl p",
+        "If_4311895248": "if(...)",
+        "Assignment_4311895408": "assign p->type",
+        "Assignment_4311895888": "assign p->length",
+        "Assignment_4311896528": "assign p->payload",
+        "If_4311896928": "if(...)",
+        "FuncCall_4311896768": "call free",
+        "Return_4312245392": "return",
+        "FuncCall_4311897168": "call memcpy",
+        "Assignment_4311897568": "assign None",
+        "Assignment_4311897808": "assign p->ref_count",
+        "Return_4312248592": "return"
+      }
+    },
+    "packet_addref": {
+      "node_count_raw": 2,
+      "edge_count_raw": 1,
+      "edge_count_kept": 1,
+      "parameters": [
+        {
+          "id": "param_p_packet_addref",
+          "label": "param: p",
+          "line": 35
+        }
+      ],
+      "edges": [
+        {
+          "from": "param_p_packet_addref",
+          "to": "If_4311898288",
+          "var": "p"
+        }
+      ],
+      "chains": [
+        [
+          "param_p_packet_addref",
+          "If_4311898288"
+        ]
+      ],
+      "node_labels": {
+        "param_p_packet_addref": "param: p",
+        "If_4311898288": "if(...)"
+      }
+    },
+    "packet_release": {
+      "node_count_raw": 6,
+      "edge_count_raw": 5,
+      "edge_count_kept": 5,
+      "parameters": [
+        {
+          "id": "param_p_packet_release",
+          "label": "param: p",
+          "line": 40
+        }
+      ],
+      "edges": [
+        {
+          "from": "param_p_packet_release",
+          "to": "If_4311898688",
+          "var": "p"
+        },
+        {
+          "from": "param_p_packet_release",
+          "to": "UnaryOp_4311898848",
+          "var": "p"
+        },
+        {
+          "from": "param_p_packet_release",
+          "to": "If_4311899408",
+          "var": "p"
+        },
+        {
+          "from": "param_p_packet_release",
+          "to": "FuncCall_4311899248",
+          "var": "p"
+        },
+        {
+          "from": "param_p_packet_release",
+          "to": "FuncCall_4311899328",
+          "var": "p"
+        }
+      ],
+      "chains": [
+        [
+          "param_p_packet_release",
+          "If_4311898688"
+        ],
+        [
+          "param_p_packet_release",
+          "UnaryOp_4311898848"
+        ],
+        [
+          "param_p_packet_release",
+          "If_4311899408"
+        ],
+        [
+          "param_p_packet_release",
+          "FuncCall_4311899248"
+        ]
+      ],
+      "node_labels": {
+        "param_p_packet_release": "param: p",
+        "If_4311898688": "if(...)",
+        "UnaryOp_4311898848": "UnaryOp",
+        "If_4311899408": "if(...)",
+        "FuncCall_4311899248": "call free",
+        "FuncCall_4311899328": "call free"
+      }
+    },
+    "packet_print": {
+      "node_count_raw": 3,
+      "edge_count_raw": 4,
+      "edge_count_kept": 2,
+      "parameters": [
+        {
+          "id": "param_p_packet_print",
+          "label": "param: p",
+          "line": 50
+        }
+      ],
+      "edges": [
+        {
+          "from": "param_p_packet_print",
+          "to": "If_4311899808",
+          "var": "p"
+        },
+        {
+          "from": "param_p_packet_print",
+          "to": "FuncCall_4311900608",
+          "var": "p"
+        }
+      ],
+      "chains": [
+        [
+          "param_p_packet_print",
+          "If_4311899808"
+        ],
+        [
+          "param_p_packet_print",
+          "FuncCall_4311900608"
+        ]
+      ],
+      "node_labels": {
+        "param_p_packet_print": "param: p",
+        "If_4311899808": "if(...)",
+        "FuncCall_4311900608": "call printf"
+      }
+    },
+    "packet_clone": {
+      "node_count_raw": 3,
+      "edge_count_raw": 4,
+      "edge_count_kept": 2,
+      "parameters": [
+        {
+          "id": "param_src_packet_clone",
+          "label": "param: src",
+          "line": 57
+        }
+      ],
+      "edges": [
+        {
+          "from": "param_src_packet_clone",
+          "to": "If_4311901168",
+          "var": "src"
+        },
+        {
+          "from": "param_src_packet_clone",
+          "to": "Return_4312266256",
+          "var": "src"
+        }
+      ],
+      "chains": [
+        [
+          "param_src_packet_clone",
+          "If_4311901168"
+        ],
+        [
+          "param_src_packet_clone",
+          "Return_4312266256"
+        ]
+      ],
+      "node_labels": {
+        "param_src_packet_clone": "param: src",
+        "If_4311901168": "if(...)",
+        "Return_4312266256": "return"
+      }
+    },
+    "process_packets": {
+      "node_count_raw": 9,
+      "edge_count_raw": 6,
+      "edge_count_kept": 6,
+      "parameters": [
+        {
+          "id": "param_p1_process_packets",
+          "label": "param: p1",
+          "line": 62
+        },
+        {
+          "id": "param_p2_process_packets",
+          "label": "param: p2",
+          "line": 62
+        }
+      ],
+      "edges": [
+        {
+          "from": "param_p1_process_packets",
+          "to": "FuncCall_4311901888",
+          "var": "p1"
+        },
+        {
+          "from": "param_p2_process_packets",
+          "to": "FuncCall_4311901968",
+          "var": "p2"
+        },
+        {
+          "from": "param_p1_process_packets",
+          "to": "If_4311902608",
+          "var": "p1"
+        },
+        {
+          "from": "param_p2_process_packets",
+          "to": "If_4311902608",
+          "var": "p2"
+        },
+        {
+          "from": "param_p1_process_packets",
+          "to": "FuncCall_4311902528",
+          "var": "p1"
+        },
+        {
+          "from": "param_p1_process_packets",
+          "to": "FuncCall_4311902928",
+          "var": "p1"
+        }
+      ],
+      "chains": [
+        [
+          "param_p1_process_packets",
+          "FuncCall_4311901888"
+        ],
+        [
+          "param_p1_process_packets",
+          "If_4311902608"
+        ],
+        [
+          "param_p1_process_packets",
+          "FuncCall_4311902528"
+        ],
+        [
+          "param_p1_process_packets",
+          "FuncCall_4311902928"
+        ],
+        [
+          "param_p2_process_packets",
+          "FuncCall_4311901968"
+        ],
+        [
+          "param_p2_process_packets",
+          "If_4311902608"
+        ]
+      ],
+      "node_labels": {
+        "param_p1_process_packets": "param: p1",
+        "param_p2_process_packets": "param: p2",
+        "FuncCall_4311901888": "call packet_print",
+        "FuncCall_4311901968": "call packet_print",
+        "If_4311902608": "if(...)",
+        "FuncCall_4311902448": "call printf",
+        "FuncCall_4311902528": "call packet_release",
+        "FuncCall_4311902848": "call printf",
+        "FuncCall_4311902928": "call packet_release"
+      }
+    },
+    "main": {
+      "node_count_raw": 11,
+      "edge_count_raw": 8,
+      "edge_count_kept": 5,
+      "parameters": [],
+      "edges": [
+        {
+          "from": "Decl_4311382736",
+          "to": "FuncCall_4311904768",
+          "var": "pkt3"
+        },
+        {
+          "from": "Decl_4311382480",
+          "to": "FuncCall_4311904848",
+          "var": "pkt1"
+        },
+        {
+          "from": "Decl_4311382608",
+          "to": "FuncCall_4311904848",
+          "var": "pkt2"
+        },
+        {
+          "from": "Decl_4311382608",
+          "to": "FuncCall_4311904928",
+          "var": "pkt2"
+        },
+        {
+          "from": "Decl_4311382736",
+          "to": "FuncCall_4311905008",
+          "var": "pkt3"
+        }
+      ],
+      "chains": [],
+      "node_labels": {
+        "Decl_4311382480": "decl pkt1",
+        "Decl_4311382608": "decl pkt2",
+        "If_4311904528": "if(...)",
+        "FuncCall_4311904368": "call fprintf",
+        "Return_4312297040": "return",
+        "Decl_4311382736": "decl pkt3",
+        "FuncCall_4311904768": "call packet_print",
+        "FuncCall_4311904848": "call process_packets",
+        "FuncCall_4311904928": "call packet_release",
+        "FuncCall_4311905008": "call packet_release",
+        "Return_4312301456": "return"
+      }
+    }
+  }
+}

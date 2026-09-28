@@ -1,0 +1,20 @@
+[
+  {
+    "id": 2506,
+    "cve_id": "CVE-2019-20637",
+    "code_before_change": "cnt_recv_prep(struct req *req, const char *ci)\n{\n\tconst char *xff;\n\n\tif (req->restarts == 0) {\n\t\t/*\n\t\t * This really should be done earlier, but we want to capture\n\t\t * it in the VSL log.\n\t\t */\n\t\thttp_CollectHdr(req->http, H_X_Forwarded_For);\n\t\tif (http_GetHdr(req->http, H_X_Forwarded_For, &xff)) {\n\t\t\thttp_Unset(req->http, H_X_Forwarded_For);\n\t\t\thttp_PrintfHeader(req->http, \"X-Forwarded-For: %s, %s\",\n\t\t\t    xff, ci);\n\t\t} else {\n\t\t\thttp_PrintfHeader(req->http, \"X-Forwarded-For: %s\", ci);\n\t\t}\n\t\thttp_CollectHdr(req->http, H_Cache_Control);\n\n\t\t/* By default we use the first backend */\n\t\treq->director_hint = VCL_DefaultDirector(req->vcl);\n\n\t\treq->d_ttl = -1;\n\t\treq->d_grace = -1;\n\t\treq->disable_esi = 0;\n\t\treq->hash_always_miss = 0;\n\t\treq->hash_ignore_busy = 0;\n\t\treq->client_identity = NULL;\n\t\treq->storage = NULL;\n\t}\n\n\treq->vdc->retval = 0;\n\treq->is_hit = 0;\n\treq->is_hitmiss = 0;\n\treq->is_hitpass = 0;\n}",
+    "code_after_change": "cnt_recv_prep(struct req *req, const char *ci)\n{\n\tconst char *xff;\n\n\tif (req->restarts == 0) {\n\t\t/*\n\t\t * This really should be done earlier, but we want to capture\n\t\t * it in the VSL log.\n\t\t */\n\t\thttp_CollectHdr(req->http, H_X_Forwarded_For);\n\t\tif (http_GetHdr(req->http, H_X_Forwarded_For, &xff)) {\n\t\t\thttp_Unset(req->http, H_X_Forwarded_For);\n\t\t\thttp_PrintfHeader(req->http, \"X-Forwarded-For: %s, %s\",\n\t\t\t    xff, ci);\n\t\t} else {\n\t\t\thttp_PrintfHeader(req->http, \"X-Forwarded-For: %s\", ci);\n\t\t}\n\t\thttp_CollectHdr(req->http, H_Cache_Control);\n\n\t\t/* By default we use the first backend */\n\t\treq->director_hint = VCL_DefaultDirector(req->vcl);\n\n\t\treq->d_ttl = -1;\n\t\treq->d_grace = -1;\n\t\treq->disable_esi = 0;\n\t\treq->hash_always_miss = 0;\n\t\treq->hash_ignore_busy = 0;\n\t\treq->client_identity = NULL;\n\t\treq->storage = NULL;\n\t}\n\n\treq->vdc->retval = 0;\n\treq->is_hit = 0;\n\treq->is_hitmiss = 0;\n\treq->is_hitpass = 0;\n\treq->err_code = 0;\n\treq->err_reason = NULL;\n}",
+    "cwe": [
+      "CWE-212"
+    ],
+    "cve_description": "An issue was discovered in Varnish Cache before 6.0.5 LTS, 6.1.x and 6.2.x before 6.2.2, and 6.3.x before 6.3.1. It does not clear a pointer between the handling of one client request and the next request within the same connection. This sometimes causes information to be disclosed from the connection workspace, such as data structures associated with previous requests within this connection or VCL-related temporary headers.",
+    "patch": "--- code before\n+++ code after\n@@ -33,4 +33,6 @@\n \treq->is_hit = 0;\n \treq->is_hitmiss = 0;\n \treq->is_hitpass = 0;\n+\treq->err_code = 0;\n+\treq->err_reason = NULL;\n }",
+    "function_modified_lines": {
+      "added": [
+        "\treq->err_code = 0;",
+        "\treq->err_reason = NULL;"
+      ],
+      "deleted": []
+    }
+  }
+]

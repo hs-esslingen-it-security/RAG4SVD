@@ -1,0 +1,21 @@
+[
+  {
+    "id": 3452,
+    "cve_id": "CVE-2018-19058",
+    "code_before_change": "bool EmbFile::save2(FILE *f) {\n  int c;\n\n  m_objStr.streamReset();\n  while ((c = m_objStr.streamGetChar()) != EOF) {\n    fputc(c, f);\n  }\n  return true;\n}",
+    "code_after_change": "bool EmbFile::save2(FILE *f) {\n  int c;\n\n  if (unlikely(!m_objStr.isStream()))\n    return false;\n\n  m_objStr.streamReset();\n  while ((c = m_objStr.streamGetChar()) != EOF) {\n    fputc(c, f);\n  }\n  return true;\n}",
+    "cwe": [
+      "CWE-670"
+    ],
+    "cve_description": "An issue was discovered in Poppler 0.71.0. There is a reachable abort in Object.h, will lead to denial of service because EmbFile::save2 in FileSpec.cc lacks a stream check before saving an embedded file.",
+    "patch": "--- code before\n+++ code after\n@@ -1,5 +1,8 @@\n bool EmbFile::save2(FILE *f) {\n   int c;\n+\n+  if (unlikely(!m_objStr.isStream()))\n+    return false;\n \n   m_objStr.streamReset();\n   while ((c = m_objStr.streamGetChar()) != EOF) {",
+    "function_modified_lines": {
+      "added": [
+        "",
+        "  if (unlikely(!m_objStr.isStream()))",
+        "    return false;"
+      ],
+      "deleted": []
+    }
+  }
+]

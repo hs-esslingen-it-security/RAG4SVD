@@ -1,0 +1,123 @@
+[
+    {
+        "cve_id": "CVE-2023-32250",
+        "code_before_change": "static inline int check_conn_state(struct ksmbd_work *work)\n{\n\tstruct smb_hdr *rsp_hdr;\n\n\tif (ksmbd_conn_exiting(work) || ksmbd_conn_need_reconnect(work)) {\n\t\trsp_hdr = work->response_buf;\n\t\trsp_hdr->Status.CifsError = STATUS_CONNECTION_DISCONNECTED;\n\t\treturn 1;\n\t}\n\treturn 0;\n}",
+        "code_after_change": "static inline int check_conn_state(struct ksmbd_work *work)\n{\n\tstruct smb_hdr *rsp_hdr;\n\n\tif (ksmbd_conn_exiting(work->conn) ||\n\t    ksmbd_conn_need_reconnect(work->conn)) {\n\t\trsp_hdr = work->response_buf;\n\t\trsp_hdr->Status.CifsError = STATUS_CONNECTION_DISCONNECTED;\n\t\treturn 1;\n\t}\n\treturn 0;\n}",
+        "patch": "--- code before\n+++ code after\n@@ -2,7 +2,8 @@\n {\n \tstruct smb_hdr *rsp_hdr;\n \n-\tif (ksmbd_conn_exiting(work) || ksmbd_conn_need_reconnect(work)) {\n+\tif (ksmbd_conn_exiting(work->conn) ||\n+\t    ksmbd_conn_need_reconnect(work->conn)) {\n \t\trsp_hdr = work->response_buf;\n \t\trsp_hdr->Status.CifsError = STATUS_CONNECTION_DISCONNECTED;\n \t\treturn 1;",
+        "function_modified_lines": {
+            "added": [
+                "\tif (ksmbd_conn_exiting(work->conn) ||",
+                "\t    ksmbd_conn_need_reconnect(work->conn)) {"
+            ],
+            "deleted": [
+                "\tif (ksmbd_conn_exiting(work) || ksmbd_conn_need_reconnect(work)) {"
+            ]
+        },
+        "cwe": [
+            "CWE-362"
+        ],
+        "cve_description": "A flaw was found in the Linux kernel's ksmbd, a high-performance in-kernel SMB server. The specific flaw exists within the processing of SMB2_SESSION_SETUP commands. The issue results from the lack of proper locking when performing operations on an object. An attacker can leverage this vulnerability to execute code in the context of the kernel.",
+        "id": 4020
+    },
+    {
+        "cve_id": "CVE-2015-7613",
+        "code_before_change": "static int newseg(struct ipc_namespace *ns, struct ipc_params *params)\n{\n\tkey_t key = params->key;\n\tint shmflg = params->flg;\n\tsize_t size = params->u.size;\n\tint error;\n\tstruct shmid_kernel *shp;\n\tsize_t numpages = (size + PAGE_SIZE - 1) >> PAGE_SHIFT;\n\tstruct file *file;\n\tchar name[13];\n\tint id;\n\tvm_flags_t acctflag = 0;\n\n\tif (size < SHMMIN || size > ns->shm_ctlmax)\n\t\treturn -EINVAL;\n\n\tif (numpages << PAGE_SHIFT < size)\n\t\treturn -ENOSPC;\n\n\tif (ns->shm_tot + numpages < ns->shm_tot ||\n\t\t\tns->shm_tot + numpages > ns->shm_ctlall)\n\t\treturn -ENOSPC;\n\n\tshp = ipc_rcu_alloc(sizeof(*shp));\n\tif (!shp)\n\t\treturn -ENOMEM;\n\n\tshp->shm_perm.key = key;\n\tshp->shm_perm.mode = (shmflg & S_IRWXUGO);\n\tshp->mlock_user = NULL;\n\n\tshp->shm_perm.security = NULL;\n\terror = security_shm_alloc(shp);\n\tif (error) {\n\t\tipc_rcu_putref(shp, ipc_rcu_free);\n\t\treturn error;\n\t}\n\n\tsprintf(name, \"SYSV%08x\", key);\n\tif (shmflg & SHM_HUGETLB) {\n\t\tstruct hstate *hs;\n\t\tsize_t hugesize;\n\n\t\ths = hstate_sizelog((shmflg >> SHM_HUGE_SHIFT) & SHM_HUGE_MASK);\n\t\tif (!hs) {\n\t\t\terror = -EINVAL;\n\t\t\tgoto no_file;\n\t\t}\n\t\thugesize = ALIGN(size, huge_page_size(hs));\n\n\t\t/* hugetlb_file_setup applies strict accounting */\n\t\tif (shmflg & SHM_NORESERVE)\n\t\t\tacctflag = VM_NORESERVE;\n\t\tfile = hugetlb_file_setup(name, hugesize, acctflag,\n\t\t\t\t  &shp->mlock_user, HUGETLB_SHMFS_INODE,\n\t\t\t\t(shmflg >> SHM_HUGE_SHIFT) & SHM_HUGE_MASK);\n\t} else {\n\t\t/*\n\t\t * Do not allow no accounting for OVERCOMMIT_NEVER, even\n\t\t * if it's asked for.\n\t\t */\n\t\tif  ((shmflg & SHM_NORESERVE) &&\n\t\t\t\tsysctl_overcommit_memory != OVERCOMMIT_NEVER)\n\t\t\tacctflag = VM_NORESERVE;\n\t\tfile = shmem_kernel_file_setup(name, size, acctflag);\n\t}\n\terror = PTR_ERR(file);\n\tif (IS_ERR(file))\n\t\tgoto no_file;\n\n\tid = ipc_addid(&shm_ids(ns), &shp->shm_perm, ns->shm_ctlmni);\n\tif (id < 0) {\n\t\terror = id;\n\t\tgoto no_id;\n\t}\n\n\tshp->shm_cprid = task_tgid_vnr(current);\n\tshp->shm_lprid = 0;\n\tshp->shm_atim = shp->shm_dtim = 0;\n\tshp->shm_ctim = get_seconds();\n\tshp->shm_segsz = size;\n\tshp->shm_nattch = 0;\n\tshp->shm_file = file;\n\tshp->shm_creator = current;\n\tlist_add(&shp->shm_clist, &current->sysvshm.shm_clist);\n\n\t/*\n\t * shmid gets reported as \"inode#\" in /proc/pid/maps.\n\t * proc-ps tools use this. Changing this will break them.\n\t */\n\tfile_inode(file)->i_ino = shp->shm_perm.id;\n\n\tns->shm_tot += numpages;\n\terror = shp->shm_perm.id;\n\n\tipc_unlock_object(&shp->shm_perm);\n\trcu_read_unlock();\n\treturn error;\n\nno_id:\n\tif (is_file_hugepages(file) && shp->mlock_user)\n\t\tuser_shm_unlock(size, shp->mlock_user);\n\tfput(file);\nno_file:\n\tipc_rcu_putref(shp, shm_rcu_free);\n\treturn error;\n}",
+        "code_after_change": "static int newseg(struct ipc_namespace *ns, struct ipc_params *params)\n{\n\tkey_t key = params->key;\n\tint shmflg = params->flg;\n\tsize_t size = params->u.size;\n\tint error;\n\tstruct shmid_kernel *shp;\n\tsize_t numpages = (size + PAGE_SIZE - 1) >> PAGE_SHIFT;\n\tstruct file *file;\n\tchar name[13];\n\tint id;\n\tvm_flags_t acctflag = 0;\n\n\tif (size < SHMMIN || size > ns->shm_ctlmax)\n\t\treturn -EINVAL;\n\n\tif (numpages << PAGE_SHIFT < size)\n\t\treturn -ENOSPC;\n\n\tif (ns->shm_tot + numpages < ns->shm_tot ||\n\t\t\tns->shm_tot + numpages > ns->shm_ctlall)\n\t\treturn -ENOSPC;\n\n\tshp = ipc_rcu_alloc(sizeof(*shp));\n\tif (!shp)\n\t\treturn -ENOMEM;\n\n\tshp->shm_perm.key = key;\n\tshp->shm_perm.mode = (shmflg & S_IRWXUGO);\n\tshp->mlock_user = NULL;\n\n\tshp->shm_perm.security = NULL;\n\terror = security_shm_alloc(shp);\n\tif (error) {\n\t\tipc_rcu_putref(shp, ipc_rcu_free);\n\t\treturn error;\n\t}\n\n\tsprintf(name, \"SYSV%08x\", key);\n\tif (shmflg & SHM_HUGETLB) {\n\t\tstruct hstate *hs;\n\t\tsize_t hugesize;\n\n\t\ths = hstate_sizelog((shmflg >> SHM_HUGE_SHIFT) & SHM_HUGE_MASK);\n\t\tif (!hs) {\n\t\t\terror = -EINVAL;\n\t\t\tgoto no_file;\n\t\t}\n\t\thugesize = ALIGN(size, huge_page_size(hs));\n\n\t\t/* hugetlb_file_setup applies strict accounting */\n\t\tif (shmflg & SHM_NORESERVE)\n\t\t\tacctflag = VM_NORESERVE;\n\t\tfile = hugetlb_file_setup(name, hugesize, acctflag,\n\t\t\t\t  &shp->mlock_user, HUGETLB_SHMFS_INODE,\n\t\t\t\t(shmflg >> SHM_HUGE_SHIFT) & SHM_HUGE_MASK);\n\t} else {\n\t\t/*\n\t\t * Do not allow no accounting for OVERCOMMIT_NEVER, even\n\t\t * if it's asked for.\n\t\t */\n\t\tif  ((shmflg & SHM_NORESERVE) &&\n\t\t\t\tsysctl_overcommit_memory != OVERCOMMIT_NEVER)\n\t\t\tacctflag = VM_NORESERVE;\n\t\tfile = shmem_kernel_file_setup(name, size, acctflag);\n\t}\n\terror = PTR_ERR(file);\n\tif (IS_ERR(file))\n\t\tgoto no_file;\n\n\tshp->shm_cprid = task_tgid_vnr(current);\n\tshp->shm_lprid = 0;\n\tshp->shm_atim = shp->shm_dtim = 0;\n\tshp->shm_ctim = get_seconds();\n\tshp->shm_segsz = size;\n\tshp->shm_nattch = 0;\n\tshp->shm_file = file;\n\tshp->shm_creator = current;\n\n\tid = ipc_addid(&shm_ids(ns), &shp->shm_perm, ns->shm_ctlmni);\n\tif (id < 0) {\n\t\terror = id;\n\t\tgoto no_id;\n\t}\n\n\tlist_add(&shp->shm_clist, &current->sysvshm.shm_clist);\n\n\t/*\n\t * shmid gets reported as \"inode#\" in /proc/pid/maps.\n\t * proc-ps tools use this. Changing this will break them.\n\t */\n\tfile_inode(file)->i_ino = shp->shm_perm.id;\n\n\tns->shm_tot += numpages;\n\terror = shp->shm_perm.id;\n\n\tipc_unlock_object(&shp->shm_perm);\n\trcu_read_unlock();\n\treturn error;\n\nno_id:\n\tif (is_file_hugepages(file) && shp->mlock_user)\n\t\tuser_shm_unlock(size, shp->mlock_user);\n\tfput(file);\nno_file:\n\tipc_rcu_putref(shp, shm_rcu_free);\n\treturn error;\n}",
+        "patch": "--- code before\n+++ code after\n@@ -68,12 +68,6 @@\n \tif (IS_ERR(file))\n \t\tgoto no_file;\n \n-\tid = ipc_addid(&shm_ids(ns), &shp->shm_perm, ns->shm_ctlmni);\n-\tif (id < 0) {\n-\t\terror = id;\n-\t\tgoto no_id;\n-\t}\n-\n \tshp->shm_cprid = task_tgid_vnr(current);\n \tshp->shm_lprid = 0;\n \tshp->shm_atim = shp->shm_dtim = 0;\n@@ -82,6 +76,13 @@\n \tshp->shm_nattch = 0;\n \tshp->shm_file = file;\n \tshp->shm_creator = current;\n+\n+\tid = ipc_addid(&shm_ids(ns), &shp->shm_perm, ns->shm_ctlmni);\n+\tif (id < 0) {\n+\t\terror = id;\n+\t\tgoto no_id;\n+\t}\n+\n \tlist_add(&shp->shm_clist, &current->sysvshm.shm_clist);\n \n \t/*",
+        "function_modified_lines": {
+            "added": [
+                "",
+                "\tid = ipc_addid(&shm_ids(ns), &shp->shm_perm, ns->shm_ctlmni);",
+                "\tif (id < 0) {",
+                "\t\terror = id;",
+                "\t\tgoto no_id;",
+                "\t}",
+                ""
+            ],
+            "deleted": [
+                "\tid = ipc_addid(&shm_ids(ns), &shp->shm_perm, ns->shm_ctlmni);",
+                "\tif (id < 0) {",
+                "\t\terror = id;",
+                "\t\tgoto no_id;",
+                "\t}",
+                ""
+            ]
+        },
+        "cwe": [
+            "CWE-362"
+        ],
+        "cve_description": "Race condition in the IPC object implementation in the Linux kernel through 4.2.3 allows local users to gain privileges by triggering an ipc_addid call that leads to uid and gid comparisons against uninitialized data, related to msg.c, shm.c, and util.c.",
+        "id": 789
+    },
+    {
+        "cve_id": "CVE-2020-29374",
+        "code_before_change": "static int i915_gem_userptr_get_pages(struct drm_i915_gem_object *obj)\n{\n\tconst unsigned long num_pages = obj->base.size >> PAGE_SHIFT;\n\tstruct mm_struct *mm = obj->userptr.mm->mm;\n\tstruct page **pvec;\n\tstruct sg_table *pages;\n\tbool active;\n\tint pinned;\n\n\t/* If userspace should engineer that these pages are replaced in\n\t * the vma between us binding this page into the GTT and completion\n\t * of rendering... Their loss. If they change the mapping of their\n\t * pages they need to create a new bo to point to the new vma.\n\t *\n\t * However, that still leaves open the possibility of the vma\n\t * being copied upon fork. Which falls under the same userspace\n\t * synchronisation issue as a regular bo, except that this time\n\t * the process may not be expecting that a particular piece of\n\t * memory is tied to the GPU.\n\t *\n\t * Fortunately, we can hook into the mmu_notifier in order to\n\t * discard the page references prior to anything nasty happening\n\t * to the vma (discard or cloning) which should prevent the more\n\t * egregious cases from causing harm.\n\t */\n\n\tif (obj->userptr.work) {\n\t\t/* active flag should still be held for the pending work */\n\t\tif (IS_ERR(obj->userptr.work))\n\t\t\treturn PTR_ERR(obj->userptr.work);\n\t\telse\n\t\t\treturn -EAGAIN;\n\t}\n\n\tpvec = NULL;\n\tpinned = 0;\n\n\tif (mm == current->mm) {\n\t\tpvec = kvmalloc_array(num_pages, sizeof(struct page *),\n\t\t\t\t      GFP_KERNEL |\n\t\t\t\t      __GFP_NORETRY |\n\t\t\t\t      __GFP_NOWARN);\n\t\tif (pvec) /* defer to worker if malloc fails */\n\t\t\tpinned = __get_user_pages_fast(obj->userptr.ptr,\n\t\t\t\t\t\t       num_pages,\n\t\t\t\t\t\t       !i915_gem_object_is_readonly(obj),\n\t\t\t\t\t\t       pvec);\n\t}\n\n\tactive = false;\n\tif (pinned < 0) {\n\t\tpages = ERR_PTR(pinned);\n\t\tpinned = 0;\n\t} else if (pinned < num_pages) {\n\t\tpages = __i915_gem_userptr_get_pages_schedule(obj);\n\t\tactive = pages == ERR_PTR(-EAGAIN);\n\t} else {\n\t\tpages = __i915_gem_userptr_alloc_pages(obj, pvec, num_pages);\n\t\tactive = !IS_ERR(pages);\n\t}\n\tif (active)\n\t\t__i915_gem_userptr_set_active(obj, true);\n\n\tif (IS_ERR(pages))\n\t\trelease_pages(pvec, pinned);\n\tkvfree(pvec);\n\n\treturn PTR_ERR_OR_ZERO(pages);\n}",
+        "code_after_change": "static int i915_gem_userptr_get_pages(struct drm_i915_gem_object *obj)\n{\n\tconst unsigned long num_pages = obj->base.size >> PAGE_SHIFT;\n\tstruct mm_struct *mm = obj->userptr.mm->mm;\n\tstruct page **pvec;\n\tstruct sg_table *pages;\n\tbool active;\n\tint pinned;\n\n\t/* If userspace should engineer that these pages are replaced in\n\t * the vma between us binding this page into the GTT and completion\n\t * of rendering... Their loss. If they change the mapping of their\n\t * pages they need to create a new bo to point to the new vma.\n\t *\n\t * However, that still leaves open the possibility of the vma\n\t * being copied upon fork. Which falls under the same userspace\n\t * synchronisation issue as a regular bo, except that this time\n\t * the process may not be expecting that a particular piece of\n\t * memory is tied to the GPU.\n\t *\n\t * Fortunately, we can hook into the mmu_notifier in order to\n\t * discard the page references prior to anything nasty happening\n\t * to the vma (discard or cloning) which should prevent the more\n\t * egregious cases from causing harm.\n\t */\n\n\tif (obj->userptr.work) {\n\t\t/* active flag should still be held for the pending work */\n\t\tif (IS_ERR(obj->userptr.work))\n\t\t\treturn PTR_ERR(obj->userptr.work);\n\t\telse\n\t\t\treturn -EAGAIN;\n\t}\n\n\tpvec = NULL;\n\tpinned = 0;\n\n\tif (mm == current->mm) {\n\t\tpvec = kvmalloc_array(num_pages, sizeof(struct page *),\n\t\t\t\t      GFP_KERNEL |\n\t\t\t\t      __GFP_NORETRY |\n\t\t\t\t      __GFP_NOWARN);\n\t\t/*\n\t\t * Using __get_user_pages_fast() with a read-only\n\t\t * access is questionable. A read-only page may be\n\t\t * COW-broken, and then this might end up giving\n\t\t * the wrong side of the COW..\n\t\t *\n\t\t * We may or may not care.\n\t\t */\n\t\tif (pvec) /* defer to worker if malloc fails */\n\t\t\tpinned = __get_user_pages_fast(obj->userptr.ptr,\n\t\t\t\t\t\t       num_pages,\n\t\t\t\t\t\t       !i915_gem_object_is_readonly(obj),\n\t\t\t\t\t\t       pvec);\n\t}\n\n\tactive = false;\n\tif (pinned < 0) {\n\t\tpages = ERR_PTR(pinned);\n\t\tpinned = 0;\n\t} else if (pinned < num_pages) {\n\t\tpages = __i915_gem_userptr_get_pages_schedule(obj);\n\t\tactive = pages == ERR_PTR(-EAGAIN);\n\t} else {\n\t\tpages = __i915_gem_userptr_alloc_pages(obj, pvec, num_pages);\n\t\tactive = !IS_ERR(pages);\n\t}\n\tif (active)\n\t\t__i915_gem_userptr_set_active(obj, true);\n\n\tif (IS_ERR(pages))\n\t\trelease_pages(pvec, pinned);\n\tkvfree(pvec);\n\n\treturn PTR_ERR_OR_ZERO(pages);\n}",
+        "patch": "--- code before\n+++ code after\n@@ -40,6 +40,14 @@\n \t\t\t\t      GFP_KERNEL |\n \t\t\t\t      __GFP_NORETRY |\n \t\t\t\t      __GFP_NOWARN);\n+\t\t/*\n+\t\t * Using __get_user_pages_fast() with a read-only\n+\t\t * access is questionable. A read-only page may be\n+\t\t * COW-broken, and then this might end up giving\n+\t\t * the wrong side of the COW..\n+\t\t *\n+\t\t * We may or may not care.\n+\t\t */\n \t\tif (pvec) /* defer to worker if malloc fails */\n \t\t\tpinned = __get_user_pages_fast(obj->userptr.ptr,\n \t\t\t\t\t\t       num_pages,",
+        "function_modified_lines": {
+            "added": [
+                "\t\t/*",
+                "\t\t * Using __get_user_pages_fast() with a read-only",
+                "\t\t * access is questionable. A read-only page may be",
+                "\t\t * COW-broken, and then this might end up giving",
+                "\t\t * the wrong side of the COW..",
+                "\t\t *",
+                "\t\t * We may or may not care.",
+                "\t\t */"
+            ],
+            "deleted": []
+        },
+        "cwe": [
+            "CWE-362",
+            "CWE-863"
+        ],
+        "cve_description": "An issue was discovered in the Linux kernel before 5.7.3, related to mm/gup.c and mm/huge_memory.c. The get_user_pages (aka gup) implementation, when used for a copy-on-write page, does not properly consider the semantics of read operations and therefore can grant unintended write access, aka CID-17839856fd58.",
+        "id": 2670
+    },
+    {
+        "cve_id": "CVE-2021-20261",
+        "code_before_change": "static int user_reset_fdc(int drive, int arg, bool interruptible)\n{\n\tint ret;\n\n\tif (lock_fdc(drive, interruptible))\n\t\treturn -EINTR;\n\n\tif (arg == FD_RESET_ALWAYS)\n\t\tFDCS->reset = 1;\n\tif (FDCS->reset) {\n\t\tcont = &reset_cont;\n\t\tret = wait_til_done(reset_fdc, interruptible);\n\t\tif (ret == -EINTR)\n\t\t\treturn -EINTR;\n\t}\n\tprocess_fd_request();\n\treturn 0;\n}",
+        "code_after_change": "static int user_reset_fdc(int drive, int arg, bool interruptible)\n{\n\tint ret;\n\n\tif (lock_fdc(drive))\n\t\treturn -EINTR;\n\n\tif (arg == FD_RESET_ALWAYS)\n\t\tFDCS->reset = 1;\n\tif (FDCS->reset) {\n\t\tcont = &reset_cont;\n\t\tret = wait_til_done(reset_fdc, interruptible);\n\t\tif (ret == -EINTR)\n\t\t\treturn -EINTR;\n\t}\n\tprocess_fd_request();\n\treturn 0;\n}",
+        "patch": "--- code before\n+++ code after\n@@ -2,7 +2,7 @@\n {\n \tint ret;\n \n-\tif (lock_fdc(drive, interruptible))\n+\tif (lock_fdc(drive))\n \t\treturn -EINTR;\n \n \tif (arg == FD_RESET_ALWAYS)",
+        "function_modified_lines": {
+            "added": [
+                "\tif (lock_fdc(drive))"
+            ],
+            "deleted": [
+                "\tif (lock_fdc(drive, interruptible))"
+            ]
+        },
+        "cwe": [
+            "CWE-362"
+        ],
+        "cve_description": "A race condition was found in the Linux kernels implementation of the floppy disk drive controller driver software. The impact of this issue is lessened by the fact that the default permissions on the floppy device (/dev/fd0) are restricted to root. If the permissions on the device have changed the impact changes greatly. In the default configuration root (or equivalent) permissions are required to attack this flaw.",
+        "id": 2863
+    },
+    {
+        "cve_id": "CVE-2020-27675",
+        "code_before_change": "evtchn_port_t evtchn_from_irq(unsigned irq)\n{\n\tif (WARN(irq >= nr_irqs, \"Invalid irq %d!\\n\", irq))\n\t\treturn 0;\n\n\treturn info_for_irq(irq)->evtchn;\n}",
+        "code_after_change": "evtchn_port_t evtchn_from_irq(unsigned irq)\n{\n\tconst struct irq_info *info = NULL;\n\n\tif (likely(irq < nr_irqs))\n\t\tinfo = info_for_irq(irq);\n\tif (!info)\n\t\treturn 0;\n\n\treturn info->evtchn;\n}",
+        "patch": "--- code before\n+++ code after\n@@ -1,7 +1,11 @@\n evtchn_port_t evtchn_from_irq(unsigned irq)\n {\n-\tif (WARN(irq >= nr_irqs, \"Invalid irq %d!\\n\", irq))\n+\tconst struct irq_info *info = NULL;\n+\n+\tif (likely(irq < nr_irqs))\n+\t\tinfo = info_for_irq(irq);\n+\tif (!info)\n \t\treturn 0;\n \n-\treturn info_for_irq(irq)->evtchn;\n+\treturn info->evtchn;\n }",
+        "function_modified_lines": {
+            "added": [
+                "\tconst struct irq_info *info = NULL;",
+                "",
+                "\tif (likely(irq < nr_irqs))",
+                "\t\tinfo = info_for_irq(irq);",
+                "\tif (!info)",
+                "\treturn info->evtchn;"
+            ],
+            "deleted": [
+                "\tif (WARN(irq >= nr_irqs, \"Invalid irq %d!\\n\", irq))",
+                "\treturn info_for_irq(irq)->evtchn;"
+            ]
+        },
+        "cwe": [
+            "CWE-362",
+            "CWE-476",
+            "CWE-416"
+        ],
+        "cve_description": "An issue was discovered in the Linux kernel through 5.9.1, as used with Xen through 4.14.x. drivers/xen/events/events_base.c allows event-channel removal during the event-handling loop (a race condition). This can cause a use-after-free or NULL pointer dereference, as demonstrated by a dom0 crash via events for an in-reconfiguration paravirtualized device, aka CID-073d0552ead5.",
+        "id": 2626
+    }
+]

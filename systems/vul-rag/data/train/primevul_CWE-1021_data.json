@@ -1,0 +1,21 @@
+[
+  {
+    "id": 1414,
+    "cve_id": "CVE-2017-5016",
+    "code_before_change": " void HTMLFormControlElement::updateVisibleValidationMessage() {\n   Page* page = document().page();\n  if (!page)\n     return;\n   String message;\n   if (layoutObject() && willValidate())\n    message = validationMessage().stripWhiteSpace();\n\n  m_hasValidationMessage = true;\n  ValidationMessageClient* client = &page->validationMessageClient();\n  TextDirection messageDir = LTR;\n  TextDirection subMessageDir = LTR;\n  String subMessage = validationSubMessage().stripWhiteSpace();\n  if (message.isEmpty())\n    client->hideValidationMessage(*this);\n  else\n    findCustomValidationMessageTextDirection(message, messageDir, subMessage,\n                                             subMessageDir);\n  client->showValidationMessage(*this, message, messageDir, subMessage,\n                                subMessageDir);\n}\n",
+    "code_after_change": " void HTMLFormControlElement::updateVisibleValidationMessage() {\n   Page* page = document().page();\n  if (!page || !page->isPageVisible())\n     return;\n   String message;\n   if (layoutObject() && willValidate())\n    message = validationMessage().stripWhiteSpace();\n\n  m_hasValidationMessage = true;\n  ValidationMessageClient* client = &page->validationMessageClient();\n  TextDirection messageDir = LTR;\n  TextDirection subMessageDir = LTR;\n  String subMessage = validationSubMessage().stripWhiteSpace();\n  if (message.isEmpty())\n    client->hideValidationMessage(*this);\n  else\n    findCustomValidationMessageTextDirection(message, messageDir, subMessage,\n                                             subMessageDir);\n  client->showValidationMessage(*this, message, messageDir, subMessage,\n                                subMessageDir);\n}\n",
+    "cwe": [
+      "CWE-1021"
+    ],
+    "cve_description": "Blink in Google Chrome prior to 56.0.2924.76 for Linux, Windows and Mac, and 56.0.2924.87 for Android, failed to prevent certain UI elements from being displayed by non-visible pages, which allowed a remote attacker to show certain UI elements on a page they don't control via a crafted HTML page.",
+    "patch": "--- code before\n+++ code after\n@@ -1,6 +1,6 @@\n  void HTMLFormControlElement::updateVisibleValidationMessage() {\n    Page* page = document().page();\n-  if (!page)\n+  if (!page || !page->isPageVisible())\n      return;\n    String message;\n    if (layoutObject() && willValidate())",
+    "function_modified_lines": {
+      "added": [
+        "  if (!page || !page->isPageVisible())"
+      ],
+      "deleted": [
+        "  if (!page)"
+      ]
+    }
+  }
+]

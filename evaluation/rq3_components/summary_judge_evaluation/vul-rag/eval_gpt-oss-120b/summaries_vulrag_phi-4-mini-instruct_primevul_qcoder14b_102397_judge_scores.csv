@@ -1,0 +1,279 @@
+cve_id,faithfulness,coverage,retrieval,conciseness,clarity,judge_response
+CVE-2021-37665,4,3,2,1,2,"Faithfulness: 4 | The summary’s statements are all supported by the code, but the massive repetition adds unnecessary content without introducing inaccuracies.  
+Functional Coverage: 3 | It mentions the main steps and overall purpose, yet omits some specific details (e.g., per‑channel scale computation using input_min/max vectors) and is overwhelmed by redundant items.  
+Retrieval Utility: 2 | While key terms (MKL‑DNN, reorder, quantization, scales) are present, the excessive duplication dilutes the semantic signal, making it less effective for targeted retrieval.  
+Conciseness: 1 | The summary is extremely verbose, repeating the same steps dozens of times, far exceeding what is needed to describe the function.  
+Clarity: 2 | The repeated list makes the description hard to follow despite being grammatically correct; the core ideas are obscured by the noise."
+CVE-2008-4934,5,4,2,1,2,"Faithfulness: 5 | All statements in the summary are supported by the code (allocation via bitmap scan, handling of partial/full u32s, mutex protection, page mapping, dirty flags, free‑block update, debug prints, etc.). No incorrect claims are present.  
+Functional Coverage: 4 | The summary mentions the core actions of the function (bitmap scanning, allocation, bitmap update, mutex handling, page I/O, free‑block accounting), though it over‑emphasizes trivial details and repeats them many times.  
+Retrieval Utility: 2 | The excessive repetition and generic phrasing drown out the distinctive semantic cues, making it harder for a retrieval system to match this summary to similar implementations.  
+Conciseness: 1 | The summary is extremely verbose, listing the same points dozens of times, far exceeding what is needed to convey the function’s behavior.  
+Clarity: 2 | While individual items are understandable, the massive redundancy and lack of structure make the overall text confusing and hard to parse quickly."
+CVE-2021-41133,2,2,2,1,2,"Faithfulness: 2 | The summary mentions the overall purpose and some actions (initializing seccomp, blocking syscalls, exporting to a temp file) but includes extraneous filler text not present in the code and omits several key details (architecture handling, multi‑arch flags, devel flag logic, specific socket‑family allowlist processing, error handling), so it is only partially supported by the source.  
+Functional Coverage: 2 | It captures the high‑level steps but leaves out many important functional sections such as architecture‑specific additions, multi‑arch support, devel‑mode conditional blocklist, detailed socket‑family allowlist logic, and cleanup/error handling, resulting in incomplete coverage of the function’s behavior.  
+Retrieval Utility: 2 | While the summary contains generic keywords like “seccomp”, “blocklist”, and “export”, the lack of specific syscall or flag details makes it less discriminative for retrieving semantically similar sandbox‑setup code.  
+Conciseness: 1 | The summary is overly verbose, repeats large blocks of irrelevant filler text, and includes unnecessary wording, far exceeding what is needed to convey the function’s behavior.  
+Clarity: 2 | The core sentences are understandable, but the presence of repeated, nonsensical filler and abrupt transitions reduces overall readability and makes the summary harder to follow."
+CVE-2008-1294,1,2,2,1,2,"Faithfulness: 1 | The summary contains numerous statements that are not present in the code (e.g., dozens of distinct error‑code conditions for CPU limits) and omits several actual checks (copy_from_user, capability checks, RLIMIT_NOFILE limit), so it is largely unsupported by the source.  
+Functional Coverage: 2 | It mentions some high‑level steps (setting limits, handling CPU limits) but misses important logic (security hook, permission checks, file‑descriptor limit) and adds many spurious error cases, resulting in incomplete coverage of the function’s behavior.  
+Retrieval Utility: 2 | The excessive, repetitive wording drowns out the core semantics, making it hard for a retrieval system to match similar implementations; the few correct points are obscured by noise.  
+Conciseness: 1 | The summary is extremely verbose, repeating the same error‑handling clause dozens of times, far exceeding what is needed to describe the function.  
+Clarity: 2 | While the opening sentence is understandable, the massive repetition and contradictory listings of error conditions make the overall description confusing and hard to parse."
+CVE-2011-1678,2,3,2,1,2,"Faithfulness: 2 | The summary contains many correct statements about the function’s actions, but also includes extensive unsupported material (e.g., a detailed comparison with the Linux `mount` command) and repeats points that are not present in the source, violating faithfulness.  
+Functional Coverage: 3 | It mentions the main purpose (adding an entry to mtab) and most of the security‑related steps, yet it over‑focuses on trivial implementation details and adds irrelevant discussion, so coverage is only moderate.  
+Retrieval Utility: 2 | While the summary lists many relevant API calls (addmntent, lock_mtab, sigprocmask, etc.), the massive redundancy and unrelated content dilute its usefulness for semantic retrieval of similar code.  
+Conciseness: 1 | The summary is excessively long, contains huge repetitive blocks, and adds unnecessary commentary, far exceeding what is needed to describe the function.  
+Clarity: 2 | The prose is generally understandable, but the repeated sections, duplicated sentences, and inserted questions make it hard to follow and reduce overall readability."
+CVE-2021-3888,3,4,3,1,2,"Faithfulness: 3 | The summary correctly mentions parsing, validation, allocation, and error handling present in the code, but it adds unrelated meta‑question text and repeats statements that are not part of the source, reducing strict faithfulness.  
+Functional Coverage: 4 | It captures the main purpose (parsing Huffman/CDIC records), the key validation steps, memory allocation, and the loop over CDIC records, though it over‑emphasizes error‑handling details.  
+Retrieval Utility: 3 | Core semantic cues (Huffman dictionary parsing, header validation, symbol allocation, CDIC processing, return codes) are present, but the excessive repetition and noise diminish its usefulness for precise retrieval.  
+Conciseness: 1 | The summary is overly verbose, containing a long list of duplicated sentences and unrelated instructional text, far exceeding what is needed to convey the code’s behavior.  
+Clarity: 2 | While individual sentences are understandable, the inclusion of repetitive content and meta‑questions makes the overall summary confusing and hard to parse quickly."
+CVE-2016-8670,2,3,2,1,2,"Faithfulness: 2 | The summary correctly notes that the function reads bytes and may return EOF, the full length, or a smaller count, but it incorrectly states that EOF is returned when the requested length exceeds the remaining size (EOF is only returned when no bytes remain). It also adds unrelated conversational text not present in the code.
+
+Functional Coverage: 3 | It captures the main behavior—reading from a dynamic buffer, handling insufficient remaining data, and updating the position—but includes excessive, irrelevant repetitions and does not mention the exact condition for EOF.
+
+Retrieval Utility: 2 | Core semantic details are present, yet the massive redundant and off‑topic content would likely dilute matching against similar implementations, reducing its usefulness for retrieval.
+
+Conciseness: 1 | The summary is extremely verbose, repeats the same bullet points many times, and adds unrelated dialogue, far exceeding what is needed to describe the function.
+
+Clarity: 2 | While the bullet points are understandable, the surrounding repetitive and contradictory text makes the overall description confusing and hard to parse quickly."
+CVE-2015-1345,4,4,2,1,2,"Faithfulness: 4 | The summary’s statements about using a delta table, handling length edge cases, employing a memchr heuristic, avoiding out‑of‑bounds pointers, and invoking a delta‑2 search are all reflected in the code, though the claim of “error code otherwise” is vague and the initial “byte‑by‑byte” phrasing is not precise.  
+Functional Coverage: 4 | It mentions the main search purpose, the delta table, the heuristic, out‑of‑bounds safety, and special handling for short patterns, covering the core behavior despite omitting some minor details.  
+Retrieval Utility: 2 | The massive, repetitive list of nearly identical points overwhelms the useful content, making it hard for a retrieval system to match the essential semantics.  
+Conciseness: 1 | The summary is excessively long and repetitive, far exceeding what is needed to convey the function’s behavior.  
+Clarity: 2 | While individual points are understandable, the overall text is cluttered with redundant items and an embedded question, reducing readability and making the intended summary unclear."
+CVE-2016-6207,2,3,2,1,2,"Faithfulness: 2 | The summary contains many unsupported claims and speculative suggestions (e.g., usage domains, alternative allocation strategies, portability improvements) that are not present in the source code, reducing its factual accuracy.  
+Functional Coverage: 3 | It correctly mentions the main actions—allocating the LineContribType, its ContribRow array, per‑element weight arrays, overflow checks, cleanup on failure, and returning the pointer—but is cluttered with extraneous material.  
+Retrieval Utility: 2 | While the opening sentences describe the essential allocation pattern, the overwhelming amount of unrelated and repetitive content dilutes the distinctive semantic cues needed for effective code retrieval.  
+Conciseness: 1 | The summary is excessively long, repetitive, and includes many irrelevant recommendations, far exceeding what is needed to convey the function’s behavior.  
+Clarity: 2 | The text is grammatically acceptable but its massive length, redundancy, and inclusion of unrelated ideas make it hard to read and understand quickly."
+CVE-2017-15670,5,4,4,4,5,"Faithfulness: 5 | All statements in the summary are directly supported by the source code; the code validates inputs, processes brace and tilde expansions, separates directory and filename, handles metacharacters, unescaping, GLOB_MARK, sorting, and returns results or errors.
+
+Functional Coverage: 4 | The summary captures the core globbing workflow and major features but omits several important flags and edge‑case handling (e.g., GLOB_ONLYDIR, GLOB_DOOFFS, GLOB_APPEND, GLOB_NOCHECK, Windows drive handling, error‑function usage).
+
+Retrieval Utility: 4 | It includes distinctive concepts such as brace expansion, tilde expansion, directory metacharacter handling, and flag‑based behavior, which should aid retrieval of similar glob implementations, though some flag details are missing.
+
+Conciseness: 4 | The summary is fairly compact while still covering many aspects; the numbered list adds some length but remains reasonable.
+
+Clarity: 5 | The language is clear, well‑structured, and unambiguous, making the summary easy to understand."
+CVE-2022-1452,4,4,4,2,3,"Faithfulness: 4 | The summary correctly states that the function creates a bootstrap‑methods attribute, sets its type, creates a list with r_list_newf, and populates it from the buffer. Minor speculative wording (e.g., “likely defined elsewhere”, “f stands for free”) is not directly evident in the code, but does not introduce outright falsehoods.
+
+Functional Coverage: 4 | It captures the main purpose (building a bootstrap‑methods attribute) and the key steps (type assignment, list creation, parsing methods, returning the attribute). It omits some low‑level details such as reading the method count and updating the size field, but those are secondary.
+
+Retrieval Utility: 4 | The summary retains distinctive identifiers (R_BIN_JAVA_ATTR_TYPE_BOOTSTRAP_METHODS_ATTR, r_list_newf, r_bin_java_bootstrap_method_new) that would help locate semantically similar code, though the repetitive phrasing may add noise.
+
+Conciseness: 2 | The text is overly verbose, repeats the same explanation several times, and includes unnecessary Q&A sections, making it far longer than needed to convey the essential behavior.
+
+Clarity: 3 | The language is grammatically correct and the main ideas are understandable, but the repeated paragraphs and interleaved questions reduce overall readability and focus."
+CVE-2018-16842,2,3,3,2,2,"Faithfulness: 2 | The core sentence correctly describes the code’s behavior, but the summary also contains unrelated questions and formatting instructions that are not present in the source, making parts unsupported.  
+Functional Coverage: 3 | It captures the main actions (mute check, formatting, width‑limited output) but omits details like the WARN_PREFIX handling and line‑splitting logic, and adds extraneous content.  
+Retrieval Utility: 3 | Key concepts for finding similar warning‑printing code are present, yet the added unrelated text may reduce precision for retrieval.  
+Conciseness: 2 | The summary is overly verbose, mixing a description with a prompt and extensive instructions, far exceeding what is needed to convey the function’s purpose.  
+Clarity: 2 | The initial description is clear, but the subsequent question and instruction block makes the overall text confusing and less easy to understand."
+CVE-2021-3712,2,4,4,2,2,"Faithfulness: 2 | The summary correctly describes many high‑level actions (creating a group from explicit parameters, handling prime and binary fields, optional seed/cofactor, matching built‑in curves), but it contains inaccurate statements (e.g., claiming BN_CTX is used for all BIGNUM operations) and includes irrelevant repetitive text not present in the code.
+
+Functional Coverage: 4 | It captures the main purpose and most important steps of the function, including parameter extraction, field‑type handling, group creation, optional fields, validation checks, and replacement with a named curve.
+
+Retrieval Utility: 4 | The summary contains many discriminative keywords (EC_GROUP_new_from_ecparameters, prime field, characteristic‑two field, seed, cofactor, EC_GROUP_set_asn1_flag, built‑in curve matching) that would aid retrieval of similar implementations, despite some noise.
+
+Conciseness: 2 | The description is overly verbose, repeats the same points multiple times, and adds unrelated filler (“step step…”), making it far longer than necessary.
+
+Clarity: 2 | While generally understandable, the repeated phrasing, Q&A style, and nonsensical filler reduce readability and make the core information harder to parse."
+CVE-2021-37635,2,3,3,1,2,"Faithfulness: 2 | The summary mentions several behaviors (e.g., handling of missing axes, default reduction to scalar) that are not present in the code, and repeats many steps that are not explicitly shown, reducing its factual accuracy.  
+Functional Coverage: 3 | It identifies the main goal of reducing a sparse tensor along given axes, but adds many peripheral or speculative details and omits concise mention of important steps like validation and allocation.  
+Retrieval Utility: 3 | Key terms like `SparseTensor::Reorder`, grouping, and coordinate‑to‑flat conversion are present, aiding retrieval, yet the excessive and repetitive content may dilute relevance.  
+Conciseness: 1 | The summary is extremely verbose, repeats identical lists dozens of times, and includes unrelated Q&A, far exceeding what is needed to describe the function.  
+Clarity: 2 | While individual sentences are readable, the overall structure is cluttered with redundancy and off‑topic material, making the core description harder to discern."
+CVE-2022-1276,2,2,1,1,2,"Faithfulness: 2 | The summary contains many generic and duplicated claims that are not directly supported by the code (e.g., repeated “handles splat assignments” and extensive function‑call details), and it omits specific behaviors such as upvar handling, error messages for unsupported lhs, and the exact node‑type dispatch logic.  
+Functional Coverage: 2 | It mentions broad categories (assignments, calls, arguments) but fails to capture key details of the implementation (e.g., the distinction between global/local/instance variables, the special handling of NODE_COLON2, the generation of specific opcodes, and error handling).  
+Retrieval Utility: 1 | The overly generic and repetitive wording provides little discriminative semantic information, making it unlikely to retrieve code that closely matches the nuanced behavior of this function.  
+Conciseness: 1 | The summary is excessively long, with dozens of near‑identical bullet points, far exceeding what is needed to convey the function’s purpose.  
+Clarity: 2 | While individual sentences are grammatically correct, the massive repetition and lack of structure make the overall text hard to read and understand quickly."
+CVE-2022-0382,5,5,5,3,3,"Faithfulness: 5 | All statements in the summary are directly supported by the code, including size validation, address‑type handling, group logic, header construction, congestion handling, synchronous connection state changes, timeout waiting, and error returns.  
+Functional Coverage: 5 | The summary captures the core responsibilities of the function: validation, address resolution (including group cases), message header/body construction, congestion management, synchronous connection handling, timeout logic, and error reporting.  
+Retrieval Utility: 5 | It contains discriminative keywords such as “TIPC socket”, “sendmsg”, “address types”, “group communication”, “congestion”, “synchronous”, and “timeout”, which will help retrieve semantically similar implementations or vulnerability‑relevant code.  
+Conciseness: 3 | The summary is overly verbose, presenting a redundant numbered list and a misplaced question, which could be condensed without loss of meaning.  
+Clarity: 3 | While generally understandable, the text has minor grammatical issues (missing space after a period, abrupt question insertion) and some repetition, reducing overall readability."
+CVE-2013-4166,1,2,3,5,3,"Faithfulness: 1 | the summary incorrectly states the condition, claiming addition occurs when the context is not in encryption or export modes, which contradicts the code that adds only when the mode *is* encryption or export.  
+Functional Coverage: 2 | it mentions adding a recipient and the relevant modes but omits the allocation of the recipients array and misrepresents the mode check, missing key implementation details.  
+Retrieval Utility: 3 | includes core concepts like “add recipient” and “encryption/export” useful for retrieval, yet the inaccurate condition may reduce precision when matching similar code.  
+Conciseness: 5 | the summary is extremely brief and contains no unnecessary information.  
+Clarity: 3 | the sentence is grammatically correct but the contradictory phrasing (“if the context is not already in those modes”) makes the intended meaning unclear."
+CVE-2020-16166,2,3,2,1,1,"Faithfulness: 2 | The core claim about mixing interrupt‑derived values and an optional architectural seed is correct, but the bullet points misstate how `credit` is used (it isn’t incremented, it’s set to 1 on a successful seed and later combined with a constant +1). The summary also contains unrelated dialogue and repeated content that isn’t supported by the code.  
+Functional Coverage: 3 | It mentions the main purpose—adding entropy to the fast pool—but omits several important control‑flow details (early returns, CRNG initialization checks, locking, mixing into the input pool) and is cluttered with extraneous text.  
+Retrieval Utility: 2 | While the key concepts (entropy mixing, cycles, IP, time, architectural seed) are present, the excessive repetition and conversational filler dilute the semantic signal, reducing usefulness for retrieval.  
+Conciseness: 1 | The summary is overly long, repeats the same bullet points multiple times, and includes unrelated conversational instructions, far exceeding what is needed to describe the function.  
+Clarity: 1 | The mixture of description, a question, and duplicated bullet lists makes the text confusing and hard to parse, harming overall readability."
+CVE-2022-27950,5,4,5,5,5,"Faithfulness: 5 | All statements in the summary (initialization, USB-specific setup, firmware check, work‑queue setup) are directly supported by the code.  
+Functional Coverage: 4 | The summary captures the main purpose and key actions, but omits details such as HID parsing, error handling, and the early USB‑type check.  
+Retrieval Utility: 5 | It retains discriminative terms (probe, USB, firmware workaround, delayed work) useful for finding similar driver‑initialization code.  
+Conciseness: 5 | The description is brief, conveying essential behavior in a single sentence without superfluous detail.  
+Clarity: 5 | The sentence is grammatically correct, clear, and unambiguous."
+CVE-2021-41072,3,4,2,1,2,"Faithfulness: 3 | Most statements reflect the code’s behavior, but some are inaccurate (e.g., “Closes the directory after processing” is not done) and many duplicated points add unsupported fluff.  
+Functional Coverage: 4 | The summary mentions the key actions of opening a SquashFS directory, reading headers and entries, validation, error handling, and memory allocation, covering the main functionality despite excessive detail.  
+Retrieval Utility: 2 | The core semantic cues (SquashFS, directory reading, validation, swapping) are present, but the extreme redundancy and generic phrasing dilute usefulness for precise code retrieval.  
+Conciseness: 1 | The summary is overwhelmingly verbose, repeating the same points dozens of times, far exceeding what is needed to describe the function.  
+Clarity: 2 | While individual sentences are understandable, the massive repetition makes the overall text confusing and hard to parse quickly."
+CVE-2010-4345,5,4,4,2,2,"Faithfulness: 5 | The summary accurately reflects the code’s overall behavior—reading configuration files, handling node/EUID suffixes, opening files, performing permission checks, parsing options, expanding strings, validating settings, compiling regexes, and processing TLS options. No statements contradict the source.
+
+Functional Coverage: 4 | It captures the main purpose and most important actions (file selection, option parsing, path expansion, validation, TLS handling). It omits some notable details such as the explicit ownership/permission checks for the config file and the macro/named‑list handling, so coverage is strong but not complete.
+
+Retrieval Utility: 4 | The summary contains many discriminative keywords (config file selection, node/EUID suffixes, permission validation, string expansion, regex compilation, TLS verification) that would help locate similar configuration‑parsing code. The breadth is helpful, though the inclusion of overly generic phrasing slightly reduces precision.
+
+Conciseness: 2 | The text is excessively long, repeats the source snippet, includes garbled filler (“Q Q …”), and lists ten detailed points that could be condensed. Important information is buried in verbosity.
+
+Clarity: 2 | While individual sentences are understandable, the overall presentation is cluttered with duplicated code, nonsensical filler, and inconsistent formatting, making it harder to read and unambiguous."
+CVE-2022-3028,4,3,4,5,5,"Faithfulness: 4 | The summary accurately describes the main actions (registration, duplicate check, updating state, broadcasting) without adding incorrect information, though it omits some ancillary checks (e.g., satype bounds, UNSPEC handling, error rollback).  
+Functional Coverage: 3 | It captures the core purpose but leaves out important validation steps, error handling, and the algorithm probing that are part of the function’s behavior.  
+Retrieval Utility: 4 | The wording includes distinctive concepts (“packet filter key”, “registration”, “duplicate check”, “broadcast”) that will help locate semantically similar PFKey registration code.  
+Conciseness: 5 | The summary conveys the essential idea in a single, compact sentence without superfluous detail.  
+Clarity: 5 | The sentence is grammatically correct, clear, and unambiguous."
+CVE-2022-21654,2,2,3,1,1,"Faithfulness: 2 | The opening sentence correctly reflects the code’s intent, but the later claims about `RELEASE_ASSERT` (e.g., checking that `ca_cert_` is non‑null or that a non‑zero return indicates error) are not supported by the source; those checks are performed elsewhere or with different semantics.  
+Functional Coverage: 2 | The summary mentions the main hashing behavior but then diverts into an extensive, repetitive discussion of `RELEASE_ASSERT` that does not capture the core loops over certificate hash lists or the overall purpose of the function.  
+Retrieval Utility: 3 | It contains useful keywords (e.g., `updateDigestForSessionId`, `EVP_DigestUpdate`, `X509_digest`, `verify_certificate_hash_list_`) that could aid retrieval, yet the bulk of unrelated, duplicated text may hinder precise matching.  
+Conciseness: 1 | The text is overly long, repeats the same explanation many times, and includes unnecessary formatting, far exceeding a concise summary.  
+Clarity: 1 | While the first sentence is clear, the subsequent massive, duplicated answer blocks make the overall summary confusing and hard to read."
+CVE-2021-44512,1,1,1,1,1,"Faithfulness: 1 | The summary contains numerous unsupported claims about `get_full_hostname()` returning a fully qualified domain name and repeats the same paragraph many times, none of which are evident from the provided code; it also omits many actions performed in `main`.  
+Functional Coverage: 1 | It fails to mention key behaviors such as directory creation, permission setting, preloading trace libraries, signal handling, random initialization, and the final call to `tmate_ssh_server_main`.  
+Retrieval Utility: 1 | The text is overly generic and flooded with repetitive filler, making it ineffective for retrieving semantically similar or vulnerability‑relevant code.  
+Conciseness: 1 | The summary is excessively long and contains massive duplication, far exceeding what is needed to convey the program’s purpose.  
+Clarity: 1 | Repetition and irrelevant detail obscure the core description, resulting in a confusing and ambiguous summary."
+CVE-2022-24950,5,3,3,5,5,"Faithfulness: 5 | All statements in the summary are directly supported by the code: it creates a socket, checks for an existing entry, and returns a set containing the new file descriptor.  
+Functional Coverage: 3 | The summary captures the main purpose but omits important aspects such as the recursive mutex lock, use of AF_UNIX sockets, permission setting with chmod, and error handling via FATAL_FAIL.  
+Retrieval Utility: 3 | It conveys the generic idea of setting up a listening socket and returning its descriptor, which helps retrieve similar listen implementations, but lacks discriminative details (e.g., Unix domain socket, mutex) that would improve precise matching.  
+Conciseness: 5 | The summary is brief, conveys the core idea in a single sentence, and avoids superfluous information.  
+Clarity: 5 | The wording is grammatically correct, clear, and unambiguous."
+CVE-2022-2639,4,4,3,1,2,"Faithfulness: 4 | The summary correctly states that the function allocates extra space, checks against a maximum limit, and updates the action length, all of which are present in the code. It uses generic terms (“network packet”) not explicit in the source, but the core claims are supported.
+
+Functional Coverage: 4 | It captures the main behavior—reserving space, enforcing a size ceiling, and adjusting the length. It omits details such as copying existing data, error handling, and the returned pointer, but the primary purpose is conveyed.
+
+Retrieval Utility: 3 | The summary includes discriminative keywords like “allocates additional space”, “maximum buffer size”, and “updates length”, which help locate similar resizing logic. However, the excessive repetition dilutes the signal and may hinder precise retrieval.
+
+Conciseness: 1 | The summary is flooded with dozens of duplicated sentences, making it far from concise and needlessly verbose.
+
+Clarity: 2 | While the initial sentence is clear, the massive repetition creates clutter and reduces overall readability, leading to ambiguity about the intended description."
+CVE-2021-3905,4,4,3,1,2,"Faithfulness: 4 | The summary correctly states that the function processes a packet batch, checks for valid IPv4/IPv6 fragments, handles them, and refills the batch when needed, though it omits details like the mutex lock and the return‑value check of `ipf_handle_frag`.  
+Functional Coverage: 4 | It captures the main purpose—iterating over packets, identifying valid fragments, handling them, and refilling the batch—but leaves out secondary actions such as locking and the exact refill logic for non‑fragments.  
+Retrieval Utility: 3 | The core semantic elements (batch processing, fragment validation, handling, refill) are present, aiding retrieval of similar code, but the excessive repetition and omission of locking reduce discriminative value.  
+Conciseness: 1 | The summary is flooded with repetitive bullet points, making it far longer than necessary and detracting from brevity.  
+Clarity: 2 | The initial sentence is clear, but the massive duplicated list creates confusion and hampers readability."
+CVE-2019-19054,4,4,5,5,5,"Faithfulness: 4 | The summary correctly reflects that the function allocates state, registers a sub‑device, sets default parameters and deals with interrupts, though “ensuring proper handling of interrupts” is a slight over‑statement of the code’s action (it simply disables them).  
+Functional Coverage: 4 | It captures the main actions—allocation, registration, parameter setup, and interrupt handling—while omitting lower‑level details such as FIFO allocation and mutex initialization.  
+Retrieval Utility: 5 | The description contains distinctive concepts (probe, V4L2 sub‑device registration, default parameters, interrupt control) that will reliably match semantically similar driver probe implementations.  
+Conciseness: 5 | The summary conveys the essential behavior in a single, brief sentence without extraneous information.  
+Clarity: 5 | The sentence is grammatically correct, easy to read, and unambiguous."
+CVE-2019-13133,5,3,3,5,5,"Faithfulness: 5 | All statements (“reads and processes a BMP image file”, “handling various BMP formats and color depths”, “returns an Image object”) are directly supported by the code; no unsupported claims are made.  
+Functional Coverage: 3 | The summary captures the core purpose (BMP reading) but omits many significant behaviors such as signature validation, error handling (CorruptImageError/Warning), compression handling, colormap processing, multi‑image support, and orientation correction.  
+Retrieval Utility: 3 | While it includes key terms like “BMP” and “image processing”, the description is generic and lacks discriminative details (e.g., handling of BI_RLE compression, OS/2 vs Windows BMP) that would aid precise retrieval of similar implementations.  
+Conciseness: 5 | The summary conveys the essential idea in a single clear sentence without superfluous information.  
+Clarity: 5 | The sentence is grammatically correct, unambiguous, and easy to understand."
+CVE-2019-19071,1,2,2,1,2,"Faithfulness: 1 | The summary contains several inaccurate statements (e.g., claiming a memory‑allocation failure returns ‑EINVAL and that queueing can fail with ‑EINVAL), which are not reflected in the source code.  
+
+Functional Coverage: 2 | It mentions the core idea of preparing and queuing a beacon, but omits important steps (zero‑initialisation, dword alignment) and adds unrelated Q&A content, so coverage is incomplete and noisy.  
+
+Retrieval Utility: 2 | Because the summary is cluttered with unrelated questions and incorrect error‑handling details, it would be less effective for retrieving semantically similar beacon‑sending implementations.  
+
+Conciseness: 1 | The text is excessively long, repeats multiple prompts, and includes extraneous information, far beyond a concise description of the function.  
+
+Clarity: 2 | While the language is mostly grammatical, the mixture of summary, questions, and instructions makes the overall meaning hard to follow."
+CVE-2019-19045,4,3,2,1,2,"Faithfulness: 4 | The summary correctly states that the function creates a CQ, allocates memory, initializes parameters, registers it with the device, and sets up a tasklet and debug message, all of which are present in the code. Minor phrasing (“PCIe connection”) is not explicit in the source but does not introduce falsehoods.  
+
+Functional Coverage: 3 | It captures the main purpose (CQ creation and initialization) but omits several important steps such as rounding the size, WQ creation, CQE initialization, error‑handling cleanup, and specific field settings (vector, irq, etc.).  
+
+Retrieval Utility: 2 | While the summary contains key concepts (CQ, FPGA, tasklet, allocation, registration), the extreme length and repetitive poetic format dilute the discriminative information, making it less useful for precise semantic retrieval.  
+
+Conciseness: 1 | The summary is excessively long and repetitive, repeating the same couplets many times, far exceeding what is needed to convey the function’s behavior.  
+
+Clarity: 2 | The poetic style is readable but the massive redundancy and over‑embellishment obscure the core information, reducing overall clarity."
+CVE-2022-23584,2,2,2,1,1,"Faithfulness: 2 | The summary contains many statements that are not supported by the code (e.g., “Supports different image formats (PNG, JPEG, BMP)”, repeated claims about memory limits, and a 1‑D output shape) and repeats points verbatim, indicating inaccuracies despite some correct points about PNG decoding and type handling.  
+Functional Coverage: 2 | It mentions the main steps (decoding, dimension checks, tensor allocation, type conversion) but is flooded with irrelevant and duplicated details, and omits precise aspects such as the Eigen thread‑pool conversion for float output.  
+Retrieval Utility: 2 | While it includes some key keywords (PNG, decode, tensor, uint8/uint16/float, size checks), the massive redundancy and incorrect claims dilute the semantic signal, making it less useful for retrieving similar implementations.  
+Conciseness: 1 | The summary is excessively long, repeats the same ideas dozens of times, and adds unnecessary filler, far exceeding a concise description.  
+Clarity: 1 | The repetitive and contradictory phrasing makes the text hard to follow; the intended single‑sentence format is not achieved, resulting in poor readability."
+CVE-2021-38383,1,3,2,1,2,"Faithfulness: 1 | The summary contains many statements not present in the code (e.g., repeated references to inet_ntop, a non‑existent “error” function, and generic “custom” helpers), making most of it unsupported.  
+Functional Coverage: 3 | It mentions the main actions (resolving address, creating socket, setting options, binding, logging, error handling) but is cluttered with irrelevant and incorrect details, omitting nuance such as the dual‑stack handling logic.  
+Retrieval Utility: 2 | The excessive repetition and inclusion of unrelated terms dilute the semantic signal, reducing its usefulness for finding similar binding‑oriented code.  
+Conciseness: 1 | The summary is extremely verbose, repeats the same phrase dozens of times, and adds unnecessary filler, far exceeding what is needed to describe the function.  
+Clarity: 2 | While individual sentences are grammatically correct, the massive redundancy and inclusion of false information make the overall text hard to parse quickly."
+CVE-2020-15569,4,3,3,5,5,"Faithfulness: 4 | The summary accurately states that the destructor deletes the mixer, player, audio driver name, and listener, all of which are present in the code. It does not mention the conditional `mixer->removeDevice(player)` call, but it does not make any incorrect claims.
+
+Functional Coverage: 3 | It captures the main cleanup actions but omits the important conditional removal of the player from the mixer, which is a notable part of the destructor’s behavior.
+
+Retrieval Utility: 3 | The summary conveys a generic “resource‑deleting destructor” which will retrieve many similar snippets, but the lack of detail about the conditional device removal reduces its ability to distinguish this specific pattern.
+
+Conciseness: 5 | The summary is brief and to the point, containing no unnecessary information.
+
+Clarity: 5 | The wording is clear, grammatically correct, and unambiguous."
+CVE-2019-19525,5,5,4,2,2,"Faithfulness: 5 | All listed actions (debug logging, setting shutdown flag, canceling delayed work, killing and freeing URBs, unregistering and freeing hardware, clearing interface data, and releasing the USB device) are directly performed in the code.  
+Functional Coverage: 5 | The summary captures the full purpose of the function—cleanly disconnecting the USB interface and releasing every associated resource.  
+Retrieval Utility: 4 | It mentions the key operations (cancel_delayed_work_sync, URB handling, hardware unregister/free) useful for finding similar cleanup code, but the extraneous request text adds noise.  
+Conciseness: 2 | The summary includes unnecessary meta‑language and a verbose bullet list, making it longer than needed.  
+Clarity: 2 | Mixing a re‑phrasing request with the actual description creates ambiguity and reduces readability."
+CVE-2022-25139,2,2,2,1,1,"Faithfulness: 2 | The summary mentions many repeated return statements and generic steps that are not explicitly present in the code, and it overstates preparation of a call rather than handling fulfillment, so several claims are unsupported.  
+Functional Coverage: 2 | It touches on context manipulation and resolve/reject handling, but omits key details (e.g., NJS_AGAIN handling, memory‑error check, exact frame restoration) and over‑emphasizes redundant return logic.  
+Retrieval Utility: 2 | While it contains some relevant keywords (asynchronous, resolve, reject, VM state), the excessive repetition and noise dilute its usefulness for finding semantically similar code.  
+Conciseness: 1 | The summary is extremely verbose, repeating the same idea dozens of times, far exceeding what is needed to describe the function.  
+Clarity: 1 | The massive redundancy and disorganized list make the text hard to read and understand, reducing overall readability."
+CVE-2018-13441,2,3,2,1,2,"Faithfulness: 2 | Contains accurate statements about functionality but also includes unrelated commentary and instructions that are not present in the code, lowering overall faithfulness.  
+Functional Coverage: 3 | Captures the main behaviors (listing handlers, finding a handler by name, checking for help text) but omits the special case handling of empty or “help” arguments and adds extraneous material.  
+Retrieval Utility: 2 | Core semantic information is present, yet the additional meta‑text and instructions add noise that would hinder precise retrieval of similar code.  
+Conciseness: 1 | The summary is far longer than necessary, mixing critique, instructions, and a numbered list, violating the requirement for a concise description.  
+Clarity: 2 | Individual points are understandable, but the interleaving of summary, criticism, and directives makes the overall text confusing and less clear."
+CVE-2022-23589,3,3,4,2,3,"Faithfulness: 3 | The summary correctly describes the main optimization (pushing a constant‑multiply into a Conv op) and the role of the shape‑check and control‑dependency helpers, but it incorrectly refers to the process as “constant folding” and includes extraneous, duplicated explanations not present in the code.  
+Functional Coverage: 3 | It mentions the key steps (constant‑multiply detection, shape validation, control‑dependency handling, node renaming) but also adds inaccurate details about generic constant folding and repeats content, so coverage is partial and noisy.  
+Retrieval Utility: 4 | The summary contains many distinctive terms (MulConvPushDown, convolution, constant input, shape compatibility, control dependencies, AddPrefixToNodeName) that would help locate similar optimization code, despite some verbosity.  
+Conciseness: 2 | The text is overly long, repeats the same explanations multiple times, and adds a redundant bullet list, making it far from concise.  
+Clarity: 3 | While individual sentences are understandable and grammatically correct, the massive repetition and mixed‑in irrelevant sections reduce overall readability and focus."
+CVE-2019-16234,5,2,2,5,5,"Faithfulness: 5 | The summary’s statements are all supported by the code; it correctly notes allocation, initialization, configuration, memory mapping, and interrupt handling without adding false details.  
+Functional Coverage: 2 | It omits many key behaviors such as DMA mask setup, hardware revision checks, wait‑queue initialization, MSIX handling, error‑path cleanup, and specific configuration flags, thus missing major functional aspects.  
+Retrieval Utility: 2 | The description is overly generic and lacks distinctive details (e.g., PCI L1 power work‑around, per‑CPU TSO header allocation, gen2 vs gen1 paths), limiting its ability to retrieve semantically similar or vulnerability‑relevant code.  
+Conciseness: 5 | The summary conveys its point in a single, succinct sentence without unnecessary elaboration.  
+Clarity: 5 | The wording is grammatically correct, clear, and unambiguous."
+CVE-2016-7132,2,2,2,1,1,"Faithfulness: 2 | The summary mentions many actions that occur in the code (e.g., handling various element types, base64 decoding, calling __wakeup, merging properties), but it also adds numerous unsupported or exaggerated statements (repeated “Free stack entries” lines, implying generic popping of elements) and mischaracterizes some behavior, reducing overall accuracy.  
+
+Functional Coverage: 2 | Core responsibilities such as processing element types, decoding binary data, invoking __wakeup, and handling EL_VAR/EL_FIELD are noted, yet the summary is flooded with redundant points and omits nuanced steps (e.g., class‑name handling, scope manipulation, hash table merging) that are important to the function’s behavior.  
+
+Retrieval Utility: 2 | While the summary contains some relevant keywords (WDDX stack, EL_VAR, EL_FIELD, __wakeup, base64), the extreme repetition and generic phrasing dilute its discriminative power, making it only marginally useful for retrieving semantically similar code.  
+
+Conciseness: 1 | The summary is excessively verbose, repeating the same bullet points dozens of times and adding unnecessary filler, far exceeding what is needed to convey the function’s behavior.  
+
+Clarity: 1 | The massive redundancy and disorganized list make the summary difficult to read and understand, despite being grammatically correct in isolated bullet points."
+CVE-2022-21736,5,3,4,5,5,"Faithfulness: 5 | The summary accurately states that the function builds a `SparseTensorSliceDatasetOp::Dataset` from the given tensors, checks batch ordering, and returns it, all of which are directly reflected in the code.  
+Functional Coverage: 3 | While it captures the main creation and ordering check, it omits important validation steps (shape checks, empty‑tensor consistency, and error handling) that are central to the function’s behavior.  
+Retrieval Utility: 4 | The summary includes distinctive keywords (SparseTensorSliceDatasetOp, indices/values/dense_shape, batch ordering) that will help locate semantically similar implementations, though missing validation details reduces specificity slightly.  
+Conciseness: 5 | The description is brief, conveying the core actions in a single clear sentence without extraneous information.  
+Clarity: 5 | The sentence is grammatically correct, easy to understand, and unambiguous."
+CVE-2022-31031,2,2,1,1,1,"Faithfulness: 2 | The summary correctly mentions parsing, length/type validation, and populating attributes, but it also contains large blocks of unrelated instructional text that are not present in the source code.  
+Functional Coverage: 2 | It captures the main purpose of the function but omits important details (e.g., attribute length alignment, handling of unknown attributes, specific error codes) and is cluttered with extraneous material.  
+Retrieval Utility: 1 | The excessive, unrelated content and repetition make it difficult for a retrieval system to match this summary with semantically similar parsing implementations.  
+Conciseness: 1 | The summary is overly long, includes repetitive instructions, and adds many irrelevant sentences, far exceeding what is needed to describe the function.  
+Clarity: 1 | The text is hard to follow due to unnecessary repetition, mixed instructions, and poor sentence structure, reducing overall readability."
+CVE-2022-27666,2,3,4,2,3,"Faithfulness: 2 | The summary contains several inaccuracies (e.g., calling the packet an “Ethernet frame,” saying the trailer is filled with the ESP header, and describing a cast as a struct) and includes statements not directly supported by the code.  
+Functional Coverage: 3 | It mentions the main tasks (preparing ESP output, handling in‑place vs out‑of‑place, fragmenting, updating the ESP header) but adds irrelevant requests (listing variables) and misstates some details, missing finer points such as the lock handling and reference‑count update.  
+Retrieval Utility: 4 | The summary lists many concrete identifiers (esp6_output_head, skb_cow_data, esp_output_fill_trailer, esp6_output_encap, etc.) that would help locate semantically similar ESP‑related skb manipulation code, despite some noise.  
+Conciseness: 2 | The text is overly verbose, mixing a functional description with exhaustive enumerations of variables, structures, macros, and step numbers, which reduces brevity.  
+Clarity: 3 | The language is generally understandable, but the mixture of description and a variable‑listing request, plus a few confusing or inaccurate phrases, makes the overall narrative less clear."
+CVE-2022-0361,5,4,4,5,5,"Faithfulness: 5 | All statements in the summary are directly supported by the code: it copies a line range, distinguishes destination positions, marks appended lines, and reports the count.  
+Functional Coverage: 4 | The summary captures the main purpose and key behaviors, but omits secondary details such as the undo save (u_save) and lock‑mark handling.  
+Retrieval Utility: 4 | The summary includes discriminative concepts (copying lines, positional cases, marking, user notification) useful for finding similar code, though it lacks mentions of undo handling and specific API calls.  
+Conciseness: 5 | The description is brief and to the point, covering essential actions without unnecessary elaboration.  
+Clarity: 5 | The wording is clear, grammatically correct, and unambiguous."
+CVE-2022-24764,2,4,3,1,2,"Faithfulness: 2 | The summary correctly describes the main steps (buffer size check, “m=” line construction, optional connection, bandwidth, and attribute printing) and the return values, but it adds unsupported claims (e.g., “used for debugging or logging”) and includes a massive block of meaningless “1. 2. 3.” repetitions that are not present in the code.
+
+Functional Coverage: 4 | It captures the essential purpose of the function and enumerates the key operations performed, covering the primary behavior. Minor extraneous commentary does not omit any major functionality.
+
+Retrieval Utility: 3 | The core semantic information (SDP media description printing, optional sections, buffer‑size check) is present, which would aid retrieval, but the excessive filler (“1. 2. 3.”) dilutes the signal and may hinder precise matching.
+
+Conciseness: 1 | The summary is overwhelmingly verbose, repeating the same numbered list dozens of times, far exceeding what is needed to convey the function’s behavior.
+
+Clarity: 2 | The initial description is clear, but the long series of repetitive numbers makes the text confusing and hard to read, reducing overall clarity."
+CVE-2022-0351,1,2,2,1,2,"Faithfulness: 1 | The summary repeatedly calls `eval7` a “Lua” function and mentions “Lua 9.0”, which are incorrect; the source code is a Vimscript expression evaluator. It also asserts behavior (e.g., “operator precedence”) that isn’t explicitly shown, and omits many concrete details such as leader handling, special constants, and error checks.
+
+Functional Coverage: 2 | It lists many expression kinds that `eval7` handles (numbers, strings, lists, dictionaries, lambdas, options, env vars, registers, nested expressions), but it misses several important steps (leader parsing, handling of `!`, `-`, `+`, logical NOT, subscript processing, special constants `true/false/null`, and the variable/function name resolution flow). It also adds inaccurate context about Lua.
+
+Retrieval Utility: 2 | The summary contains many generic keywords (numbers, strings, lists, etc.) that could match similar evaluators, but the repeated and inaccurate “Lua” phrasing reduces its discriminative power for retrieving Vim‑specific code.
+
+Conciseness: 1 | The text is excessively long, contains many duplicated sentences, and includes irrelevant filler (“step step step …”), far exceeding what is needed to convey the function’s purpose.
+
+Clarity: 2 | While the prose is mostly grammatical, the repeated sections, incorrect language references, and filler text make it confusing and dilute the core description."

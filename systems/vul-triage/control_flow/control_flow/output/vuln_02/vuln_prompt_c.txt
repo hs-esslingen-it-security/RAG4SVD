@@ -1,0 +1,79 @@
+文件: /Users/vinsontang/Desktop/test/graph_demo/control_flow/test_snippets/vuln_02_format_string.c
+图构建模式: precise_c
+【AST】
+- 类型/结构定义：Typedef@L15
+- 函数 log_init@L17：
+  - 赋值：Assign:=
+  - 调用：memset
+- 函数 log_set_message@L22：
+  - 赋值：Assign:=
+  - 调用：strncpy
+- 函数 log_print@L28：
+  - 调用：printf；printf；printf
+- 函数 log_to_file@L34：
+  - 调用：fprintf；fprintf；fclose；fopen
+  - 条件/循环：If
+  - 返回：Return
+- 函数 classify_severity@L42：
+  - 调用：strstr；strstr
+  - 条件/循环：If；If
+  - 返回：Return；Return；Return
+- 函数 process_log@L48：
+  - 调用：log_init；log_set_message；log_print；log_to_file；classify_severity
+- 函数 main@L57：
+  - 调用：printf；process_log
+  - 条件/循环：If；For
+  - 返回：Return；Return
+
+【CFG】
+- 函数 log_init：保留控制点 4/4；分支节点 0；调用节点 1；线性段折叠 0。
+  - 路径1: Entry -> call memset(...) -> entry->severity = ... -> log_init EXIT
+- 函数 log_set_message：保留控制点 4/4；分支节点 0；调用节点 1；线性段折叠 0。
+  - 路径1: Entry -> call strncpy(...) -> entry->message[128 - 1] = ... -> log_set_message EXIT
+- 函数 log_print：保留控制点 5/5；分支节点 0；调用节点 3；线性段折叠 0。
+  - 路径1: Entry -> call printf(...) -> call printf(...) -> call printf(...) -> log_print EXIT
+- 函数 log_to_file：保留控制点 8/8；分支节点 1；调用节点 3；线性段折叠 0。
+  - 分支/循环节点：if (!fp)@L36
+  - 路径1: Entry -> decl fp = fopen(...) -> if (!fp) -> call fprintf(...) -> call fprintf(...) -> call fclose(...) -> log_to_file EXIT
+- 函数 classify_severity：保留控制点 7/7；分支节点 2；调用节点 0；线性段折叠 0。
+  - 分支/循环节点：if (strstr(...))@L43；if (strstr(...))@L44
+- 函数 process_log：保留控制点 8/8；分支节点 0；调用节点 4；线性段折叠 0。
+  - 路径1: Entry -> decl entry -> decl sev = classify_severity(...) -> call log_init(...) -> call log_set_message(...) -> call log_print(...) -> call log_to_file(...) -> process_log EXIT
+- 函数 main：保留控制点 10/10；分支节点 2；调用节点 2；线性段折叠 0。
+  - 分支/循环节点：if (argc < 2)@L58；for_cond (i < argc)@L62
+
+【DFG】
+- 函数 log_init：边保留 2/2；参数源 2 个；抽取链路 2 条。
+  - 参数源：param: entry@L17；param: sev@L17
+  - 数据链：param: entry -> call memset
+  - 数据链：param: sev -> assign entry->severity
+- 函数 log_set_message：边保留 2/2；参数源 2 个；抽取链路 2 条。
+  - 参数源：param: entry@L22；param: msg@L22
+  - 数据链：param: entry -> call strncpy
+  - 数据链：param: msg -> call strncpy
+- 函数 log_print：边保留 2/2；参数源 1 个；抽取链路 2 条。
+  - 参数源：param: entry@L28
+  - 数据链：param: entry -> call printf
+  - 数据链：param: entry -> call printf
+- 函数 log_to_file：边保留 7/7；参数源 2 个；抽取链路 6 条。
+  - 参数源：param: entry@L34；param: path@L34
+  - 数据链：param: entry -> call fprintf
+  - 数据链：param: entry -> call fprintf
+  - 数据链：param: path -> decl fp -> if(...)
+  - 数据链：param: path -> decl fp -> call fprintf
+  - 数据链：param: path -> decl fp -> call fprintf
+  - 数据链：param: path -> decl fp -> call fclose
+- 函数 classify_severity：边保留 2/2；参数源 1 个；抽取链路 2 条。
+  - 参数源：param: msg@L42
+  - 数据链：param: msg -> if(...)
+  - 数据链：param: msg -> if(...)
+- 函数 process_log：边保留 7/7；参数源 1 个；抽取链路 2 条。
+  - 参数源：param: user_input@L48
+  - 数据链：param: user_input -> call log_set_message
+  - 数据链：param: user_input -> decl sev -> call log_init
+- 函数 main：边保留 4/4；参数源 2 个；抽取链路 4 条。
+  - 参数源：param: argc@L57；param: argv@L57
+  - 数据链：param: argc -> if(...)
+  - 数据链：param: argc -> for_cond
+  - 数据链：param: argv -> call printf
+  - 数据链：param: argv -> call process_log

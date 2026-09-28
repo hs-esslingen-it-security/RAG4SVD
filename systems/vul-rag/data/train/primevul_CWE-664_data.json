@@ -1,0 +1,21 @@
+[
+  {
+    "id": 1464,
+    "cve_id": "CVE-2019-5816",
+    "code_before_change": "ChildProcessTerminationInfo ChildProcessLauncherHelper::GetTerminationInfo(\n    const ChildProcessLauncherHelper::Process& process,\n    bool known_dead) {\n  ChildProcessTerminationInfo info;\n   if (!java_peer_avaiable_on_client_thread_)\n     return info;\n \n  Java_ChildProcessLauncherHelperImpl_getTerminationInfo(\n       AttachCurrentThread(), java_peer_, reinterpret_cast<intptr_t>(&info));\n \n   base::android::ApplicationState app_state =\n      base::android::ApplicationStatusListener::GetState();\n  bool app_foreground =\n      app_state == base::android::APPLICATION_STATE_HAS_RUNNING_ACTIVITIES ||\n      app_state == base::android::APPLICATION_STATE_HAS_PAUSED_ACTIVITIES;\n\n  if (app_foreground &&\n      (info.binding_state == base::android::ChildBindingState::MODERATE ||\n       info.binding_state == base::android::ChildBindingState::STRONG)) {\n    info.status = base::TERMINATION_STATUS_OOM_PROTECTED;\n  } else {\n    info.status = base::TERMINATION_STATUS_NORMAL_TERMINATION;\n  }\n  return info;\n}\n",
+    "code_after_change": "ChildProcessTerminationInfo ChildProcessLauncherHelper::GetTerminationInfo(\n    const ChildProcessLauncherHelper::Process& process,\n    bool known_dead) {\n  ChildProcessTerminationInfo info;\n   if (!java_peer_avaiable_on_client_thread_)\n     return info;\n \n  Java_ChildProcessLauncherHelperImpl_getTerminationInfoAndStop(\n       AttachCurrentThread(), java_peer_, reinterpret_cast<intptr_t>(&info));\n \n   base::android::ApplicationState app_state =\n      base::android::ApplicationStatusListener::GetState();\n  bool app_foreground =\n      app_state == base::android::APPLICATION_STATE_HAS_RUNNING_ACTIVITIES ||\n      app_state == base::android::APPLICATION_STATE_HAS_PAUSED_ACTIVITIES;\n\n  if (app_foreground &&\n      (info.binding_state == base::android::ChildBindingState::MODERATE ||\n       info.binding_state == base::android::ChildBindingState::STRONG)) {\n    info.status = base::TERMINATION_STATUS_OOM_PROTECTED;\n  } else {\n    info.status = base::TERMINATION_STATUS_NORMAL_TERMINATION;\n  }\n  return info;\n}\n",
+    "cwe": [
+      "CWE-664"
+    ],
+    "cve_description": "Process lifetime issue in Chrome in Google Chrome on Android prior to 74.0.3729.108 allowed a remote attacker to potentially persist an exploited process via a crafted HTML page.",
+    "patch": "--- code before\n+++ code after\n@@ -5,7 +5,7 @@\n    if (!java_peer_avaiable_on_client_thread_)\n      return info;\n  \n-  Java_ChildProcessLauncherHelperImpl_getTerminationInfo(\n+  Java_ChildProcessLauncherHelperImpl_getTerminationInfoAndStop(\n        AttachCurrentThread(), java_peer_, reinterpret_cast<intptr_t>(&info));\n  \n    base::android::ApplicationState app_state =",
+    "function_modified_lines": {
+      "added": [
+        "  Java_ChildProcessLauncherHelperImpl_getTerminationInfoAndStop("
+      ],
+      "deleted": [
+        "  Java_ChildProcessLauncherHelperImpl_getTerminationInfo("
+      ]
+    }
+  }
+]

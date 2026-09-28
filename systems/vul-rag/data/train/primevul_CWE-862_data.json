@@ -1,0 +1,240 @@
+[
+  {
+    "id": 620,
+    "cve_id": "CVE-2017-17807",
+    "code_before_change": "static void construct_get_dest_keyring(struct key **_dest_keyring)\n {\n \tstruct request_key_auth *rka;\n \tconst struct cred *cred = current_cred();\n \tstruct key *dest_keyring = *_dest_keyring, *authkey;\n \n \tkenter(\"%p\", dest_keyring);\n \n\t/* find the appropriate keyring */\n\tif (dest_keyring) {\n \t\t/* the caller supplied one */\n \t\tkey_get(dest_keyring);\n \t} else {\n \t\t/* use a default keyring; falling through the cases until we\n \t\t * find one that we actually have */\n \t\tswitch (cred->jit_keyring) {\n\t\tcase KEY_REQKEY_DEFL_DEFAULT:\n\t\tcase KEY_REQKEY_DEFL_REQUESTOR_KEYRING:\n\t\t\tif (cred->request_key_auth) {\n\t\t\t\tauthkey = cred->request_key_auth;\n\t\t\t\tdown_read(&authkey->sem);\n\t\t\t\trka = authkey->payload.data[0];\n\t\t\t\tif (!test_bit(KEY_FLAG_REVOKED,\n\t\t\t\t\t      &authkey->flags))\n \t\t\t\t\tdest_keyring =\n \t\t\t\t\t\tkey_get(rka->dest_keyring);\n \t\t\t\tup_read(&authkey->sem);\n\t\t\t\tif (dest_keyring)\n \t\t\t\t\tbreak;\n \t\t\t}\n \n \t\tcase KEY_REQKEY_DEFL_THREAD_KEYRING:\n\t\t\tdest_keyring = key_get(cred->thread_keyring);\n\t\t\tif (dest_keyring)\n\t\t\t\tbreak;\n\n\t\tcase KEY_REQKEY_DEFL_PROCESS_KEYRING:\n\t\t\tdest_keyring = key_get(cred->process_keyring);\n\t\t\tif (dest_keyring)\n\t\t\t\tbreak;\n\n\t\tcase KEY_REQKEY_DEFL_SESSION_KEYRING:\n\t\t\trcu_read_lock();\n\t\t\tdest_keyring = key_get(\n\t\t\t\trcu_dereference(cred->session_keyring));\n\t\t\trcu_read_unlock();\n\n\t\t\tif (dest_keyring)\n\t\t\t\tbreak;\n\n\t\tcase KEY_REQKEY_DEFL_USER_SESSION_KEYRING:\n\t\t\tdest_keyring =\n\t\t\t\tkey_get(cred->user->session_keyring);\n\t\t\tbreak;\n\n\t\tcase KEY_REQKEY_DEFL_USER_KEYRING:\n\t\t\tdest_keyring = key_get(cred->user->uid_keyring);\n\t\t\tbreak;\n\n\t\tcase KEY_REQKEY_DEFL_GROUP_KEYRING:\n \t\tdefault:\n \t\t\tBUG();\n \t\t}\n \t}\n \n \t*_dest_keyring = dest_keyring;\n \tkleave(\" [dk %d]\", key_serial(dest_keyring));\n\treturn;\n }\n",
+    "code_after_change": "static void construct_get_dest_keyring(struct key **_dest_keyring)\nstatic int construct_get_dest_keyring(struct key **_dest_keyring)\n {\n \tstruct request_key_auth *rka;\n \tconst struct cred *cred = current_cred();\n \tstruct key *dest_keyring = *_dest_keyring, *authkey;\n\tint ret;\n \n \tkenter(\"%p\", dest_keyring);\n \n\t/* find the appropriate keyring */\n\tif (dest_keyring) {\n \t\t/* the caller supplied one */\n \t\tkey_get(dest_keyring);\n \t} else {\n\t\tbool do_perm_check = true;\n\n \t\t/* use a default keyring; falling through the cases until we\n \t\t * find one that we actually have */\n \t\tswitch (cred->jit_keyring) {\n\t\tcase KEY_REQKEY_DEFL_DEFAULT:\n\t\tcase KEY_REQKEY_DEFL_REQUESTOR_KEYRING:\n\t\t\tif (cred->request_key_auth) {\n\t\t\t\tauthkey = cred->request_key_auth;\n\t\t\t\tdown_read(&authkey->sem);\n\t\t\t\trka = authkey->payload.data[0];\n\t\t\t\tif (!test_bit(KEY_FLAG_REVOKED,\n\t\t\t\t\t      &authkey->flags))\n \t\t\t\t\tdest_keyring =\n \t\t\t\t\t\tkey_get(rka->dest_keyring);\n \t\t\t\tup_read(&authkey->sem);\n\t\t\t\tif (dest_keyring) {\n\t\t\t\t\tdo_perm_check = false;\n \t\t\t\t\tbreak;\n\t\t\t\t}\n \t\t\t}\n \n \t\tcase KEY_REQKEY_DEFL_THREAD_KEYRING:\n\t\t\tdest_keyring = key_get(cred->thread_keyring);\n\t\t\tif (dest_keyring)\n\t\t\t\tbreak;\n\n\t\tcase KEY_REQKEY_DEFL_PROCESS_KEYRING:\n\t\t\tdest_keyring = key_get(cred->process_keyring);\n\t\t\tif (dest_keyring)\n\t\t\t\tbreak;\n\n\t\tcase KEY_REQKEY_DEFL_SESSION_KEYRING:\n\t\t\trcu_read_lock();\n\t\t\tdest_keyring = key_get(\n\t\t\t\trcu_dereference(cred->session_keyring));\n\t\t\trcu_read_unlock();\n\n\t\t\tif (dest_keyring)\n\t\t\t\tbreak;\n\n\t\tcase KEY_REQKEY_DEFL_USER_SESSION_KEYRING:\n\t\t\tdest_keyring =\n\t\t\t\tkey_get(cred->user->session_keyring);\n\t\t\tbreak;\n\n\t\tcase KEY_REQKEY_DEFL_USER_KEYRING:\n\t\t\tdest_keyring = key_get(cred->user->uid_keyring);\n\t\t\tbreak;\n\n\t\tcase KEY_REQKEY_DEFL_GROUP_KEYRING:\n \t\tdefault:\n \t\t\tBUG();\n \t\t}\n\n\t\t/*\n\t\t * Require Write permission on the keyring.  This is essential\n\t\t * because the default keyring may be the session keyring, and\n\t\t * joining a keyring only requires Search permission.\n\t\t *\n\t\t * However, this check is skipped for the \"requestor keyring\" so\n\t\t * that /sbin/request-key can itself use request_key() to add\n\t\t * keys to the original requestor's destination keyring.\n\t\t */\n\t\tif (dest_keyring && do_perm_check) {\n\t\t\tret = key_permission(make_key_ref(dest_keyring, 1),\n\t\t\t\t\t     KEY_NEED_WRITE);\n\t\t\tif (ret) {\n\t\t\t\tkey_put(dest_keyring);\n\t\t\t\treturn ret;\n\t\t\t}\n\t\t}\n \t}\n \n \t*_dest_keyring = dest_keyring;\n \tkleave(\" [dk %d]\", key_serial(dest_keyring));\n\treturn 0;\n }\n",
+    "cwe": [
+      "CWE-862"
+    ],
+    "cve_description": "The KEYS subsystem in the Linux kernel before 4.14.6 omitted an access-control check when adding a key to the current task's \"default request-key keyring\" via the request_key() system call, allowing a local user to use a sequence of crafted system calls to add keys to a keyring with only Search permission (not Write permission) to that keyring, related to construct_get_dest_keyring() in security/keys/request_key.c.",
+    "patch": "--- code before\n+++ code after\n@@ -1,8 +1,10 @@\n static void construct_get_dest_keyring(struct key **_dest_keyring)\n+static int construct_get_dest_keyring(struct key **_dest_keyring)\n  {\n  \tstruct request_key_auth *rka;\n  \tconst struct cred *cred = current_cred();\n  \tstruct key *dest_keyring = *_dest_keyring, *authkey;\n+\tint ret;\n  \n  \tkenter(\"%p\", dest_keyring);\n  \n@@ -11,6 +13,8 @@\n  \t\t/* the caller supplied one */\n  \t\tkey_get(dest_keyring);\n  \t} else {\n+\t\tbool do_perm_check = true;\n+\n  \t\t/* use a default keyring; falling through the cases until we\n  \t\t * find one that we actually have */\n  \t\tswitch (cred->jit_keyring) {\n@@ -25,8 +29,10 @@\n  \t\t\t\t\tdest_keyring =\n  \t\t\t\t\t\tkey_get(rka->dest_keyring);\n  \t\t\t\tup_read(&authkey->sem);\n-\t\t\t\tif (dest_keyring)\n+\t\t\t\tif (dest_keyring) {\n+\t\t\t\t\tdo_perm_check = false;\n  \t\t\t\t\tbreak;\n+\t\t\t\t}\n  \t\t\t}\n  \n  \t\tcase KEY_REQKEY_DEFL_THREAD_KEYRING:\n@@ -61,9 +67,27 @@\n  \t\tdefault:\n  \t\t\tBUG();\n  \t\t}\n+\n+\t\t/*\n+\t\t * Require Write permission on the keyring.  This is essential\n+\t\t * because the default keyring may be the session keyring, and\n+\t\t * joining a keyring only requires Search permission.\n+\t\t *\n+\t\t * However, this check is skipped for the \"requestor keyring\" so\n+\t\t * that /sbin/request-key can itself use request_key() to add\n+\t\t * keys to the original requestor's destination keyring.\n+\t\t */\n+\t\tif (dest_keyring && do_perm_check) {\n+\t\t\tret = key_permission(make_key_ref(dest_keyring, 1),\n+\t\t\t\t\t     KEY_NEED_WRITE);\n+\t\t\tif (ret) {\n+\t\t\t\tkey_put(dest_keyring);\n+\t\t\t\treturn ret;\n+\t\t\t}\n+\t\t}\n  \t}\n  \n  \t*_dest_keyring = dest_keyring;\n  \tkleave(\" [dk %d]\", key_serial(dest_keyring));\n-\treturn;\n+\treturn 0;\n  }",
+    "function_modified_lines": {
+      "added": [
+        "static int construct_get_dest_keyring(struct key **_dest_keyring)",
+        "\tint ret;",
+        "\t\tbool do_perm_check = true;",
+        "",
+        "\t\t\t\tif (dest_keyring) {",
+        "\t\t\t\t\tdo_perm_check = false;",
+        "\t\t\t\t}",
+        "",
+        "\t\t/*",
+        "\t\t * Require Write permission on the keyring.  This is essential",
+        "\t\t * because the default keyring may be the session keyring, and",
+        "\t\t * joining a keyring only requires Search permission.",
+        "\t\t *",
+        "\t\t * However, this check is skipped for the \"requestor keyring\" so",
+        "\t\t * that /sbin/request-key can itself use request_key() to add",
+        "\t\t * keys to the original requestor's destination keyring.",
+        "\t\t */",
+        "\t\tif (dest_keyring && do_perm_check) {",
+        "\t\t\tret = key_permission(make_key_ref(dest_keyring, 1),",
+        "\t\t\t\t\t     KEY_NEED_WRITE);",
+        "\t\t\tif (ret) {",
+        "\t\t\t\tkey_put(dest_keyring);",
+        "\t\t\t\treturn ret;",
+        "\t\t\t}",
+        "\t\t}",
+        "\treturn 0;"
+      ],
+      "deleted": [
+        "\t\t\t\tif (dest_keyring)",
+        "\treturn;"
+      ]
+    }
+  },
+  {
+    "id": 816,
+    "cve_id": "CVE-2017-5985",
+    "code_before_change": " static int rename_in_ns(int pid, char *oldname, char **newnamep)\n {\n\tint fd = -1, ofd = -1, ret, ifindex = -1;\n \tbool grab_newname = false;\n \n \tofd = lxc_preserve_ns(getpid(), \"net\");\n \tif (ofd < 0) {\n\t\tfprintf(stderr, \"Failed opening network namespace path for '%d'.\", getpid());\n\t\treturn -1;\n \t}\n \n \tfd = lxc_preserve_ns(pid, \"net\");\n \tif (fd < 0) {\n\t\tfprintf(stderr, \"Failed opening network namespace path for '%d'.\", pid);\n\t\treturn -1;\n \t}\n \n\tif (setns(fd, 0) < 0) {\n\t\tfprintf(stderr, \"setns to container network namespace\\n\");\n\t\tgoto out_err;\n \t}\n\tclose(fd); fd = -1;\n \tif (!*newnamep) {\n \t\tgrab_newname = true;\n \t\t*newnamep = VETH_DEF_NAME;\n\t\tif (!(ifindex = if_nametoindex(oldname))) {\n\t\t\tfprintf(stderr, \"failed to get netdev index\\n\");\n\t\t\tgoto out_err;\n \t\t}\n \t}\n\tif ((ret = lxc_netdev_rename_by_name(oldname, *newnamep)) < 0) {\n\t\tfprintf(stderr, \"Error %d renaming netdev %s to %s in container\\n\", ret, oldname, *newnamep);\n\t\tgoto out_err;\n \t}\n \tif (grab_newname) {\n\t\tchar ifname[IFNAMSIZ], *namep = ifname;\n \t\tif (!if_indextoname(ifindex, namep)) {\n\t\t\tfprintf(stderr, \"Failed to get new netdev name\\n\");\n\t\t\tgoto out_err;\n \t\t}\n \t\t*newnamep = strdup(namep);\n \t\tif (!*newnamep)\n\t\t\tgoto out_err;\n \t}\n\tif (setns(ofd, 0) < 0) {\n\t\tfprintf(stderr, \"Error returning to original netns\\n\");\n\t\tclose(ofd);\n\t\treturn -1;\n \t}\n\tclose(ofd);\n \n\treturn 0;\n \nout_err:\n\tif (ofd >= 0)\n\t\tclose(ofd);\n\tif (setns(ofd, 0) < 0)\n\t\tfprintf(stderr, \"Error returning to original network namespace\\n\");\n \tif (fd >= 0)\n \t\tclose(fd);\n\treturn -1;\n }\n",
+    "code_after_change": " static int rename_in_ns(int pid, char *oldname, char **newnamep)\n {\n\tuid_t ruid, suid, euid;\n\tint fret = -1;\n\tint fd = -1, ifindex = -1, ofd = -1, ret;\n \tbool grab_newname = false;\n \n \tofd = lxc_preserve_ns(getpid(), \"net\");\n \tif (ofd < 0) {\n\t\tusernic_error(\"Failed opening network namespace path for '%d'.\", getpid());\n\t\treturn fret;\n \t}\n \n \tfd = lxc_preserve_ns(pid, \"net\");\n \tif (fd < 0) {\n\t\tusernic_error(\"Failed opening network namespace path for '%d'.\", pid);\n\t\tgoto do_partial_cleanup;\n\t}\n\n\tret = getresuid(&ruid, &euid, &suid);\n\tif (ret < 0) {\n\t\tusernic_error(\"Failed to retrieve real, effective, and saved \"\n\t\t\t      \"user IDs: %s\\n\",\n\t\t\t      strerror(errno));\n\t\tgoto do_partial_cleanup;\n\t}\n\n\tret = setns(fd, CLONE_NEWNET);\n\tclose(fd);\n\tfd = -1;\n\tif (ret < 0) {\n\t\tusernic_error(\"Failed to setns() to the network namespace of \"\n\t\t\t      \"the container with PID %d: %s.\\n\",\n\t\t\t      pid, strerror(errno));\n\t\tgoto do_partial_cleanup;\n \t}\n \n\tret = setresuid(ruid, ruid, 0);\n\tif (ret < 0) {\n\t\tusernic_error(\"Failed to drop privilege by setting effective \"\n\t\t\t      \"user id and real user id to %d, and saved user \"\n\t\t\t      \"ID to 0: %s.\\n\",\n\t\t\t      ruid, strerror(errno));\n\t\t// COMMENT(brauner): It's ok to jump to do_full_cleanup here\n\t\t// since setresuid() will succeed when trying to set real,\n\t\t// effective, and saved to values they currently have.\n\t\tgoto do_full_cleanup;\n \t}\n\n \tif (!*newnamep) {\n \t\tgrab_newname = true;\n \t\t*newnamep = VETH_DEF_NAME;\n\n\t\tifindex = if_nametoindex(oldname);\n\t\tif (!ifindex) {\n\t\t\tusernic_error(\"Failed to get netdev index: %s.\\n\", strerror(errno));\n\t\t\tgoto do_full_cleanup;\n \t\t}\n \t}\n\n\tret = lxc_netdev_rename_by_name(oldname, *newnamep);\n\tif (ret < 0) {\n\t\tusernic_error(\"Error %d renaming netdev %s to %s in container.\\n\", ret, oldname, *newnamep);\n\t\tgoto do_full_cleanup;\n \t}\n\n \tif (grab_newname) {\n\t\tchar ifname[IFNAMSIZ];\n\t\tchar *namep = ifname;\n\n \t\tif (!if_indextoname(ifindex, namep)) {\n\t\t\tusernic_error(\"Failed to get new netdev name: %s.\\n\", strerror(errno));\n\t\t\tgoto do_full_cleanup;\n \t\t}\n\n \t\t*newnamep = strdup(namep);\n \t\tif (!*newnamep)\n\t\t\tgoto do_full_cleanup;\n \t}\n\n\tfret = 0;\n\ndo_full_cleanup:\n\tret = setresuid(ruid, euid, suid);\n\tif (ret < 0) {\n\t\tusernic_error(\"Failed to restore privilege by setting effective \"\n\t\t\t      \"user id to %d, real user id to %d, and saved user \"\n\t\t\t      \"ID to %d: %s.\\n\",\n\t\t\t      ruid, euid, suid, strerror(errno));\n\t\tfret = -1;\n\t\t// COMMENT(brauner): setns() should fail if setresuid() doesn't\n\t\t// succeed but there's no harm in falling through; keeps the\n\t\t// code cleaner.\n \t}\n \n\tret = setns(ofd, CLONE_NEWNET);\n\tif (ret < 0) {\n\t\tusernic_error(\"Failed to setns() to original network namespace \"\n\t\t\t      \"of PID %d: %s.\\n\",\n\t\t\t      ofd, strerror(errno));\n\t\tfret = -1;\n\t}\n \ndo_partial_cleanup:\n \tif (fd >= 0)\n \t\tclose(fd);\n\tclose(ofd);\n\n\treturn fret;\n }\n",
+    "cwe": [
+      "CWE-862"
+    ],
+    "cve_description": "lxc-user-nic in Linux Containers (LXC) allows local users with a lxc-usernet allocation to create network interfaces on the host and choose the name of those interfaces by leveraging lack of netns ownership check.",
+    "patch": "--- code before\n+++ code after\n@@ -1,62 +1,110 @@\n  static int rename_in_ns(int pid, char *oldname, char **newnamep)\n  {\n-\tint fd = -1, ofd = -1, ret, ifindex = -1;\n+\tuid_t ruid, suid, euid;\n+\tint fret = -1;\n+\tint fd = -1, ifindex = -1, ofd = -1, ret;\n  \tbool grab_newname = false;\n  \n  \tofd = lxc_preserve_ns(getpid(), \"net\");\n  \tif (ofd < 0) {\n-\t\tfprintf(stderr, \"Failed opening network namespace path for '%d'.\", getpid());\n-\t\treturn -1;\n+\t\tusernic_error(\"Failed opening network namespace path for '%d'.\", getpid());\n+\t\treturn fret;\n  \t}\n  \n  \tfd = lxc_preserve_ns(pid, \"net\");\n  \tif (fd < 0) {\n-\t\tfprintf(stderr, \"Failed opening network namespace path for '%d'.\", pid);\n-\t\treturn -1;\n+\t\tusernic_error(\"Failed opening network namespace path for '%d'.\", pid);\n+\t\tgoto do_partial_cleanup;\n+\t}\n+\n+\tret = getresuid(&ruid, &euid, &suid);\n+\tif (ret < 0) {\n+\t\tusernic_error(\"Failed to retrieve real, effective, and saved \"\n+\t\t\t      \"user IDs: %s\\n\",\n+\t\t\t      strerror(errno));\n+\t\tgoto do_partial_cleanup;\n+\t}\n+\n+\tret = setns(fd, CLONE_NEWNET);\n+\tclose(fd);\n+\tfd = -1;\n+\tif (ret < 0) {\n+\t\tusernic_error(\"Failed to setns() to the network namespace of \"\n+\t\t\t      \"the container with PID %d: %s.\\n\",\n+\t\t\t      pid, strerror(errno));\n+\t\tgoto do_partial_cleanup;\n  \t}\n  \n-\tif (setns(fd, 0) < 0) {\n-\t\tfprintf(stderr, \"setns to container network namespace\\n\");\n-\t\tgoto out_err;\n+\tret = setresuid(ruid, ruid, 0);\n+\tif (ret < 0) {\n+\t\tusernic_error(\"Failed to drop privilege by setting effective \"\n+\t\t\t      \"user id and real user id to %d, and saved user \"\n+\t\t\t      \"ID to 0: %s.\\n\",\n+\t\t\t      ruid, strerror(errno));\n+\t\t// COMMENT(brauner): It's ok to jump to do_full_cleanup here\n+\t\t// since setresuid() will succeed when trying to set real,\n+\t\t// effective, and saved to values they currently have.\n+\t\tgoto do_full_cleanup;\n  \t}\n-\tclose(fd); fd = -1;\n+\n  \tif (!*newnamep) {\n  \t\tgrab_newname = true;\n  \t\t*newnamep = VETH_DEF_NAME;\n-\t\tif (!(ifindex = if_nametoindex(oldname))) {\n-\t\t\tfprintf(stderr, \"failed to get netdev index\\n\");\n-\t\t\tgoto out_err;\n+\n+\t\tifindex = if_nametoindex(oldname);\n+\t\tif (!ifindex) {\n+\t\t\tusernic_error(\"Failed to get netdev index: %s.\\n\", strerror(errno));\n+\t\t\tgoto do_full_cleanup;\n  \t\t}\n  \t}\n-\tif ((ret = lxc_netdev_rename_by_name(oldname, *newnamep)) < 0) {\n-\t\tfprintf(stderr, \"Error %d renaming netdev %s to %s in container\\n\", ret, oldname, *newnamep);\n-\t\tgoto out_err;\n+\n+\tret = lxc_netdev_rename_by_name(oldname, *newnamep);\n+\tif (ret < 0) {\n+\t\tusernic_error(\"Error %d renaming netdev %s to %s in container.\\n\", ret, oldname, *newnamep);\n+\t\tgoto do_full_cleanup;\n  \t}\n+\n  \tif (grab_newname) {\n-\t\tchar ifname[IFNAMSIZ], *namep = ifname;\n+\t\tchar ifname[IFNAMSIZ];\n+\t\tchar *namep = ifname;\n+\n  \t\tif (!if_indextoname(ifindex, namep)) {\n-\t\t\tfprintf(stderr, \"Failed to get new netdev name\\n\");\n-\t\t\tgoto out_err;\n+\t\t\tusernic_error(\"Failed to get new netdev name: %s.\\n\", strerror(errno));\n+\t\t\tgoto do_full_cleanup;\n  \t\t}\n+\n  \t\t*newnamep = strdup(namep);\n  \t\tif (!*newnamep)\n-\t\t\tgoto out_err;\n+\t\t\tgoto do_full_cleanup;\n  \t}\n-\tif (setns(ofd, 0) < 0) {\n-\t\tfprintf(stderr, \"Error returning to original netns\\n\");\n-\t\tclose(ofd);\n-\t\treturn -1;\n+\n+\tfret = 0;\n+\n+do_full_cleanup:\n+\tret = setresuid(ruid, euid, suid);\n+\tif (ret < 0) {\n+\t\tusernic_error(\"Failed to restore privilege by setting effective \"\n+\t\t\t      \"user id to %d, real user id to %d, and saved user \"\n+\t\t\t      \"ID to %d: %s.\\n\",\n+\t\t\t      ruid, euid, suid, strerror(errno));\n+\t\tfret = -1;\n+\t\t// COMMENT(brauner): setns() should fail if setresuid() doesn't\n+\t\t// succeed but there's no harm in falling through; keeps the\n+\t\t// code cleaner.\n  \t}\n-\tclose(ofd);\n  \n-\treturn 0;\n+\tret = setns(ofd, CLONE_NEWNET);\n+\tif (ret < 0) {\n+\t\tusernic_error(\"Failed to setns() to original network namespace \"\n+\t\t\t      \"of PID %d: %s.\\n\",\n+\t\t\t      ofd, strerror(errno));\n+\t\tfret = -1;\n+\t}\n  \n-out_err:\n-\tif (ofd >= 0)\n-\t\tclose(ofd);\n-\tif (setns(ofd, 0) < 0)\n-\t\tfprintf(stderr, \"Error returning to original network namespace\\n\");\n+do_partial_cleanup:\n  \tif (fd >= 0)\n  \t\tclose(fd);\n-\treturn -1;\n+\tclose(ofd);\n+\n+\treturn fret;\n  }",
+    "function_modified_lines": {
+      "added": [
+        "\tuid_t ruid, suid, euid;",
+        "\tint fret = -1;",
+        "\tint fd = -1, ifindex = -1, ofd = -1, ret;",
+        "\t\tusernic_error(\"Failed opening network namespace path for '%d'.\", getpid());",
+        "\t\treturn fret;",
+        "\t\tusernic_error(\"Failed opening network namespace path for '%d'.\", pid);",
+        "\t\tgoto do_partial_cleanup;",
+        "\t}",
+        "",
+        "\tret = getresuid(&ruid, &euid, &suid);",
+        "\tif (ret < 0) {",
+        "\t\tusernic_error(\"Failed to retrieve real, effective, and saved \"",
+        "\t\t\t      \"user IDs: %s\\n\",",
+        "\t\t\t      strerror(errno));",
+        "\t\tgoto do_partial_cleanup;",
+        "\t}",
+        "",
+        "\tret = setns(fd, CLONE_NEWNET);",
+        "\tclose(fd);",
+        "\tfd = -1;",
+        "\tif (ret < 0) {",
+        "\t\tusernic_error(\"Failed to setns() to the network namespace of \"",
+        "\t\t\t      \"the container with PID %d: %s.\\n\",",
+        "\t\t\t      pid, strerror(errno));",
+        "\t\tgoto do_partial_cleanup;",
+        "\tret = setresuid(ruid, ruid, 0);",
+        "\tif (ret < 0) {",
+        "\t\tusernic_error(\"Failed to drop privilege by setting effective \"",
+        "\t\t\t      \"user id and real user id to %d, and saved user \"",
+        "\t\t\t      \"ID to 0: %s.\\n\",",
+        "\t\t\t      ruid, strerror(errno));",
+        "\t\t// COMMENT(brauner): It's ok to jump to do_full_cleanup here",
+        "\t\t// since setresuid() will succeed when trying to set real,",
+        "\t\t// effective, and saved to values they currently have.",
+        "\t\tgoto do_full_cleanup;",
+        "",
+        "",
+        "\t\tifindex = if_nametoindex(oldname);",
+        "\t\tif (!ifindex) {",
+        "\t\t\tusernic_error(\"Failed to get netdev index: %s.\\n\", strerror(errno));",
+        "\t\t\tgoto do_full_cleanup;",
+        "",
+        "\tret = lxc_netdev_rename_by_name(oldname, *newnamep);",
+        "\tif (ret < 0) {",
+        "\t\tusernic_error(\"Error %d renaming netdev %s to %s in container.\\n\", ret, oldname, *newnamep);",
+        "\t\tgoto do_full_cleanup;",
+        "",
+        "\t\tchar ifname[IFNAMSIZ];",
+        "\t\tchar *namep = ifname;",
+        "",
+        "\t\t\tusernic_error(\"Failed to get new netdev name: %s.\\n\", strerror(errno));",
+        "\t\t\tgoto do_full_cleanup;",
+        "",
+        "\t\t\tgoto do_full_cleanup;",
+        "",
+        "\tfret = 0;",
+        "",
+        "do_full_cleanup:",
+        "\tret = setresuid(ruid, euid, suid);",
+        "\tif (ret < 0) {",
+        "\t\tusernic_error(\"Failed to restore privilege by setting effective \"",
+        "\t\t\t      \"user id to %d, real user id to %d, and saved user \"",
+        "\t\t\t      \"ID to %d: %s.\\n\",",
+        "\t\t\t      ruid, euid, suid, strerror(errno));",
+        "\t\tfret = -1;",
+        "\t\t// COMMENT(brauner): setns() should fail if setresuid() doesn't",
+        "\t\t// succeed but there's no harm in falling through; keeps the",
+        "\t\t// code cleaner.",
+        "\tret = setns(ofd, CLONE_NEWNET);",
+        "\tif (ret < 0) {",
+        "\t\tusernic_error(\"Failed to setns() to original network namespace \"",
+        "\t\t\t      \"of PID %d: %s.\\n\",",
+        "\t\t\t      ofd, strerror(errno));",
+        "\t\tfret = -1;",
+        "\t}",
+        "do_partial_cleanup:",
+        "\tclose(ofd);",
+        "",
+        "\treturn fret;"
+      ],
+      "deleted": [
+        "\tint fd = -1, ofd = -1, ret, ifindex = -1;",
+        "\t\tfprintf(stderr, \"Failed opening network namespace path for '%d'.\", getpid());",
+        "\t\treturn -1;",
+        "\t\tfprintf(stderr, \"Failed opening network namespace path for '%d'.\", pid);",
+        "\t\treturn -1;",
+        "\tif (setns(fd, 0) < 0) {",
+        "\t\tfprintf(stderr, \"setns to container network namespace\\n\");",
+        "\t\tgoto out_err;",
+        "\tclose(fd); fd = -1;",
+        "\t\tif (!(ifindex = if_nametoindex(oldname))) {",
+        "\t\t\tfprintf(stderr, \"failed to get netdev index\\n\");",
+        "\t\t\tgoto out_err;",
+        "\tif ((ret = lxc_netdev_rename_by_name(oldname, *newnamep)) < 0) {",
+        "\t\tfprintf(stderr, \"Error %d renaming netdev %s to %s in container\\n\", ret, oldname, *newnamep);",
+        "\t\tgoto out_err;",
+        "\t\tchar ifname[IFNAMSIZ], *namep = ifname;",
+        "\t\t\tfprintf(stderr, \"Failed to get new netdev name\\n\");",
+        "\t\t\tgoto out_err;",
+        "\t\t\tgoto out_err;",
+        "\tif (setns(ofd, 0) < 0) {",
+        "\t\tfprintf(stderr, \"Error returning to original netns\\n\");",
+        "\t\tclose(ofd);",
+        "\t\treturn -1;",
+        "\tclose(ofd);",
+        "\treturn 0;",
+        "out_err:",
+        "\tif (ofd >= 0)",
+        "\t\tclose(ofd);",
+        "\tif (setns(ofd, 0) < 0)",
+        "\t\tfprintf(stderr, \"Error returning to original network namespace\\n\");",
+        "\treturn -1;"
+      ]
+    }
+  },
+  {
+    "id": 1481,
+    "cve_id": "CVE-2018-16081",
+    "code_before_change": "bool PlatformFontSkia::InitDefaultFont() {\n  if (g_default_font.Get())\n    return true;\n \n   bool success = false;\n   std::string family = kFallbackFontFamilyName;\n  int size_pixels = 12;\n   int style = Font::NORMAL;\n   Font::Weight weight = Font::Weight::NORMAL;\n   FontRenderParams params;\n\n  const SkiaFontDelegate* delegate = SkiaFontDelegate::instance();\n  if (delegate) {\n    delegate->GetDefaultFontDescription(&family, &size_pixels, &style, &weight,\n                                        &params);\n  } else if (default_font_description_) {\n#if defined(OS_CHROMEOS)\n    FontRenderParamsQuery query;\n    CHECK(FontList::ParseDescription(*default_font_description_,\n                                     &query.families, &query.style,\n                                     &query.pixel_size, &query.weight))\n        << \"Failed to parse font description \" << *default_font_description_;\n    params = gfx::GetFontRenderParams(query, &family);\n    size_pixels = query.pixel_size;\n    style = query.style;\n    weight = query.weight;\n#else\n    NOTREACHED();\n#endif\n  }\n\n  sk_sp<SkTypeface> typeface =\n      CreateSkTypeface(style & Font::ITALIC, weight, &family, &success);\n  if (!success)\n    return false;\n  g_default_font.Get() = new PlatformFontSkia(\n      std::move(typeface), family, size_pixels, style, weight, params);\n  return true;\n}\n",
+    "code_after_change": "bool PlatformFontSkia::InitDefaultFont() {\n  if (g_default_font.Get())\n    return true;\n \n   bool success = false;\n   std::string family = kFallbackFontFamilyName;\n  int size_pixels = PlatformFont::kDefaultBaseFontSize;\n   int style = Font::NORMAL;\n   Font::Weight weight = Font::Weight::NORMAL;\n   FontRenderParams params;\n\n  const SkiaFontDelegate* delegate = SkiaFontDelegate::instance();\n  if (delegate) {\n    delegate->GetDefaultFontDescription(&family, &size_pixels, &style, &weight,\n                                        &params);\n  } else if (default_font_description_) {\n#if defined(OS_CHROMEOS)\n    FontRenderParamsQuery query;\n    CHECK(FontList::ParseDescription(*default_font_description_,\n                                     &query.families, &query.style,\n                                     &query.pixel_size, &query.weight))\n        << \"Failed to parse font description \" << *default_font_description_;\n    params = gfx::GetFontRenderParams(query, &family);\n    size_pixels = query.pixel_size;\n    style = query.style;\n    weight = query.weight;\n#else\n    NOTREACHED();\n#endif\n  }\n\n  sk_sp<SkTypeface> typeface =\n      CreateSkTypeface(style & Font::ITALIC, weight, &family, &success);\n  if (!success)\n    return false;\n  g_default_font.Get() = new PlatformFontSkia(\n      std::move(typeface), family, size_pixels, style, weight, params);\n  return true;\n}\n",
+    "cwe": [
+      "CWE-862"
+    ],
+    "cve_description": "Allowing the chrome.debugger API to run on file:// URLs in DevTools in Google Chrome prior to 69.0.3497.81 allowed an attacker who convinced a user to install a malicious extension to access files on the local file system without file access permission via a crafted Chrome Extension.",
+    "patch": "--- code before\n+++ code after\n@@ -4,7 +4,7 @@\n  \n    bool success = false;\n    std::string family = kFallbackFontFamilyName;\n-  int size_pixels = 12;\n+  int size_pixels = PlatformFont::kDefaultBaseFontSize;\n    int style = Font::NORMAL;\n    Font::Weight weight = Font::Weight::NORMAL;\n    FontRenderParams params;",
+    "function_modified_lines": {
+      "added": [
+        "  int size_pixels = PlatformFont::kDefaultBaseFontSize;"
+      ],
+      "deleted": [
+        "  int size_pixels = 12;"
+      ]
+    }
+  },
+  {
+    "id": 2412,
+    "cve_id": "CVE-2019-15030",
+    "code_before_change": "void giveup_all(struct task_struct *tsk)\n{\n\tunsigned long usermsr;\n\n\tif (!tsk->thread.regs)\n\t\treturn;\n\n\tusermsr = tsk->thread.regs->msr;\n\n\tif ((usermsr & msr_all_available) == 0)\n\t\treturn;\n\n\tmsr_check_and_set(msr_all_available);\n\tcheck_if_tm_restore_required(tsk);\n\n\tWARN_ON((usermsr & MSR_VSX) && !((usermsr & MSR_FP) && (usermsr & MSR_VEC)));\n\n#ifdef CONFIG_PPC_FPU\n\tif (usermsr & MSR_FP)\n\t\t__giveup_fpu(tsk);\n#endif\n#ifdef CONFIG_ALTIVEC\n\tif (usermsr & MSR_VEC)\n\t\t__giveup_altivec(tsk);\n#endif\n#ifdef CONFIG_SPE\n\tif (usermsr & MSR_SPE)\n\t\t__giveup_spe(tsk);\n#endif\n\n\tmsr_check_and_clear(msr_all_available);\n}",
+    "code_after_change": "void giveup_all(struct task_struct *tsk)\n{\n\tunsigned long usermsr;\n\n\tif (!tsk->thread.regs)\n\t\treturn;\n\n\tcheck_if_tm_restore_required(tsk);\n\n\tusermsr = tsk->thread.regs->msr;\n\n\tif ((usermsr & msr_all_available) == 0)\n\t\treturn;\n\n\tmsr_check_and_set(msr_all_available);\n\n\tWARN_ON((usermsr & MSR_VSX) && !((usermsr & MSR_FP) && (usermsr & MSR_VEC)));\n\n#ifdef CONFIG_PPC_FPU\n\tif (usermsr & MSR_FP)\n\t\t__giveup_fpu(tsk);\n#endif\n#ifdef CONFIG_ALTIVEC\n\tif (usermsr & MSR_VEC)\n\t\t__giveup_altivec(tsk);\n#endif\n#ifdef CONFIG_SPE\n\tif (usermsr & MSR_SPE)\n\t\t__giveup_spe(tsk);\n#endif\n\n\tmsr_check_and_clear(msr_all_available);\n}",
+    "cwe": [
+      "CWE-862"
+    ],
+    "cve_description": "In the Linux kernel through 5.2.14 on the powerpc platform, a local user can read vector registers of other users' processes via a Facility Unavailable exception. To exploit the venerability, a local user starts a transaction (via the hardware transactional memory instruction tbegin) and then accesses vector registers. At some point, the vector registers will be corrupted with the values from a different local Linux process because of a missing arch/powerpc/kernel/process.c check.",
+    "patch": "--- code before\n+++ code after\n@@ -5,13 +5,14 @@\n \tif (!tsk->thread.regs)\n \t\treturn;\n \n+\tcheck_if_tm_restore_required(tsk);\n+\n \tusermsr = tsk->thread.regs->msr;\n \n \tif ((usermsr & msr_all_available) == 0)\n \t\treturn;\n \n \tmsr_check_and_set(msr_all_available);\n-\tcheck_if_tm_restore_required(tsk);\n \n \tWARN_ON((usermsr & MSR_VSX) && !((usermsr & MSR_FP) && (usermsr & MSR_VEC)));\n ",
+    "function_modified_lines": {
+      "added": [
+        "\tcheck_if_tm_restore_required(tsk);",
+        ""
+      ],
+      "deleted": [
+        "\tcheck_if_tm_restore_required(tsk);"
+      ]
+    }
+  },
+  {
+    "id": 3074,
+    "cve_id": "CVE-2019-17055",
+    "code_before_change": "base_sock_create(struct net *net, struct socket *sock, int protocol, int kern)\n{\n\tstruct sock *sk;\n\n\tif (sock->type != SOCK_RAW)\n\t\treturn -ESOCKTNOSUPPORT;\n\n\tsk = sk_alloc(net, PF_ISDN, GFP_KERNEL, &mISDN_proto, kern);\n\tif (!sk)\n\t\treturn -ENOMEM;\n\n\tsock_init_data(sock, sk);\n\tsock->ops = &base_sock_ops;\n\tsock->state = SS_UNCONNECTED;\n\tsock_reset_flag(sk, SOCK_ZAPPED);\n\tsk->sk_protocol = protocol;\n\tsk->sk_state    = MISDN_OPEN;\n\tmISDN_sock_link(&base_sockets, sk);\n\n\treturn 0;\n}",
+    "code_after_change": "data_sock_create(struct net *net, struct socket *sock, int protocol, int kern)\n{\n\tstruct sock *sk;\n\n\tif (sock->type != SOCK_DGRAM)\n\t\treturn -ESOCKTNOSUPPORT;\n\n\tsk = sk_alloc(net, PF_ISDN, GFP_KERNEL, &mISDN_proto, kern);\n\tif (!sk)\n\t\treturn -ENOMEM;\n\n\tsock_init_data(sock, sk);\n\n\tsock->ops = &data_sock_ops;\n\tsock->state = SS_UNCONNECTED;\n\tsock_reset_flag(sk, SOCK_ZAPPED);\n\n\tsk->sk_protocol = protocol;\n\tsk->sk_state    = MISDN_OPEN;\n\tmISDN_sock_link(&data_sockets, sk);\n\n\treturn 0;\n}",
+    "cwe": [
+      "CWE-862"
+    ],
+    "cve_description": "base_sock_create in drivers/isdn/mISDN/socket.c in the AF_ISDN network module in the Linux kernel through 5.3.2 does not enforce CAP_NET_RAW, which means that unprivileged users can create a raw socket, aka CID-b91ee4aa2a21.",
+    "patch": "--- code before\n+++ code after\n@@ -1,8 +1,8 @@\n-base_sock_create(struct net *net, struct socket *sock, int protocol, int kern)\n+data_sock_create(struct net *net, struct socket *sock, int protocol, int kern)\n {\n \tstruct sock *sk;\n \n-\tif (sock->type != SOCK_RAW)\n+\tif (sock->type != SOCK_DGRAM)\n \t\treturn -ESOCKTNOSUPPORT;\n \n \tsk = sk_alloc(net, PF_ISDN, GFP_KERNEL, &mISDN_proto, kern);\n@@ -10,12 +10,14 @@\n \t\treturn -ENOMEM;\n \n \tsock_init_data(sock, sk);\n-\tsock->ops = &base_sock_ops;\n+\n+\tsock->ops = &data_sock_ops;\n \tsock->state = SS_UNCONNECTED;\n \tsock_reset_flag(sk, SOCK_ZAPPED);\n+\n \tsk->sk_protocol = protocol;\n \tsk->sk_state    = MISDN_OPEN;\n-\tmISDN_sock_link(&base_sockets, sk);\n+\tmISDN_sock_link(&data_sockets, sk);\n \n \treturn 0;\n }",
+    "function_modified_lines": {
+      "added": [
+        "data_sock_create(struct net *net, struct socket *sock, int protocol, int kern)",
+        "\tif (sock->type != SOCK_DGRAM)",
+        "",
+        "\tsock->ops = &data_sock_ops;",
+        "",
+        "\tmISDN_sock_link(&data_sockets, sk);"
+      ],
+      "deleted": [
+        "base_sock_create(struct net *net, struct socket *sock, int protocol, int kern)",
+        "\tif (sock->type != SOCK_RAW)",
+        "\tsock->ops = &base_sock_ops;",
+        "\tmISDN_sock_link(&base_sockets, sk);"
+      ]
+    }
+  }
+]

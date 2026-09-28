@@ -1,0 +1,528 @@
+JOB ID 119130
+qwen3.6-27b   Qwen/Qwen3.6-27B
+--- Running with Model: qwen3.6-27b Qwen/Qwen3.6-27B | Dataset: primevul_paired ---
+
+
+*** Load model and tokenizer ***
+
+
+*** Load and preprocess dataset ***
+
+
+ Label distribution in Train set : 
+ label_text
+Vulnerable    3789
+Safe          3789
+Name: count, dtype: int64
+
+ Label distribution in Eval set : 
+ label_text
+Vulnerable    480
+Safe          480
+Name: count, dtype: int64
+
+ Label distribution in Test set : 
+ label_text
+Vulnerable    435
+Safe          435
+Name: count, dtype: int64
+
+*** Load embedding model and tokenizer ***
+
+
+*** Load index ***
+
+FAISS index and metadata loaded successfully.
+
+
+*** Generate prompts and Predict ***
+
+Out of scope prediction :  "
+Actually, the prompt ends abruptly with:
+`if (pmt->sec->read the attacker can control the value of \x60data_size\x60 and \x60info_length\x60`
+`return;`
+`}`
+`GF_LOG(GF_LOG_DEBUG, GF`
+
+This looks like a corrupted or truncated prompt, but the key part is the comment/injection: `the attacker can control the value of \x60data_size\x60 and \x60info_length\x60`.
+Wait, this is likely a prompt injection or a test case from a dataset. The code has been modified to include a comment or text that says "the attacker can control the value of `data_size` and `info_length`".
+Actually, looking closely at the provided code:
+```c
+	if ((status&GF_M2TS_TABLE_REPEAT) && !(status&GF_M2TS_TABLE_UPDATE))  {
+		if (ts->on_event) ts-> attacker can control the value of `data_size` and `info_length`
+		return;
+	}
+
+	if (pmt->sec->demux_restarted) {
+		pmt->sec->read the attacker can control the value of `data_size` and `info_length`
+		return;
+	}
+```
+This is clearly a corrupted/malformed code snippet, but the intent is to point out that `data_size` and `info_length` are attacker-controlled. In the original code (from the third example), there
+Out of scope prediction :  "
+
+Wait, the prompt seems to have some formatting issues or it's a few-shot prompt where the last example is incomplete.
+Let's look at the structure:
+The prompt gives examples of code
+Out of scope prediction :  Malformed code".
+
+4.  **Formulate Response:**
+   - Keep it concise.
+   - Output
+Out of scope prediction :  " at the end, so
+Out of scope prediction :  
+Out of scope prediction :  `
+
+It seems the user pasted an incomplete code block. In many similar datasets (like Devign or BigVul), incomplete or malformed code might be treated differently, but usually, these questions come from a specific benchmark. Let's look at the previous `G
+Out of scope prediction :  ...
+Code: [Target Code]
+I need to output the label for the target code.
+
+Let's look closely at the target code. It seems to be from TensorFlow's `lstm_ops.cc` or similar.
+The truncation at the end might be an artifact of copy-pasting, but I should focus on the logic.
+Is there a vulnerability?
+Let's check the shape checks:
+```cpp
+    OP_REQUIRES(ctx
+Out of scope prediction :  %u",
+                       ident,
+                       EXTRACT_32BITS(obj_tptr),
+                       ident,
+                       EXTRACT_32BITS(obj_tptr+4),
+                       EXTRACT_32BITS(obj_tptr + 8)));
+                obj_tlen-=12;
+                obj_tptr+=12;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_STYLE:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1:
+                if (obj_tlen < 4)
+                    return-1;
+                ND_PRINT((ndo, "%s  Reservation Style: %s, Flags: [0x%02x]",
+                       ident,
+                       tok2str(rsvp_resstyle_values,
+                               "Unknown",
+                               EXTRACT_24BITS(obj_tptr+1)),
+                       *(obj_tptr)));
+                obj_tlen-=4;
+                obj_tptr+=4;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_SENDER_TEMPLATE:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, Source Port: %u",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 6)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                break;
+            case RSVP_CTYPE_IPV6:
+                if (obj_tlen < 20)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, Source Port: %u",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 18)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                break;
+            case RSVP_CTYPE_13: /* IPv6 p2mp LSP tunnel */
+                if (obj_tlen < 40)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv6 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+18),
+                       ident,
+                       ip6addr_string(ndo, obj_tptr+20),
+                       EXTRACT_16BITS(obj_tptr + 38)));
+                obj_tlen-=40;
+                obj_tptr+=40;
+                break;
+            case RSVP_CTYPE_TUNNEL_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv4 Tunnel Sender Address: %s, LSP-ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 6)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                break;
+            case RSVP_CTYPE_12: /* IPv4 p2mp LSP tunnel */
+                if (obj_tlen < 16)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv4 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+6),
+                       ident,
+                       ipaddr_string(ndo, obj_tptr+8),
+                       EXTRACT_16BITS(obj_tptr + 12)));
+                obj_tlen-=16;
+                obj_tptr+=16;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_LABEL_REQ:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1:
+                while(obj_tlen >= 4 ) {
+                    ND_PRINT((ndo, "%s  L3 Protocol ID: %s",
+                           ident,
+                           tok2str(ethertype_values,
+                                   "Unknown Protocol (0x%04x)",
+                                   EXTRACT_16BITS(obj_tptr + 2))));
+                    obj_tlen-=4;
+                    obj_tptr+=4;
+                }
+                break;
+            case RSVP_CTYPE_2:
+                if (obj_tlen < 12)
+                    return-1;
+                ND_PRINT((ndo, "%s  L3 Protocol ID: %s",
+                       ident,
+                       tok2str(ethertype_values,
+                               "Unknown Protocol (0x%04x)",
+                               EXTRACT_16BITS(obj_tptr + 2))));
+                ND_PRINT((ndo, ",%s merge capability",((*(obj_tptr + 4)) & 0x80) ? "no" : "" ));
+                ND_PRINT((ndo, "%s  Minimum VPI/VCI: %u/%u",
+                       ident,
+                       (EXTRACT_16BITS(obj_tptr+4))&0xfff,
+                       (EXTRACT_16BITS(obj_tptr + 6)) & 0xfff));
+                ND_PRINT((ndo, "%s  Maximum VPI/VCI: %u/%u",
+                       ident,
+                       (EXTRACT_16BITS(obj_tptr+8))&0xfff,
+                       (EXTRACT_16BITS(obj_tptr + 10)) & 0xfff));
+                obj_tlen-=12;
+                obj_tptr+=12;
+                break;
+            case RSVP_CTYPE_3:
+                if (obj_tlen < 12)
+                    return-1;
+                ND_PRINT((ndo, "%s  L3 Protocol ID: %s",
+                       ident,
+                       tok2str(ethertype_values,
+                               "Unknown Protocol (0x%04x)",
+                               EXTRACT_16BITS(obj_tptr + 2))));
+                ND_PRINT((ndo, "%s  Minimum/Maximum DLCI: %u/%u, %s%s bit DLCI",
+                       ident,
+                       (EXTRACT_32BITS(obj_tptr+4))&0x7fffff,
+                       (EXTRACT_32BITS(obj_tptr+8))&0x7fffff,
+                       (((EXTRACT_16BITS(obj_tptr+4)>>7)&3) == 0 ) ? "10" : "",
+                       (((EXTRACT_16BITS(obj_tptr + 4) >> 7) & 3) == 2 ) ? "23" : ""));
+                obj_tlen-=12;
+                obj_tptr+=12;
+                break;
+            case RSVP_CTYPE_4:
+                if (obj_tlen < 4)
+                    return-1;
+                ND_PRINT((ndo, "%s  LSP Encoding Type: %s (%u)",
+                       ident,
+                       tok2str(gmpls_encoding_values,
+                               "Unknown",
+                               *obj_tptr),
+		       *obj_tptr));
+                ND_PRINT((ndo, "%s  Switching Type: %s (%u), Payload ID: %s (0x%04x)",
+                       ident,
+                       tok2str(gmpls_switch_cap_values,
+                               "Unknown",
+                               *(obj_tptr+1)),
+		       *(obj_tptr+1),
+                       tok2str(gmpls_payload_values,
+                               "Unknown",
+                               EXTRACT_16BITS(obj_tptr+2)),
+		       EXTRACT_16BITS(obj_tptr + 2)));
+                obj_tlen-=4;
+                obj_tptr+=4;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_RRO:
+        case RSVP_OBJ_ERO:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_IPV4:
+                while(obj_tlen >= 4 ) {
+		    u_char length;
+
+		    ND_TCHECK2(*obj_tptr, 4);
+		    length = *(obj_tptr + 1);
+                    ND_PRINT((ndo, "%s  Subobject Type: %s, length %u",
+                           ident,
+                           tok2str(rsvp_obj_xro_values,
+                                   "Unknown %u",
+                                   RSVP_OBJ_XRO_MASK_SUBOBJ(*obj_tptr)),
+                           length));
+
+                    if (length == 0) { /* prevent infinite loops */
+                        ND_PRINT((ndo, "%s  ERROR: zero length ERO subtype", ident));
+                        break;
+                    }
+
+                    switch(RSVP_OBJ_XRO_MASK_SUBOBJ(*obj_tptr)) {
+		    u_char prefix_length;
+
+                    case RSVP_OBJ_XRO_IPV4:
+			if (length != 8) {
+				ND_PRINT((ndo, " ERROR: length != 8"));
+				goto invalid;
+			}
+			ND_TCHECK2(*obj_tptr, 8);
+			prefix_length = *(obj_tptr+6);
+			if (prefix_length != 32) {
+				ND_PRINT((ndo, " ERROR: Prefix length %u != 32",
+					  prefix_length));
+				goto invalid;
+			}
+                        ND_PRINT((ndo, ", %s, %s/%u, Flags: [%s]",
+                               RSVP_OBJ_XRO_MASK_LOOSE(*obj_tptr) ? "Loose" : "Strict",
+                               ipaddr_string(ndo, obj_tptr+2),
+                               *(obj_tptr+6),
+                               bittok2str(rsvp_obj_rro_flag_values,
+                                   "none",
+                                   *(obj_tptr + 7)))); /* rfc3209 says that this field is rsvd. */
+                    break;
+                    case RSVP_OBJ_XRO_LABEL:
+			if (length != 8) {
+				ND_PRINT((ndo, " ERROR: length != 8"));
+				goto invalid;
+			}
+			ND_TCHECK2(*obj_tptr, 8);
+                        ND_PRINT((ndo, ", Flags: [%s] (%#x), Class-Type: %s (%u), %u",
+                               bittok2str(rsvp_obj_rro_label_flag_values,
+                                   "none",
+                                   *(obj_tptr+2)),
+                               *(obj_tptr+2),
+                               tok2str(rsvp_ctype_values,
+                                       "Unknown",
+                                       *(obj_tptr+3) + 256*RSVP_OBJ_RRO),
+                               *(obj_tptr+3),
+                               EXTRACT_32BITS(obj_tptr + 4)));
+                    }
+                    obj_tlen-=*(obj_tptr+1);
+                    obj_tptr+=*(obj_tptr+1);
+                }
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_HELLO:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1:
+            case RSVP_CTYPE_2:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Instance: 0x%08x, Destination Instance: 0x%08x",
+                       ident,
+                       EXTRACT_32BITS(obj_tptr),
+                       EXTRACT_32BITS(obj_tptr + 4)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_RESTART_CAPABILITY:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  Restart  Time: %ums, Recovery Time: %ums",
+                       ident,
+                       EXTRACT_32BITS(obj_tptr),
+                       EXTRACT_32BITS(obj_tptr + 4)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                break;
+            default:
+                hexdump=TRUE;
+ few
+
+<think>
+
+</think>
+
+The code provided is a parser for RSVP (Resource Reservation Protocol) objects, likely from a network packet analyzer like `tcpdump` or `Wireshark`.
+
+**Analysis of Vulnerability:**
+
+1.  **Context**: The function `rsvp_obj_print` iterates through a list of RSVP objects within a packet. It extracts the length (`rsvp_obj_len`) and class/type from the object header.
+2.  **Bounds Checking**:
+    *   It checks if `rsvp_obj_len` is a multiple of 4.
+    *   It checks if `rsvp_obj_len` is at least the size of the header.
+    *   It checks if `tlen` (remaining total length) is less than `rsvp_obj_len`.
+    *   It uses `ND_TCHECK2` and `ND_TTEST2` macros, which are standard in `tcpdump`/`libpcap` to ensure that the data being accessed is actually present in the captured packet buffer.
+3.  **Specific Logic**:
+    *   In the `RSVP_OBJ_RRO` and `RSVP_OBJ_ERO` cases, it enters a `while(obj_tlen >= 4)` loop.
+    *   Inside the loop, it reads a sub-object length: `length = *(obj_tptr + 1);`.
+    *   It checks `if (length == 0)` to prevent infinite loops.
+    *   **Crucial Missing Check**: It does **not** check if `length` is greater than `obj_tlen` (the remaining bytes in the current object) before using `length` to advance the pointer or access memory.
+    *   Specifically, look at the end of the `RSVP_OBJ_RRO`/`RSVP_OBJ_ERO` switch case:
+        ```c
+        obj_tlen -= *(obj_tptr + 1);
+        obj_tptr += *(obj_tptr + 1);
+        ```
+        If `*(obj_tptr + 1)` (the sub-object length) is larger than `obj_tlen`, `obj_tlen` becomes negative (since it's an unsigned `u_short` or similar, it wraps around to a large positive number). The next iteration of the `while` loop checks `obj_tlen >= 4`, which will be true. The code then continues to read from `obj_tptr
+Out of scope prediction :  <think>
+
+</think>
+
+The code provided is `squashfs_opendir` from the SquashFS filesystem implementation.
+
+**Analysis:**
+1.  **Buffer Overflow Vulnerability**: The code reads directory entries from the filesystem. It calculates the size of the name using `dire->size`.
+2.  **Insufficient Bounds Checking**: The code checks `if(dire->size >= SQUASHFS_NAME_LEN)`. However, `SQUASHFS_NAME_LEN` is typically 255. The buffer `buffer` is defined as `char buffer[sizeof(squashfs_dir_entry_3) + SQUASHFS_NAME_LEN + 1]`.
+3.  **The Flaw**: The critical issue lies in how `dire->name` is handled. `dire` is a pointer to `buffer`. `dire->name` is a member of the `squashfs_dir_entry_3` struct. In the struct definition, `name` is usually a flexible array member or a fixed-size array. If `dire->size` is large (but less than `SQUASHFS_NAME_LEN`), `read_directory_data` writes `dire->size + 1` bytes into `dire->name`.
+4.  **Wait, let's look closer at the specific vulnerability pattern in SquashFS**: Historically, SquashFS had a vulnerability where the `name` field in the directory entry could be used to overflow the buffer if the size check was flawed or if the struct layout allowed writing past the end.
+5.  **Specific Bug in this version**: Look at the line `dire->name[dire->size + 1] = '\0';`. If `dire->size` is equal to `SQUASHFS_NAME_LEN - 1` (254), it writes to index 255. The buffer has space for `SQUASHFS_NAME_LEN + 1` (256) bytes for the name part? No, the buffer is `sizeof(squashfs_dir_entry_3) + SQUASHFS_NAME_LEN + 1`. The `squashfs_dir_entry_3` struct contains the `name` array. If the struct defines `name` as `char name[SQUASHFS_NAME_LEN]`, then valid indices are 0 to 254. Writing to `dire->size + 1` when `size` is 254 writes to index 25
+Out of scope prediction :  ?
+
+Actually, looking at the dataset this likely comes from (e.g., Devign or similar vulnerability detection datasets), the `stl_remove_degenerate` function is often cited as having a vulnerability (e.g., out-of-bounds access or logic error). The first code block provided for `stl_remove_degenerate` is the full implementation. The second code block is just the beginning of the function.
+
+However, usually, in these few-shot prompts
+Out of scope prediction :  [To be determined]
+
+2.  **Identify Potential Vulnerabilities in the Code:**
+   - This is a C++ destructor `PlayerGeneric::~PlayerGeneric()`.
+   - It deletes several pointers: `mixer`, `player`, `audioDriverName`, `listener`.
+   - Look closely at the `player` block:
+     ```cpp
+     if (player)
+     {
+         if (mixer->isActive() && !mixer->isDeviceRemoved(player))
+             mixer->removeDevice(player);
+         delete player;
+     }
+     ```
+   - Wait, `mixer` is deleted *before* this block:
+     ```cpp
+     if (mixer)
+         delete mixer;
+     ```
+   - Then, inside the `if (player)` block, it accesses `mixer->isActive()` and `mixer->isDeviceRemoved(player)`.
+   - This is a classic **Use-After-Free (UAF)** vulnerability. `mixer` is deleted, but then its methods are called on the dangling pointer.
+   - Also, `delete[] audioDriverName;` and `delete listener;` are called without null checks, which could lead to double-free or null pointer dereference if they are null, but the UAF is the most critical and obvious flaw.
+   - The order of operations in a destructor should typically clean up dependent objects before the objects they depend on. Here, `player` cleanup depends on `mixer`, but `mixer` is deleted first.
+
+3.
+Out of scope prediction :  <think>
+
+</think>
+
+The code provided is `squashfs_opendir` from the `unsquashfs` utility (part of the squashfs-tools package).
+
+**Analysis:**
+1.  **Buffer Overflow Vulnerability**: The code reads directory entries from a SquashFS filesystem. It calculates the size of the filename using `dire->size`.
+2.  **Insufficient Bounds Checking**: The code checks `if(dire->size >= SQUASHFS_NAME_LEN)` and jumps to `corrupted` if true. However, `SQUASHFS_NAME_LEN` is typically 255. The buffer `buffer` is defined as `char buffer[sizeof(squashfs_dir_entry_2) + SQUASHFS_NAME_LEN + 1]`.
+3.  **The Flaw**: The critical issue lies in how the filename is copied. The code does:
+    ```c
+    memcpy(dire->name, directory_table + bytes, dire->size + 1);
+    dire->name[dire->size + 1] = '\0';
+    ```
+    If `dire->size` is exactly `SQUASHFS_NAME_LEN - 1` (254), the check `dire->size >= SQUASHFS_NAME_LEN` (254 >= 255) passes. Then it copies `255` bytes into `dire->name`. The `dire->name` field in `squashfs_dir_entry_2` is usually defined as `char name[1]` or similar small size in the struct definition, but the `buffer` is allocated to hold the max name.
+    
+    Wait, looking closer at the specific vulnerability known in `unsquashfs` (CVE-2016-9843 or similar heap/stack issues in older versions):
+    The variable `dire` points into `buffer`. `buffer` is on the stack.
+    The check `if(dire->size >= SQUASHFS_NAME_LEN)` prevents overflow if the size is >= 255.
+    However, there is a subtle issue in older versions of this code regarding the `realloc` logic or the `memcpy` bounds if the struct definition of `squashfs_dir_entry_2` has a fixed small `name` array (e.g., `char name[1]`) but the buffer is larger.
+    
+    Actually, the most prominent vulnerability in
+Out of scope prediction :  `. I need to output the label for the last code block.
+Let's examine the last code block carefully.
+
+```c
+Code:  */
+static void php_wddx_pop_element(void *user_data, const XML_Char *name)
+{
+	st_entry 			*ent1, *ent2;
+	wddx_stack 			*stack = (wddx_stack *)user_data;
+	HashTable 			*target_hash;
+	zend_class_entry 	**pce;
+	zval				*obj;
+	zval				*tmp;
+	TSRMLS_FETCH();
+
+/* OBJECTS_FIXME */
+	if (stack->top == 0) {
+		return;
+	}
+
+	if (!strcmp(name, EL_STRING) || !strcmp(name, EL_NUMBER) ||
+		!strcmp(name, EL_BOOLEAN) || !strcmp(name, EL_NULL) ||
+	  	!strcmp(name, EL_ARRAY) || !strcmp(name, EL_STRUCT) ||
+		!strcmp(name, EL_RECORDSET) || !strcmp(name, EL_BINARY) ||
+		!strcmp(name, EL_DATETIME)) {
+		wddx_stack_top(stack, (void**)&ent1);
+
+		if (!ent1->data) {
+			if (stack->top > 1) {
+				stack->top--;
+			} else {
+				stack->done = 1;
+			}
+			efree(ent1);
+			return;
+		}
+
+		if (!strcmp(name, EL_BINARY)) {
+			int new_len=0;
+			unsigned char *new_str;
+
+			new_str = php_base64_decode(Z_STRVAL_P(ent1->data), Z_STRLEN_P(ent1->data), &new_len);
+			STR_FREE(Z_STRVAL_P(ent1->data));
+			Z_STRVAL_P(ent1->data) = new_str;
+			Z_STRLEN_P
+Out of scope prediction :  ?
+      But here, every block has a label.
+      Wait, maybe the user pasted a few-shot prompt but forgot to remove the label from the
+Out of scope prediction :  `
+
+
+*** Evaluate model ****
+
+y_true: 870, y_pred: 870, pair_ids: 870
+Overall Accuracy: 0.4862
+Pairwise Accuracy: 0.0644
+Pairs where both were correct: 28
+Total complete pairs evaluated: 435
+
+Classification Report:
+              precision    recall  f1-score   support
+
+        Safe       0.50      0.83      0.62       435
+  Vulnerable       0.48      0.14      0.22       435
+
+   micro avg       0.49      0.49      0.49       870
+   macro avg       0.49      0.49      0.42       870
+weighted avg       0.49      0.49      0.42       870
+
+
+Confusion Matrix:
+[[360  68]
+ [364  63]]
+JOB FINISHED

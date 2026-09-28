@@ -1,0 +1,38 @@
+文件: /Users/vinsontang/Desktop/test/graph_demo/control_flow/test_snippets/safe_02_linked_list.c
+图构建模式: precise_c
+【AST】
+- 类型/结构定义：Typedef@L12
+- 函数 create_node@L14：保留 11/51 个语义节点；调用=fprintf, malloc；分支=1；返回=2。
+- 函数 push_front@L25：保留 10/38 个语义节点；调用=create_node；分支=1；返回=1。
+- 函数 pop_front@L32：保留 10/44 个语义节点；调用=free；分支=1；返回=2。
+- 函数 list_length@L41：保留 7/29 个语义节点；调用=无；分支=1；返回=1。
+- 函数 print_list@L50：保留 10/44 个语义节点；调用=printf；分支=2；返回=0。
+- 函数 free_list@L60：保留 9/41 个语义节点；调用=free；分支=1；返回=0。
+- 函数 main@L70：保留 18/84 个语义节点；调用=free_list, list_length, pop_front, print_list；分支=1；返回=1。
+
+【CFG】
+- 函数 create_node：保留控制点 6/9；分支节点 1；调用节点 1；线性段折叠 3。
+- 函数 push_front：保留控制点 4/7；分支节点 1；调用节点 0；线性段折叠 3。
+  - 路径1: Entry -> decl n = create_node(...) -> if (n == 0) -> *head = ... -> push_front EXIT
+- 函数 pop_front：保留控制点 6/9；分支节点 1；调用节点 1；线性段折叠 3。
+- 函数 list_length：保留控制点 4/5；分支节点 1；调用节点 0；线性段折叠 1。
+- 函数 print_list：保留控制点 5/5；分支节点 1；调用节点 2；线性段折叠 0。
+  - 路径1: Entry -> call printf(...) -> while (head != 0) -> call printf(...) -> print_list EXIT
+- 函数 free_list：保留控制点 3/5；分支节点 1；调用节点 0；线性段折叠 2。
+  - 路径1: Entry -> decl cur -> while (cur != 0) -> *head = ... -> free_list EXIT
+- 函数 main：保留控制点 12/15；分支节点 1；调用节点 8；线性段折叠 3。
+
+【DFG】
+- 函数 create_node：边保留 2/3；参数源 1 个；抽取链路 1 条。
+  - 数据链：param: val -> assign n->data
+- 函数 push_front：边保留 2/4；参数源 2 个；抽取链路 2 条。
+  - 数据链：param: head -> assign n->next
+  - 数据链：param: val -> decl n
+- 函数 pop_front：边保留 4/6；参数源 1 个；抽取链路 2 条。
+  - 数据链：param: head -> if(...)
+  - 数据链：param: head -> decl tmp -> call free
+- 函数 list_length：边保留 1/1；参数源 1 个；抽取链路 0 条。
+- 函数 print_list：边保留 0/0；参数源 1 个；抽取链路 0 条。
+- 函数 free_list：边保留 1/1；参数源 1 个；抽取链路 1 条。
+  - 数据链：param: head -> decl cur
+- 函数 main：边保留 8/8；参数源 0 个；抽取链路 0 条。

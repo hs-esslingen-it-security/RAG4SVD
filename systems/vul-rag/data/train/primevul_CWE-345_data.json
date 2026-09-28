@@ -1,0 +1,273 @@
+[
+  {
+    "id": 129,
+    "cve_id": "CVE-2014-4883",
+    "code_before_change": "dns_stricmp(const char* str1, const char* str2)\n{\n  char c1, c2;\n  *----------------------------------------------------------------------------*/\n \n /* DNS variables */\nstatic struct udp_pcb        *dns_pcb;\n static u8_t                   dns_seqno;\n static struct dns_table_entry dns_table[DNS_TABLE_SIZE];\n static struct dns_req_entry   dns_requests[DNS_MAX_REQUESTS];\n        if (c1_upc != c2_upc) {\n          /* still not equal */\n          /* don't care for < or > */\n          return 1;\n        }\n      } else {\n        /* characters are not equal but none is in the alphabet range */\n        return 1;\n      }\n",
+    "code_after_change": "dns_stricmp(const char* str1, const char* str2)\n{\n  char c1, c2;\n  *----------------------------------------------------------------------------*/\n \n /* DNS variables */\nstatic struct udp_pcb        *dns_pcbs[DNS_MAX_SOURCE_PORTS];\n#if ((LWIP_DNS_SECURE & LWIP_DNS_SECURE_RAND_SRC_PORT) != 0)\nstatic u8_t                   dns_last_pcb_idx;\n#endif\n static u8_t                   dns_seqno;\n static struct dns_table_entry dns_table[DNS_TABLE_SIZE];\n static struct dns_req_entry   dns_requests[DNS_MAX_REQUESTS];\n        if (c1_upc != c2_upc) {\n          /* still not equal */\n          /* don't care for < or > */\n          return 1;\n        }\n      } else {\n        /* characters are not equal but none is in the alphabet range */\n        return 1;\n      }\n",
+    "cwe": [
+      "CWE-345"
+    ],
+    "cve_description": "resolv.c in the DNS resolver in uIP, and dns.c in the DNS resolver in lwIP 1.4.1 and earlier, does not use random values for ID fields and source ports of DNS query packets, which makes it easier for man-in-the-middle attackers to conduct cache-poisoning attacks via spoofed reply packets.",
+    "patch": "--- code before\n+++ code after\n@@ -4,7 +4,10 @@\n   *----------------------------------------------------------------------------*/\n  \n  /* DNS variables */\n-static struct udp_pcb        *dns_pcb;\n+static struct udp_pcb        *dns_pcbs[DNS_MAX_SOURCE_PORTS];\n+#if ((LWIP_DNS_SECURE & LWIP_DNS_SECURE_RAND_SRC_PORT) != 0)\n+static u8_t                   dns_last_pcb_idx;\n+#endif\n  static u8_t                   dns_seqno;\n  static struct dns_table_entry dns_table[DNS_TABLE_SIZE];\n  static struct dns_req_entry   dns_requests[DNS_MAX_REQUESTS];",
+    "function_modified_lines": {
+      "added": [
+        "static struct udp_pcb        *dns_pcbs[DNS_MAX_SOURCE_PORTS];",
+        "#if ((LWIP_DNS_SECURE & LWIP_DNS_SECURE_RAND_SRC_PORT) != 0)",
+        "static u8_t                   dns_last_pcb_idx;",
+        "#endif"
+      ],
+      "deleted": [
+        "static struct udp_pcb        *dns_pcb;"
+      ]
+    }
+  },
+  {
+    "id": 2027,
+    "cve_id": "CVE-2019-15162",
+    "code_before_change": "daemon_AuthUserPwd(char *username, char *password, char *errbuf)\n{\n#ifdef _WIN32\n\t/*\n\t * Warning: the user which launches the process must have the\n\t * SE_TCB_NAME right.\n\t * This corresponds to have the \"Act as part of the Operating System\"\n\t * turned on (administrative tools, local security settings, local\n\t * policies, user right assignment)\n\t * However, it seems to me that if you run it as a service, this\n\t * right should be provided by default.\n\t *\n\t * XXX - hopefully, this returns errors such as ERROR_LOGON_FAILURE,\n\t * which merely indicates that the user name or password is\n\t * incorrect, not whether it's the user name or the password\n\t * that's incorrect, so a client that's trying to brute-force\n\t * accounts doesn't know whether it's the user name or the\n\t * password that's incorrect, so it doesn't know whether to\n\t * stop trying to log in with a given user name and move on\n\t * to another user name.\n\t */\n\tHANDLE Token;\n\tif (LogonUser(username, \".\", password, LOGON32_LOGON_NETWORK, LOGON32_PROVIDER_DEFAULT, &Token) == 0)\n\t{\n\t\tpcap_fmt_errmsg_for_win32_err(errbuf, PCAP_ERRBUF_SIZE,\n\t\t    GetLastError(), \"LogonUser() failed\");\n\t\treturn -1;\n\t}\n\n\t// This call should change the current thread to the selected user.\n\t// I didn't test it.\n\tif (ImpersonateLoggedOnUser(Token) == 0)\n\t{\n\t\tpcap_fmt_errmsg_for_win32_err(errbuf, PCAP_ERRBUF_SIZE,\n\t\t    GetLastError(), \"ImpersonateLoggedOnUser() failed\");\n\t\tCloseHandle(Token);\n\t\treturn -1;\n\t}\n\n\tCloseHandle(Token);\n\treturn 0;\n\n#else\n\t/*\n\t * See\n\t *\n\t *\thttp://www.unixpapa.com/incnote/passwd.html\n\t *\n\t * We use the Solaris/Linux shadow password authentication if\n\t * we have getspnam(), otherwise we just do traditional\n\t * authentication, which, on some platforms, might work, even\n\t * with shadow passwords, if we're running as root.  Traditional\n\t * authenticaion won't work if we're not running as root, as\n\t * I think these days all UN*Xes either won't return the password\n\t * at all with getpwnam() or will only do so if you're root.\n\t *\n\t * XXX - perhaps what we *should* be using is PAM, if we have\n\t * it.  That might hide all the details of username/password\n\t * authentication, whether it's done with a visible-to-root-\n\t * only password database or some other authentication mechanism,\n\t * behind its API.\n\t */\n\tstruct passwd *user;\n\tchar *user_password;\n#ifdef HAVE_GETSPNAM\n\tstruct spwd *usersp;\n#endif\n\tchar *crypt_password;\n\n\t// This call is needed to get the uid\n\tif ((user = getpwnam(username)) == NULL)\n\t{\n\t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed: user name or password incorrect\");\n\t\treturn -1;\n\t}\n\n#ifdef HAVE_GETSPNAM\n\t// This call is needed to get the password; otherwise 'x' is returned\n\tif ((usersp = getspnam(username)) == NULL)\n\t{\n\t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed: user name or password incorrect\");\n\t\treturn -1;\n\t}\n\tuser_password = usersp->sp_pwdp;\n#else\n\t/*\n\t * XXX - what about other platforms?\n\t * The unixpapa.com page claims this Just Works on *BSD if you're\n\t * running as root - it's from 2000, so it doesn't indicate whether\n\t * macOS (which didn't come out until 2001, under the name Mac OS\n\t * X) behaves like the *BSDs or not, and might also work on AIX.\n\t * HP-UX does something else.\n\t *\n\t * Again, hopefully PAM hides all that.\n\t */\n\tuser_password = user->pw_passwd;\n#endif\n\n\tcrypt_password = crypt(password, user_password);\n\tif (crypt_password == NULL)\n\t{\n\t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed\");\n\t\treturn -1;\n\t}\n\tif (strcmp(user_password, crypt_password) != 0)\n\t{\n\t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed: user name or password incorrect\");\n\t\treturn -1;\n\t}\n\n\tif (setuid(user->pw_uid))\n\t{\n\t\tpcap_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,\n\t\t    errno, \"setuid\");\n\t\treturn -1;\n\t}\n\n/*\tif (setgid(user->pw_gid))\n\t{\n\t\tpcap_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,\n\t\t    errno, \"setgid\");\n\t\treturn -1;\n\t}\n*/\n\treturn 0;\n\n#endif\n\n}",
+    "code_after_change": "daemon_AuthUserPwd(char *username, char *password, char *errbuf)\n{\n#ifdef _WIN32\n\t/*\n\t * Warning: the user which launches the process must have the\n\t * SE_TCB_NAME right.\n\t * This corresponds to have the \"Act as part of the Operating System\"\n\t * turned on (administrative tools, local security settings, local\n\t * policies, user right assignment)\n\t * However, it seems to me that if you run it as a service, this\n\t * right should be provided by default.\n\t *\n\t * XXX - hopefully, this returns errors such as ERROR_LOGON_FAILURE,\n\t * which merely indicates that the user name or password is\n\t * incorrect, not whether it's the user name or the password\n\t * that's incorrect, so a client that's trying to brute-force\n\t * accounts doesn't know whether it's the user name or the\n\t * password that's incorrect, so it doesn't know whether to\n \t * stop trying to log in with a given user name and move on\n \t * to another user name.\n \t */\n\tDWORD error;\n \tHANDLE Token;\n\tchar errmsgbuf[PCAP_ERRBUF_SIZE];\t// buffer for errors to log\n\n \tif (LogonUser(username, \".\", password, LOGON32_LOGON_NETWORK, LOGON32_PROVIDER_DEFAULT, &Token) == 0)\n \t{\n\t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed\");\n\t\terror = GetLastError();\n\t\tif (error != ERROR_LOGON_FAILURE)\n\t\t{\n\t\t\t// Some error other than an authentication error;\n\t\t\t// log it.\n\t\t\tpcap_fmt_errmsg_for_win32_err(errmsgbuf,\n\t\t\t    PCAP_ERRBUF_SIZE, error, \"LogonUser() failed\");\n\t\t\trpcapd_log(LOGPRIO_ERROR, \"%s\", errmsgbuf);\n\t\t}\t\t\t    \n \t\treturn -1;\n \t}\n \n \tif (ImpersonateLoggedOnUser(Token) == 0)\n \t{\n\t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed\");\n\t\tpcap_fmt_errmsg_for_win32_err(errmsgbuf, PCAP_ERRBUF_SIZE,\n \t\t    GetLastError(), \"ImpersonateLoggedOnUser() failed\");\n\t\trpcapd_log(LOGPRIO_ERROR, \"%s\", errmsgbuf);\n \t\tCloseHandle(Token);\n \t\treturn -1;\n \t}\n\n\tCloseHandle(Token);\n\treturn 0;\n\n#else\n\t/*\n\t * See\n\t *\n\t *\thttp://www.unixpapa.com/incnote/passwd.html\n\t *\n\t * We use the Solaris/Linux shadow password authentication if\n\t * we have getspnam(), otherwise we just do traditional\n\t * authentication, which, on some platforms, might work, even\n\t * with shadow passwords, if we're running as root.  Traditional\n\t * authenticaion won't work if we're not running as root, as\n\t * I think these days all UN*Xes either won't return the password\n\t * at all with getpwnam() or will only do so if you're root.\n\t *\n\t * XXX - perhaps what we *should* be using is PAM, if we have\n\t * it.  That might hide all the details of username/password\n\t * authentication, whether it's done with a visible-to-root-\n \t * only password database or some other authentication mechanism,\n \t * behind its API.\n \t */\n\tint error;\n \tstruct passwd *user;\n \tchar *user_password;\n #ifdef HAVE_GETSPNAM\n\tstruct spwd *usersp;\n#endif\n\tchar *crypt_password;\n\n \tif ((user = getpwnam(username)) == NULL)\n \t{\n\t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed\");\n \t\treturn -1;\n \t}\n \n #ifdef HAVE_GETSPNAM\n \tif ((usersp = getspnam(username)) == NULL)\n \t{\n\t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed\");\n \t\treturn -1;\n \t}\n \tuser_password = usersp->sp_pwdp;\n#else\n\t/*\n\t * XXX - what about other platforms?\n\t * The unixpapa.com page claims this Just Works on *BSD if you're\n\t * running as root - it's from 2000, so it doesn't indicate whether\n\t * macOS (which didn't come out until 2001, under the name Mac OS\n\t * X) behaves like the *BSDs or not, and might also work on AIX.\n\t * HP-UX does something else.\n\t *\n\t * Again, hopefully PAM hides all that.\n\t */\n \tuser_password = user->pw_passwd;\n #endif\n \n\t//\n\t// The Single UNIX Specification says that if crypt() fails it\n\t// sets errno, but some implementatons that haven't been run\n\t// through the SUS test suite might not do so.\n\t//\n\terrno = 0;\n \tcrypt_password = crypt(password, user_password);\n \tif (crypt_password == NULL)\n \t{\n\t\terror = errno;\n \t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed\");\n\t\tif (error == 0)\n\t\t{\n\t\t\t// It didn't set errno.\n\t\t\trpcapd_log(LOGPRIO_ERROR, \"crypt() failed\");\n\t\t}\n\t\telse\n\t\t{\n\t\t\trpcapd_log(LOGPRIO_ERROR, \"crypt() failed: %s\",\n\t\t\t    strerror(error));\n\t\t}\n \t\treturn -1;\n \t}\n \tif (strcmp(user_password, crypt_password) != 0)\n \t{\n\t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed\");\n \t\treturn -1;\n \t}\n \n \tif (setuid(user->pw_uid))\n \t{\n\t\terror = errno;\n \t\tpcap_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,\n\t\t    error, \"setuid\");\n\t\trpcapd_log(LOGPRIO_ERROR, \"setuid() failed: %s\",\n\t\t    strerror(error));\n \t\treturn -1;\n \t}\n \n /*\tif (setgid(user->pw_gid))\n \t{\n\t\terror = errno;\n \t\tpcap_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,\n \t\t    errno, \"setgid\");\n\t\trpcapd_log(LOGPRIO_ERROR, \"setgid() failed: %s\",\n\t\t    strerror(error));\n \t\treturn -1;\n \t}\n */\n\treturn 0;\n\n#endif\n\n}\n",
+    "cwe": [
+      "CWE-345"
+    ],
+    "cve_description": "rpcapd/daemon.c in libpcap before 1.9.1 on non-Windows platforms provides details about why authentication failed, which might make it easier for attackers to enumerate valid usernames.",
+    "patch": "--- code before\n+++ code after\n@@ -16,26 +16,37 @@\n \t * that's incorrect, so a client that's trying to brute-force\n \t * accounts doesn't know whether it's the user name or the\n \t * password that's incorrect, so it doesn't know whether to\n-\t * stop trying to log in with a given user name and move on\n-\t * to another user name.\n-\t */\n-\tHANDLE Token;\n-\tif (LogonUser(username, \".\", password, LOGON32_LOGON_NETWORK, LOGON32_PROVIDER_DEFAULT, &Token) == 0)\n-\t{\n-\t\tpcap_fmt_errmsg_for_win32_err(errbuf, PCAP_ERRBUF_SIZE,\n-\t\t    GetLastError(), \"LogonUser() failed\");\n-\t\treturn -1;\n-\t}\n+ \t * stop trying to log in with a given user name and move on\n+ \t * to another user name.\n+ \t */\n+\tDWORD error;\n+ \tHANDLE Token;\n+\tchar errmsgbuf[PCAP_ERRBUF_SIZE];\t// buffer for errors to log\n \n-\t// This call should change the current thread to the selected user.\n-\t// I didn't test it.\n-\tif (ImpersonateLoggedOnUser(Token) == 0)\n-\t{\n-\t\tpcap_fmt_errmsg_for_win32_err(errbuf, PCAP_ERRBUF_SIZE,\n-\t\t    GetLastError(), \"ImpersonateLoggedOnUser() failed\");\n-\t\tCloseHandle(Token);\n-\t\treturn -1;\n-\t}\n+ \tif (LogonUser(username, \".\", password, LOGON32_LOGON_NETWORK, LOGON32_PROVIDER_DEFAULT, &Token) == 0)\n+ \t{\n+\t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed\");\n+\t\terror = GetLastError();\n+\t\tif (error != ERROR_LOGON_FAILURE)\n+\t\t{\n+\t\t\t// Some error other than an authentication error;\n+\t\t\t// log it.\n+\t\t\tpcap_fmt_errmsg_for_win32_err(errmsgbuf,\n+\t\t\t    PCAP_ERRBUF_SIZE, error, \"LogonUser() failed\");\n+\t\t\trpcapd_log(LOGPRIO_ERROR, \"%s\", errmsgbuf);\n+\t\t}\t\t\t    \n+ \t\treturn -1;\n+ \t}\n+ \n+ \tif (ImpersonateLoggedOnUser(Token) == 0)\n+ \t{\n+\t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed\");\n+\t\tpcap_fmt_errmsg_for_win32_err(errmsgbuf, PCAP_ERRBUF_SIZE,\n+ \t\t    GetLastError(), \"ImpersonateLoggedOnUser() failed\");\n+\t\trpcapd_log(LOGPRIO_ERROR, \"%s\", errmsgbuf);\n+ \t\tCloseHandle(Token);\n+ \t\treturn -1;\n+ \t}\n \n \tCloseHandle(Token);\n \treturn 0;\n@@ -57,31 +68,30 @@\n \t * XXX - perhaps what we *should* be using is PAM, if we have\n \t * it.  That might hide all the details of username/password\n \t * authentication, whether it's done with a visible-to-root-\n-\t * only password database or some other authentication mechanism,\n-\t * behind its API.\n-\t */\n-\tstruct passwd *user;\n-\tchar *user_password;\n-#ifdef HAVE_GETSPNAM\n+ \t * only password database or some other authentication mechanism,\n+ \t * behind its API.\n+ \t */\n+\tint error;\n+ \tstruct passwd *user;\n+ \tchar *user_password;\n+ #ifdef HAVE_GETSPNAM\n \tstruct spwd *usersp;\n #endif\n \tchar *crypt_password;\n \n-\t// This call is needed to get the uid\n-\tif ((user = getpwnam(username)) == NULL)\n-\t{\n-\t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed: user name or password incorrect\");\n-\t\treturn -1;\n-\t}\n-\n-#ifdef HAVE_GETSPNAM\n-\t// This call is needed to get the password; otherwise 'x' is returned\n-\tif ((usersp = getspnam(username)) == NULL)\n-\t{\n-\t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed: user name or password incorrect\");\n-\t\treturn -1;\n-\t}\n-\tuser_password = usersp->sp_pwdp;\n+ \tif ((user = getpwnam(username)) == NULL)\n+ \t{\n+\t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed\");\n+ \t\treturn -1;\n+ \t}\n+ \n+ #ifdef HAVE_GETSPNAM\n+ \tif ((usersp = getspnam(username)) == NULL)\n+ \t{\n+\t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed\");\n+ \t\treturn -1;\n+ \t}\n+ \tuser_password = usersp->sp_pwdp;\n #else\n \t/*\n \t * XXX - what about other platforms?\n@@ -93,37 +103,60 @@\n \t *\n \t * Again, hopefully PAM hides all that.\n \t */\n-\tuser_password = user->pw_passwd;\n-#endif\n-\n-\tcrypt_password = crypt(password, user_password);\n-\tif (crypt_password == NULL)\n-\t{\n+ \tuser_password = user->pw_passwd;\n+ #endif\n+ \n+\t//\n+\t// The Single UNIX Specification says that if crypt() fails it\n+\t// sets errno, but some implementatons that haven't been run\n+\t// through the SUS test suite might not do so.\n+\t//\n+\terrno = 0;\n+ \tcrypt_password = crypt(password, user_password);\n+ \tif (crypt_password == NULL)\n+ \t{\n+\t\terror = errno;\n+ \t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed\");\n+\t\tif (error == 0)\n+\t\t{\n+\t\t\t// It didn't set errno.\n+\t\t\trpcapd_log(LOGPRIO_ERROR, \"crypt() failed\");\n+\t\t}\n+\t\telse\n+\t\t{\n+\t\t\trpcapd_log(LOGPRIO_ERROR, \"crypt() failed: %s\",\n+\t\t\t    strerror(error));\n+\t\t}\n+ \t\treturn -1;\n+ \t}\n+ \tif (strcmp(user_password, crypt_password) != 0)\n+ \t{\n \t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed\");\n-\t\treturn -1;\n-\t}\n-\tif (strcmp(user_password, crypt_password) != 0)\n-\t{\n-\t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed: user name or password incorrect\");\n-\t\treturn -1;\n-\t}\n-\n-\tif (setuid(user->pw_uid))\n-\t{\n-\t\tpcap_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,\n-\t\t    errno, \"setuid\");\n-\t\treturn -1;\n-\t}\n-\n-/*\tif (setgid(user->pw_gid))\n-\t{\n-\t\tpcap_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,\n-\t\t    errno, \"setgid\");\n-\t\treturn -1;\n-\t}\n-*/\n+ \t\treturn -1;\n+ \t}\n+ \n+ \tif (setuid(user->pw_uid))\n+ \t{\n+\t\terror = errno;\n+ \t\tpcap_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,\n+\t\t    error, \"setuid\");\n+\t\trpcapd_log(LOGPRIO_ERROR, \"setuid() failed: %s\",\n+\t\t    strerror(error));\n+ \t\treturn -1;\n+ \t}\n+ \n+ /*\tif (setgid(user->pw_gid))\n+ \t{\n+\t\terror = errno;\n+ \t\tpcap_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,\n+ \t\t    errno, \"setgid\");\n+\t\trpcapd_log(LOGPRIO_ERROR, \"setgid() failed: %s\",\n+\t\t    strerror(error));\n+ \t\treturn -1;\n+ \t}\n+ */\n \treturn 0;\n \n #endif\n \n-}+}",
+    "function_modified_lines": {
+      "added": [
+        " \t * stop trying to log in with a given user name and move on",
+        " \t * to another user name.",
+        " \t */",
+        "\tDWORD error;",
+        " \tHANDLE Token;",
+        "\tchar errmsgbuf[PCAP_ERRBUF_SIZE];\t// buffer for errors to log",
+        " \tif (LogonUser(username, \".\", password, LOGON32_LOGON_NETWORK, LOGON32_PROVIDER_DEFAULT, &Token) == 0)",
+        " \t{",
+        "\t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed\");",
+        "\t\terror = GetLastError();",
+        "\t\tif (error != ERROR_LOGON_FAILURE)",
+        "\t\t{",
+        "\t\t\t// Some error other than an authentication error;",
+        "\t\t\t// log it.",
+        "\t\t\tpcap_fmt_errmsg_for_win32_err(errmsgbuf,",
+        "\t\t\t    PCAP_ERRBUF_SIZE, error, \"LogonUser() failed\");",
+        "\t\t\trpcapd_log(LOGPRIO_ERROR, \"%s\", errmsgbuf);",
+        "\t\t}\t\t\t    ",
+        " \t\treturn -1;",
+        " \t}",
+        " ",
+        " \tif (ImpersonateLoggedOnUser(Token) == 0)",
+        " \t{",
+        "\t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed\");",
+        "\t\tpcap_fmt_errmsg_for_win32_err(errmsgbuf, PCAP_ERRBUF_SIZE,",
+        " \t\t    GetLastError(), \"ImpersonateLoggedOnUser() failed\");",
+        "\t\trpcapd_log(LOGPRIO_ERROR, \"%s\", errmsgbuf);",
+        " \t\tCloseHandle(Token);",
+        " \t\treturn -1;",
+        " \t}",
+        " \t * only password database or some other authentication mechanism,",
+        " \t * behind its API.",
+        " \t */",
+        "\tint error;",
+        " \tstruct passwd *user;",
+        " \tchar *user_password;",
+        " #ifdef HAVE_GETSPNAM",
+        " \tif ((user = getpwnam(username)) == NULL)",
+        " \t{",
+        "\t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed\");",
+        " \t\treturn -1;",
+        " \t}",
+        " ",
+        " #ifdef HAVE_GETSPNAM",
+        " \tif ((usersp = getspnam(username)) == NULL)",
+        " \t{",
+        "\t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed\");",
+        " \t\treturn -1;",
+        " \t}",
+        " \tuser_password = usersp->sp_pwdp;",
+        " \tuser_password = user->pw_passwd;",
+        " #endif",
+        " ",
+        "\t//",
+        "\t// The Single UNIX Specification says that if crypt() fails it",
+        "\t// sets errno, but some implementatons that haven't been run",
+        "\t// through the SUS test suite might not do so.",
+        "\t//",
+        "\terrno = 0;",
+        " \tcrypt_password = crypt(password, user_password);",
+        " \tif (crypt_password == NULL)",
+        " \t{",
+        "\t\terror = errno;",
+        " \t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed\");",
+        "\t\tif (error == 0)",
+        "\t\t{",
+        "\t\t\t// It didn't set errno.",
+        "\t\t\trpcapd_log(LOGPRIO_ERROR, \"crypt() failed\");",
+        "\t\t}",
+        "\t\telse",
+        "\t\t{",
+        "\t\t\trpcapd_log(LOGPRIO_ERROR, \"crypt() failed: %s\",",
+        "\t\t\t    strerror(error));",
+        "\t\t}",
+        " \t\treturn -1;",
+        " \t}",
+        " \tif (strcmp(user_password, crypt_password) != 0)",
+        " \t{",
+        " \t\treturn -1;",
+        " \t}",
+        " ",
+        " \tif (setuid(user->pw_uid))",
+        " \t{",
+        "\t\terror = errno;",
+        " \t\tpcap_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,",
+        "\t\t    error, \"setuid\");",
+        "\t\trpcapd_log(LOGPRIO_ERROR, \"setuid() failed: %s\",",
+        "\t\t    strerror(error));",
+        " \t\treturn -1;",
+        " \t}",
+        " ",
+        " /*\tif (setgid(user->pw_gid))",
+        " \t{",
+        "\t\terror = errno;",
+        " \t\tpcap_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,",
+        " \t\t    errno, \"setgid\");",
+        "\t\trpcapd_log(LOGPRIO_ERROR, \"setgid() failed: %s\",",
+        "\t\t    strerror(error));",
+        " \t\treturn -1;",
+        " \t}",
+        " */",
+        "}"
+      ],
+      "deleted": [
+        "\t * stop trying to log in with a given user name and move on",
+        "\t * to another user name.",
+        "\t */",
+        "\tHANDLE Token;",
+        "\tif (LogonUser(username, \".\", password, LOGON32_LOGON_NETWORK, LOGON32_PROVIDER_DEFAULT, &Token) == 0)",
+        "\t{",
+        "\t\tpcap_fmt_errmsg_for_win32_err(errbuf, PCAP_ERRBUF_SIZE,",
+        "\t\t    GetLastError(), \"LogonUser() failed\");",
+        "\t\treturn -1;",
+        "\t}",
+        "\t// This call should change the current thread to the selected user.",
+        "\t// I didn't test it.",
+        "\tif (ImpersonateLoggedOnUser(Token) == 0)",
+        "\t{",
+        "\t\tpcap_fmt_errmsg_for_win32_err(errbuf, PCAP_ERRBUF_SIZE,",
+        "\t\t    GetLastError(), \"ImpersonateLoggedOnUser() failed\");",
+        "\t\tCloseHandle(Token);",
+        "\t\treturn -1;",
+        "\t}",
+        "\t * only password database or some other authentication mechanism,",
+        "\t * behind its API.",
+        "\t */",
+        "\tstruct passwd *user;",
+        "\tchar *user_password;",
+        "#ifdef HAVE_GETSPNAM",
+        "\t// This call is needed to get the uid",
+        "\tif ((user = getpwnam(username)) == NULL)",
+        "\t{",
+        "\t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed: user name or password incorrect\");",
+        "\t\treturn -1;",
+        "\t}",
+        "",
+        "#ifdef HAVE_GETSPNAM",
+        "\t// This call is needed to get the password; otherwise 'x' is returned",
+        "\tif ((usersp = getspnam(username)) == NULL)",
+        "\t{",
+        "\t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed: user name or password incorrect\");",
+        "\t\treturn -1;",
+        "\t}",
+        "\tuser_password = usersp->sp_pwdp;",
+        "\tuser_password = user->pw_passwd;",
+        "#endif",
+        "",
+        "\tcrypt_password = crypt(password, user_password);",
+        "\tif (crypt_password == NULL)",
+        "\t{",
+        "\t\treturn -1;",
+        "\t}",
+        "\tif (strcmp(user_password, crypt_password) != 0)",
+        "\t{",
+        "\t\tpcap_snprintf(errbuf, PCAP_ERRBUF_SIZE, \"Authentication failed: user name or password incorrect\");",
+        "\t\treturn -1;",
+        "\t}",
+        "",
+        "\tif (setuid(user->pw_uid))",
+        "\t{",
+        "\t\tpcap_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,",
+        "\t\t    errno, \"setuid\");",
+        "\t\treturn -1;",
+        "\t}",
+        "",
+        "/*\tif (setgid(user->pw_gid))",
+        "\t{",
+        "\t\tpcap_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,",
+        "\t\t    errno, \"setgid\");",
+        "\t\treturn -1;",
+        "\t}",
+        "*/",
+        "}"
+      ]
+    }
+  },
+  {
+    "id": 2038,
+    "cve_id": "CVE-2021-41203",
+    "code_before_change": "void TensorSliceReader::LoadShard(int shard) const {\n  CHECK_LT(shard, sss_.size());\n  if (sss_[shard] || !status_.ok()) {\n    return;  // Already loaded, or invalid.\n  }\n  string value;\n  SavedTensorSlices sts;\n  const string fname = fnames_[shard];\n  VLOG(1) << \"Reading meta data from file \" << fname << \"...\";\n  Table* table;\n  Status s = open_function_(fname, &table);\n  if (!s.ok()) {\n    status_ = errors::DataLoss(\"Unable to open table file \", fname, \": \",\n                               s.ToString());\n    return;\n  }\n  sss_[shard].reset(table);\n  if (!(table->Get(kSavedTensorSlicesKey, &value) &&\n        ParseProtoUnlimited(&sts, value))) {\n    status_ = errors::Internal(\n        \"Failed to find the saved tensor slices at the beginning of the \"\n        \"checkpoint file: \",\n        fname);\n    return;\n  }\n  status_ = CheckVersions(sts.meta().versions(), TF_CHECKPOINT_VERSION,\n                          TF_CHECKPOINT_VERSION_MIN_PRODUCER, \"Checkpoint\",\n                          \"checkpoint\");\n  if (!status_.ok()) return;\n  for (const SavedSliceMeta& ssm : sts.meta().tensor()) {\n    TensorShape ssm_shape;\n    status_ = TensorShape::BuildTensorShapeBase(ssm.shape(), &ssm_shape);\n    if (!status_.ok()) return;\n    for (const TensorSliceProto& tsp : ssm.slice()) {\n      TensorSlice ss_slice(tsp);\n      status_ = RegisterTensorSlice(ssm.name(), ssm_shape, ssm.type(), fname,\n                                    ss_slice, &tensors_);\n      if (!status_.ok()) return;\n    }\n  }\n}",
+    "code_after_change": "void TensorSliceReader::LoadShard(int shard) const {\n  CHECK_LT(shard, sss_.size());\n  if (sss_[shard] || !status_.ok()) {\n    return;  // Already loaded, or invalid.\n  }\n  string value;\n  SavedTensorSlices sts;\n  const string fname = fnames_[shard];\n  VLOG(1) << \"Reading meta data from file \" << fname << \"...\";\n  Table* table;\n  Status s = open_function_(fname, &table);\n  if (!s.ok()) {\n    status_ = errors::DataLoss(\"Unable to open table file \", fname, \": \",\n                               s.ToString());\n    return;\n  }\n  sss_[shard].reset(table);\n  if (!(table->Get(kSavedTensorSlicesKey, &value) &&\n        ParseProtoUnlimited(&sts, value))) {\n    status_ = errors::Internal(\n        \"Failed to find the saved tensor slices at the beginning of the \"\n        \"checkpoint file: \",\n        fname);\n    return;\n  }\n  status_ = CheckVersions(sts.meta().versions(), TF_CHECKPOINT_VERSION,\n                          TF_CHECKPOINT_VERSION_MIN_PRODUCER, \"Checkpoint\",\n                          \"checkpoint\");\n  if (!status_.ok()) return;\n  for (const SavedSliceMeta& ssm : sts.meta().tensor()) {\n    TensorShape ssm_shape;\n    status_ = TensorShape::BuildTensorShapeBase(ssm.shape(), &ssm_shape);\n    if (!status_.ok()) return;\n    for (const TensorSliceProto& tsp : ssm.slice()) {\n      TensorSlice ss_slice;\n      status_ = TensorSlice::BuildTensorSlice(tsp, &ss_slice);\n      if (!status_.ok()) return;\n      status_ = RegisterTensorSlice(ssm.name(), ssm_shape, ssm.type(), fname,\n                                    ss_slice, &tensors_);\n      if (!status_.ok()) return;\n    }\n  }\n}",
+    "cwe": [
+      "CWE-345"
+    ],
+    "cve_description": "TensorFlow is an open source platform for machine learning. In affected versions an attacker can trigger undefined behavior, integer overflows, segfaults and `CHECK`-fail crashes if they can change saved checkpoints from outside of TensorFlow. This is because the checkpoints loading infrastructure is missing validation for invalid file formats. The fixes will be included in TensorFlow 2.7.0. We will also cherrypick these commits on TensorFlow 2.6.1, TensorFlow 2.5.2, and TensorFlow 2.4.4, as these are also affected and still in supported range.",
+    "patch": "--- code before\n+++ code after\n@@ -32,7 +32,9 @@\n     status_ = TensorShape::BuildTensorShapeBase(ssm.shape(), &ssm_shape);\n     if (!status_.ok()) return;\n     for (const TensorSliceProto& tsp : ssm.slice()) {\n-      TensorSlice ss_slice(tsp);\n+      TensorSlice ss_slice;\n+      status_ = TensorSlice::BuildTensorSlice(tsp, &ss_slice);\n+      if (!status_.ok()) return;\n       status_ = RegisterTensorSlice(ssm.name(), ssm_shape, ssm.type(), fname,\n                                     ss_slice, &tensors_);\n       if (!status_.ok()) return;",
+    "function_modified_lines": {
+      "added": [
+        "      TensorSlice ss_slice;",
+        "      status_ = TensorSlice::BuildTensorSlice(tsp, &ss_slice);",
+        "      if (!status_.ok()) return;"
+      ],
+      "deleted": [
+        "      TensorSlice ss_slice(tsp);"
+      ]
+    }
+  },
+  {
+    "id": 2091,
+    "cve_id": "CVE-2016-1000004",
+    "code_before_change": "xmlNodePtr SimpleXMLElement_exportNode(const Object& sxe) {\n  assert(sxe->instanceof(SimpleXMLElement_classof()));\n  auto data = Native::data<SimpleXMLElement>(sxe.get());\n  return php_sxe_get_first_node(data, data->nodep());\n}",
+    "code_after_change": "xmlNodePtr SimpleXMLElement_exportNode(const Object& sxe) {\n  if (!sxe->instanceof(SimpleXMLElement_classof())) return nullptr;\n  auto data = Native::data<SimpleXMLElement>(sxe.get());\n  return php_sxe_get_first_node(data, data->nodep());\n}",
+    "cwe": [
+      "CWE-345"
+    ],
+    "cve_description": "Insufficient type checks were employed prior to casting input data in SimpleXMLElement_exportNode and simplexml_import_dom. This issue affects HHVM versions prior to 3.9.5, all versions between 3.10.0 and 3.12.3 (inclusive), and all versions between 3.13.0 and 3.14.1 (inclusive).",
+    "patch": "--- code before\n+++ code after\n@@ -1,5 +1,5 @@\n xmlNodePtr SimpleXMLElement_exportNode(const Object& sxe) {\n-  assert(sxe->instanceof(SimpleXMLElement_classof()));\n+  if (!sxe->instanceof(SimpleXMLElement_classof())) return nullptr;\n   auto data = Native::data<SimpleXMLElement>(sxe.get());\n   return php_sxe_get_first_node(data, data->nodep());\n }",
+    "function_modified_lines": {
+      "added": [
+        "  if (!sxe->instanceof(SimpleXMLElement_classof())) return nullptr;"
+      ],
+      "deleted": [
+        "  assert(sxe->instanceof(SimpleXMLElement_classof()));"
+      ]
+    }
+  },
+  {
+    "id": 3026,
+    "cve_id": "CVE-2017-11103",
+    "code_before_change": "_krb5_extract_ticket(krb5_context context,\n\t\t     krb5_kdc_rep *rep,\n\t\t     krb5_creds *creds,\n\t\t     krb5_keyblock *key,\n\t\t     krb5_const_pointer keyseed,\n\t\t     krb5_key_usage key_usage,\n\t\t     krb5_addresses *addrs,\n\t\t     unsigned nonce,\n\t\t     unsigned flags,\n\t\t     krb5_data *request,\n\t\t     krb5_decrypt_proc decrypt_proc,\n\t\t     krb5_const_pointer decryptarg)\n{\n    krb5_error_code ret;\n    krb5_principal tmp_principal;\n    size_t len = 0;\n    time_t tmp_time;\n    krb5_timestamp sec_now;\n\n    /* decrypt */\n\n    if (decrypt_proc == NULL)\n\tdecrypt_proc = decrypt_tkt;\n\n    ret = (*decrypt_proc)(context, key, key_usage, decryptarg, rep);\n    if (ret)\n\tgoto out;\n\n    if (rep->enc_part.flags.enc_pa_rep && request) {\n\tkrb5_crypto crypto = NULL;\n\tChecksum cksum;\n\tPA_DATA *pa = NULL;\n\tint idx = 0;\n\n\t_krb5_debug(context, 5, \"processing enc-ap-rep\");\n\n\tif (rep->enc_part.encrypted_pa_data == NULL ||\n\t    (pa = krb5_find_padata(rep->enc_part.encrypted_pa_data->val,\n\t\t\t\t   rep->enc_part.encrypted_pa_data->len,\n\t\t\t\t   KRB5_PADATA_REQ_ENC_PA_REP,\n\t\t\t\t   &idx)) == NULL)\n\t{\n\t    _krb5_debug(context, 5, \"KRB5_PADATA_REQ_ENC_PA_REP missing\");\n\t    ret = KRB5KRB_AP_ERR_MODIFIED;\n\t    goto out;\n\t}\n\t\n\tret = krb5_crypto_init(context, key, 0, &crypto);\n\tif (ret)\n\t    goto out;\n\t\n\tret = decode_Checksum(pa->padata_value.data,\n\t\t\t      pa->padata_value.length,\n\t\t\t      &cksum, NULL);\n\tif (ret) {\n\t    krb5_crypto_destroy(context, crypto);\n\t    goto out;\n\t}\n\t\n\tret = krb5_verify_checksum(context, crypto,\n\t\t\t\t   KRB5_KU_AS_REQ,\n\t\t\t\t   request->data, request->length,\n\t\t\t\t   &cksum);\n\tkrb5_crypto_destroy(context, crypto);\n\tfree_Checksum(&cksum);\n\t_krb5_debug(context, 5, \"enc-ap-rep: %svalid\", (ret == 0) ? \"\" : \"in\");\n\tif (ret)\n\t    goto out;\n    }\n\n    /* save session key */\n\n    creds->session.keyvalue.length = 0;\n    creds->session.keyvalue.data   = NULL;\n    creds->session.keytype = rep->enc_part.key.keytype;\n    ret = krb5_data_copy (&creds->session.keyvalue,\n\t\t\t  rep->enc_part.key.keyvalue.data,\n\t\t\t  rep->enc_part.key.keyvalue.length);\n    if (ret) {\n\tkrb5_clear_error_message(context);\n\tgoto out;\n    }\n\n    /* compare client and save */\n    ret = _krb5_principalname2krb5_principal(context,\n\t\t\t\t\t     &tmp_principal,\n\t\t\t\t\t     rep->kdc_rep.cname,\n\t\t\t\t\t     rep->kdc_rep.crealm);\n    if (ret)\n\tgoto out;\n\n    /* check client referral and save principal */\n    /* anonymous here ? */\n    if((flags & EXTRACT_TICKET_ALLOW_CNAME_MISMATCH) == 0) {\n\tret = check_client_referral(context, rep,\n\t\t\t\t    creds->client,\n\t\t\t\t    tmp_principal,\n\t\t\t\t    &creds->session);\n\tif (ret) {\n\t    krb5_free_principal (context, tmp_principal);\n\t    goto out;\n\t}\n    }\n    krb5_free_principal (context, creds->client);\n    creds->client = tmp_principal;\n\n    /* check server referral and save principal */\n    ret = _krb5_principalname2krb5_principal (context,\n\t\t\t\t\t      &tmp_principal,\n\t\t\t\t\t      rep->kdc_rep.ticket.sname,\n\t\t\t\t\t      rep->kdc_rep.ticket.realm);\n    if (ret)\n\tgoto out;\n    if((flags & EXTRACT_TICKET_ALLOW_SERVER_MISMATCH) == 0){\n\tret = check_server_referral(context,\n\t\t\t\t    rep,\n\t\t\t\t    flags,\n\t\t\t\t    creds->server,\n\t\t\t\t    tmp_principal,\n\t\t\t\t    &creds->session);\n\tif (ret) {\n\t    krb5_free_principal (context, tmp_principal);\n\t    goto out;\n\t}\n    }\n    krb5_free_principal(context, creds->server);\n    creds->server = tmp_principal;\n\n    /* verify names */\n    if(flags & EXTRACT_TICKET_MATCH_REALM){\n\tconst char *srealm = krb5_principal_get_realm(context, creds->server);\n\tconst char *crealm = krb5_principal_get_realm(context, creds->client);\n\n\tif (strcmp(rep->enc_part.srealm, srealm) != 0 ||\n\t    strcmp(rep->enc_part.srealm, crealm) != 0)\n\t{\n\t    ret = KRB5KRB_AP_ERR_MODIFIED;\n\t    krb5_clear_error_message(context);\n\t    goto out;\n\t}\n    }\n\n    /* compare nonces */\n\n    if (nonce != (unsigned)rep->enc_part.nonce) {\n\tret = KRB5KRB_AP_ERR_MODIFIED;\n\tkrb5_set_error_message(context, ret, N_(\"malloc: out of memory\", \"\"));\n\tgoto out;\n    }\n\n    /* set kdc-offset */\n\n    krb5_timeofday (context, &sec_now);\n    if (rep->enc_part.flags.initial\n\t&& (flags & EXTRACT_TICKET_TIMESYNC)\n\t&& context->kdc_sec_offset == 0\n\t&& krb5_config_get_bool (context, NULL,\n\t\t\t\t \"libdefaults\",\n\t\t\t\t \"kdc_timesync\",\n\t\t\t\t NULL)) {\n\tcontext->kdc_sec_offset = rep->enc_part.authtime - sec_now;\n\tkrb5_timeofday (context, &sec_now);\n    }\n\n    /* check all times */\n\n    if (rep->enc_part.starttime) {\n\ttmp_time = *rep->enc_part.starttime;\n    } else\n\ttmp_time = rep->enc_part.authtime;\n\n    if (creds->times.starttime == 0\n\t&& labs(tmp_time - sec_now) > context->max_skew) {\n\tret = KRB5KRB_AP_ERR_SKEW;\n\tkrb5_set_error_message (context, ret,\n\t\t\t\tN_(\"time skew (%ld) larger than max (%ld)\", \"\"),\n\t\t\t       labs(tmp_time - sec_now),\n\t\t\t       (long)context->max_skew);\n\tgoto out;\n    }\n\n    if (creds->times.starttime != 0\n\t&& tmp_time != creds->times.starttime) {\n\tkrb5_clear_error_message (context);\n\tret = KRB5KRB_AP_ERR_MODIFIED;\n\tgoto out;\n    }\n\n    creds->times.starttime = tmp_time;\n\n    if (rep->enc_part.renew_till) {\n\ttmp_time = *rep->enc_part.renew_till;\n    } else\n\ttmp_time = 0;\n\n    if (creds->times.renew_till != 0\n\t&& tmp_time > creds->times.renew_till) {\n\tkrb5_clear_error_message (context);\n\tret = KRB5KRB_AP_ERR_MODIFIED;\n\tgoto out;\n    }\n\n    creds->times.renew_till = tmp_time;\n\n    creds->times.authtime = rep->enc_part.authtime;\n\n    if (creds->times.endtime != 0\n\t&& rep->enc_part.endtime > creds->times.endtime) {\n\tkrb5_clear_error_message (context);\n\tret = KRB5KRB_AP_ERR_MODIFIED;\n\tgoto out;\n    }\n\n    creds->times.endtime  = rep->enc_part.endtime;\n\n    if(rep->enc_part.caddr)\n\tkrb5_copy_addresses (context, rep->enc_part.caddr, &creds->addresses);\n    else if(addrs)\n\tkrb5_copy_addresses (context, addrs, &creds->addresses);\n    else {\n\tcreds->addresses.len = 0;\n\tcreds->addresses.val = NULL;\n    }\n    creds->flags.b = rep->enc_part.flags;\n\n    creds->authdata.len = 0;\n    creds->authdata.val = NULL;\n\n    /* extract ticket */\n    ASN1_MALLOC_ENCODE(Ticket, creds->ticket.data, creds->ticket.length,\n\t\t       &rep->kdc_rep.ticket, &len, ret);\n    if(ret)\n\tgoto out;\n    if (creds->ticket.length != len)\n\tkrb5_abortx(context, \"internal error in ASN.1 encoder\");\n    creds->second_ticket.length = 0;\n    creds->second_ticket.data   = NULL;\n\n\nout:\n    memset (rep->enc_part.key.keyvalue.data, 0,\n\t    rep->enc_part.key.keyvalue.length);\n    return ret;\n}",
+    "code_after_change": "_krb5_extract_ticket(krb5_context context,\n\t\t     krb5_kdc_rep *rep,\n\t\t     krb5_creds *creds,\n\t\t     krb5_keyblock *key,\n\t\t     krb5_const_pointer keyseed,\n\t\t     krb5_key_usage key_usage,\n\t\t     krb5_addresses *addrs,\n\t\t     unsigned nonce,\n\t\t     unsigned flags,\n\t\t     krb5_data *request,\n\t\t     krb5_decrypt_proc decrypt_proc,\n\t\t     krb5_const_pointer decryptarg)\n{\n    krb5_error_code ret;\n    krb5_principal tmp_principal;\n    size_t len = 0;\n    time_t tmp_time;\n    krb5_timestamp sec_now;\n\n    /* decrypt */\n\n    if (decrypt_proc == NULL)\n\tdecrypt_proc = decrypt_tkt;\n\n    ret = (*decrypt_proc)(context, key, key_usage, decryptarg, rep);\n    if (ret)\n\tgoto out;\n\n    if (rep->enc_part.flags.enc_pa_rep && request) {\n\tkrb5_crypto crypto = NULL;\n\tChecksum cksum;\n\tPA_DATA *pa = NULL;\n\tint idx = 0;\n\n\t_krb5_debug(context, 5, \"processing enc-ap-rep\");\n\n\tif (rep->enc_part.encrypted_pa_data == NULL ||\n\t    (pa = krb5_find_padata(rep->enc_part.encrypted_pa_data->val,\n\t\t\t\t   rep->enc_part.encrypted_pa_data->len,\n\t\t\t\t   KRB5_PADATA_REQ_ENC_PA_REP,\n\t\t\t\t   &idx)) == NULL)\n\t{\n\t    _krb5_debug(context, 5, \"KRB5_PADATA_REQ_ENC_PA_REP missing\");\n\t    ret = KRB5KRB_AP_ERR_MODIFIED;\n\t    goto out;\n\t}\n\t\n\tret = krb5_crypto_init(context, key, 0, &crypto);\n\tif (ret)\n\t    goto out;\n\t\n\tret = decode_Checksum(pa->padata_value.data,\n\t\t\t      pa->padata_value.length,\n\t\t\t      &cksum, NULL);\n\tif (ret) {\n\t    krb5_crypto_destroy(context, crypto);\n\t    goto out;\n\t}\n\t\n\tret = krb5_verify_checksum(context, crypto,\n\t\t\t\t   KRB5_KU_AS_REQ,\n\t\t\t\t   request->data, request->length,\n\t\t\t\t   &cksum);\n\tkrb5_crypto_destroy(context, crypto);\n\tfree_Checksum(&cksum);\n\t_krb5_debug(context, 5, \"enc-ap-rep: %svalid\", (ret == 0) ? \"\" : \"in\");\n\tif (ret)\n\t    goto out;\n    }\n\n    /* save session key */\n\n    creds->session.keyvalue.length = 0;\n    creds->session.keyvalue.data   = NULL;\n    creds->session.keytype = rep->enc_part.key.keytype;\n    ret = krb5_data_copy (&creds->session.keyvalue,\n\t\t\t  rep->enc_part.key.keyvalue.data,\n\t\t\t  rep->enc_part.key.keyvalue.length);\n    if (ret) {\n\tkrb5_clear_error_message(context);\n\tgoto out;\n    }\n\n    /* compare client and save */\n    ret = _krb5_principalname2krb5_principal(context,\n\t\t\t\t\t     &tmp_principal,\n\t\t\t\t\t     rep->kdc_rep.cname,\n\t\t\t\t\t     rep->kdc_rep.crealm);\n    if (ret)\n\tgoto out;\n\n    /* check client referral and save principal */\n    /* anonymous here ? */\n    if((flags & EXTRACT_TICKET_ALLOW_CNAME_MISMATCH) == 0) {\n\tret = check_client_referral(context, rep,\n\t\t\t\t    creds->client,\n\t\t\t\t    tmp_principal,\n\t\t\t\t    &creds->session);\n\tif (ret) {\n\t    krb5_free_principal (context, tmp_principal);\n\t    goto out;\n\t}\n    }\n    krb5_free_principal (context, creds->client);\n    creds->client = tmp_principal;\n\n    /* check server referral and save principal */\n    ret = _krb5_principalname2krb5_principal (context,\n\t\t\t\t\t      &tmp_principal,\n\t\t\t\t\t      rep->enc_part.sname,\n\t\t\t\t\t      rep->enc_part.srealm);\n    if (ret)\n\tgoto out;\n    if((flags & EXTRACT_TICKET_ALLOW_SERVER_MISMATCH) == 0){\n\tret = check_server_referral(context,\n\t\t\t\t    rep,\n\t\t\t\t    flags,\n\t\t\t\t    creds->server,\n\t\t\t\t    tmp_principal,\n\t\t\t\t    &creds->session);\n\tif (ret) {\n\t    krb5_free_principal (context, tmp_principal);\n\t    goto out;\n\t}\n    }\n    krb5_free_principal(context, creds->server);\n    creds->server = tmp_principal;\n\n    /* verify names */\n    if(flags & EXTRACT_TICKET_MATCH_REALM){\n\tconst char *srealm = krb5_principal_get_realm(context, creds->server);\n\tconst char *crealm = krb5_principal_get_realm(context, creds->client);\n\n\tif (strcmp(rep->enc_part.srealm, srealm) != 0 ||\n\t    strcmp(rep->enc_part.srealm, crealm) != 0)\n\t{\n\t    ret = KRB5KRB_AP_ERR_MODIFIED;\n\t    krb5_clear_error_message(context);\n\t    goto out;\n\t}\n    }\n\n    /* compare nonces */\n\n    if (nonce != (unsigned)rep->enc_part.nonce) {\n\tret = KRB5KRB_AP_ERR_MODIFIED;\n\tkrb5_set_error_message(context, ret, N_(\"malloc: out of memory\", \"\"));\n\tgoto out;\n    }\n\n    /* set kdc-offset */\n\n    krb5_timeofday (context, &sec_now);\n    if (rep->enc_part.flags.initial\n\t&& (flags & EXTRACT_TICKET_TIMESYNC)\n\t&& context->kdc_sec_offset == 0\n\t&& krb5_config_get_bool (context, NULL,\n\t\t\t\t \"libdefaults\",\n\t\t\t\t \"kdc_timesync\",\n\t\t\t\t NULL)) {\n\tcontext->kdc_sec_offset = rep->enc_part.authtime - sec_now;\n\tkrb5_timeofday (context, &sec_now);\n    }\n\n    /* check all times */\n\n    if (rep->enc_part.starttime) {\n\ttmp_time = *rep->enc_part.starttime;\n    } else\n\ttmp_time = rep->enc_part.authtime;\n\n    if (creds->times.starttime == 0\n\t&& labs(tmp_time - sec_now) > context->max_skew) {\n\tret = KRB5KRB_AP_ERR_SKEW;\n\tkrb5_set_error_message (context, ret,\n\t\t\t\tN_(\"time skew (%ld) larger than max (%ld)\", \"\"),\n\t\t\t       labs(tmp_time - sec_now),\n\t\t\t       (long)context->max_skew);\n\tgoto out;\n    }\n\n    if (creds->times.starttime != 0\n\t&& tmp_time != creds->times.starttime) {\n\tkrb5_clear_error_message (context);\n\tret = KRB5KRB_AP_ERR_MODIFIED;\n\tgoto out;\n    }\n\n    creds->times.starttime = tmp_time;\n\n    if (rep->enc_part.renew_till) {\n\ttmp_time = *rep->enc_part.renew_till;\n    } else\n\ttmp_time = 0;\n\n    if (creds->times.renew_till != 0\n\t&& tmp_time > creds->times.renew_till) {\n\tkrb5_clear_error_message (context);\n\tret = KRB5KRB_AP_ERR_MODIFIED;\n\tgoto out;\n    }\n\n    creds->times.renew_till = tmp_time;\n\n    creds->times.authtime = rep->enc_part.authtime;\n\n    if (creds->times.endtime != 0\n\t&& rep->enc_part.endtime > creds->times.endtime) {\n\tkrb5_clear_error_message (context);\n\tret = KRB5KRB_AP_ERR_MODIFIED;\n\tgoto out;\n    }\n\n    creds->times.endtime  = rep->enc_part.endtime;\n\n    if(rep->enc_part.caddr)\n\tkrb5_copy_addresses (context, rep->enc_part.caddr, &creds->addresses);\n    else if(addrs)\n\tkrb5_copy_addresses (context, addrs, &creds->addresses);\n    else {\n\tcreds->addresses.len = 0;\n\tcreds->addresses.val = NULL;\n    }\n    creds->flags.b = rep->enc_part.flags;\n\n    creds->authdata.len = 0;\n    creds->authdata.val = NULL;\n\n    /* extract ticket */\n    ASN1_MALLOC_ENCODE(Ticket, creds->ticket.data, creds->ticket.length,\n\t\t       &rep->kdc_rep.ticket, &len, ret);\n    if(ret)\n\tgoto out;\n    if (creds->ticket.length != len)\n\tkrb5_abortx(context, \"internal error in ASN.1 encoder\");\n    creds->second_ticket.length = 0;\n    creds->second_ticket.data   = NULL;\n\n\nout:\n    memset (rep->enc_part.key.keyvalue.data, 0,\n\t    rep->enc_part.key.keyvalue.length);\n    return ret;\n}",
+    "cwe": [
+      "CWE-345"
+    ],
+    "cve_description": "Heimdal before 7.4 allows remote attackers to impersonate services with Orpheus' Lyre attacks because it obtains service-principal names in a way that violates the Kerberos 5 protocol specification. In _krb5_extract_ticket() the KDC-REP service name must be obtained from the encrypted version stored in 'enc_part' instead of the unencrypted version stored in 'ticket'. Use of the unencrypted version provides an opportunity for successful server impersonation and other attacks. NOTE: this CVE is only for Heimdal and other products that embed Heimdal code; it does not apply to other instances in which this part of the Kerberos 5 protocol specification is violated.",
+    "patch": "--- code before\n+++ code after\n@@ -107,8 +107,8 @@\n     /* check server referral and save principal */\n     ret = _krb5_principalname2krb5_principal (context,\n \t\t\t\t\t      &tmp_principal,\n-\t\t\t\t\t      rep->kdc_rep.ticket.sname,\n-\t\t\t\t\t      rep->kdc_rep.ticket.realm);\n+\t\t\t\t\t      rep->enc_part.sname,\n+\t\t\t\t\t      rep->enc_part.srealm);\n     if (ret)\n \tgoto out;\n     if((flags & EXTRACT_TICKET_ALLOW_SERVER_MISMATCH) == 0){",
+    "function_modified_lines": {
+      "added": [
+        "\t\t\t\t\t      rep->enc_part.sname,",
+        "\t\t\t\t\t      rep->enc_part.srealm);"
+      ],
+      "deleted": [
+        "\t\t\t\t\t      rep->kdc_rep.ticket.sname,",
+        "\t\t\t\t\t      rep->kdc_rep.ticket.realm);"
+      ]
+    }
+  }
+]

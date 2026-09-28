@@ -1,0 +1,10 @@
+[
+    {
+        "title": "`setGuardian()` Wrong implementation",
+        "link": "https://github.com/code-423n4/2021-11-badgerzaps-findings/issues/51",
+        "detail": "# Handle\n\nWatchPug\n\n\n# Vulnerability details\n\nhttps://github.com/Badger-Finance/badger-ibbtc-utility-zaps/blob/6f700995129182fec81b772f97abab9977b46026/contracts/IbbtcVaultZap.sol#L116-L119\n\n```solidity=116\nfunction setGuardian(address _guardian) external {\n    _onlyGovernance();\n    governance = _guardian;\n}\n```\n\nhttps://github.com/Badger-Finance/badger-ibbtc-utility-zaps/blob/a5c71b72222d84b6414ca0339ed1761dc79fe56e/contracts/SettToRenIbbtcZap.sol#L130-L133\n\n```solidity=130\nfunction setGuardian(address _guardian) external {\n    _onlyGovernance();\n    governance = _guardian;\n}\n```\n\n`governance = _guardian` should be `guardian = _guardian`.\n\n",
+        "code": [
+            "    function setGuardian(address _guardian) external {\n        _onlyGovernance();\n        governance = _guardian;\n    }"
+        ]
+    }
+]

@@ -1,0 +1,28 @@
+文件: D:\program\Code Vulnerability Detection\control_flow\control_flow\test_snippets\vuln_01_stack_bof.c
+图构建模式: heuristic_c
+【AST】
+- 类型/结构定义：typedef struct {@L12
+- 函数 global@L1：声明3个、赋值0个、分支0个、调用2个。
+  - 调用链要点：gets。
+- 函数 init_user@L17：声明1个、赋值1个、分支0个、调用1个。
+  - 调用链要点：memset。
+- 函数 greet@L22：声明0个、赋值0个、分支1个、调用2个。
+  - 调用链要点：printf。
+  - 条件/循环：if (u->privilege > 0) {
+- 函数 read_username@L31：声明1个、赋值0个、分支0个、调用3个。
+  - 调用链要点：gets -> printf -> strcpy。
+- 函数 check_admin@L38：声明0个、赋值2个、分支2个、调用0个。
+  - 条件/循环：if (strcmp(name, "root") == 0) return 1;；if (strcmp(name, "admin") == 0) return 1;
+- 函数 process_login@L44：声明1个、赋值1个、分支1个、调用2个。
+  - 调用链要点：greet -> read_username。
+  - 条件/循环：if (check_admin(u->username)) {
+- 函数 main@L52：声明1个、赋值0个、分支0个、调用3个。
+  - 调用链要点：init_user -> printf -> process_login。
+
+【CFG】
+- 函数 global：保留控制点 8/48；分支节点 4；调用节点 0；线性段折叠 40。
+  - 分支/循环节点：if (u->privilege > 0) {@L23；if (strcmp(name, "root") == 0) return 1;@L39；if (strcmp(name, "admin") == 0) return 1;@L40；if (check_admin(u->username)) {@L46
+  - 路径1: Entry -> /* -> * vuln_01_stack_bof.c -> if (u->privilege > 0) { -> if (strcmp(name, "root") == 0) return 1; -> if (strcmp(name, "admin") == 0) return 1; -> return 0; -> if (check_admin(u->username)) { -> return 0; -> } -> global EXIT
+
+【DFG】
+- 函数 global：边保留 0/0；参数源 0 个；抽取链路 0 条。

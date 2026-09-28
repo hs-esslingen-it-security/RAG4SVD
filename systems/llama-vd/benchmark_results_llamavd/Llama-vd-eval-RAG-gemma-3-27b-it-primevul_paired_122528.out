@@ -1,0 +1,688 @@
+JOB ID 122528
+gemma-3-27b-it   google/gemma-3-27b-it
+--- Running with Model: gemma-3-27b-it google/gemma-3-27b-it | Dataset: primevul_paired ---
+
+
+*** Load model and tokenizer ***
+
+
+*** Load and preprocess dataset ***
+
+
+ Label distribution in Train set : 
+ label_text
+Vulnerable    3789
+Safe          3789
+Name: count, dtype: int64
+
+ Label distribution in Eval set : 
+ label_text
+Vulnerable    480
+Safe          480
+Name: count, dtype: int64
+
+ Label distribution in Test set : 
+ label_text
+Vulnerable    435
+Safe          435
+Name: count, dtype: int64
+
+*** Load embedding model and tokenizer ***
+
+
+*** Load index ***
+
+FAISS index and metadata loaded successfully.
+
+
+*** Generate prompts and Predict ***
+
+Out of scope prediction :  %u",
+                       ident,
+                       EXTRACT_32BITS(obj_tptr),
+                       ident,
+                       EXTRACT_32BITS(obj_tptr+4),
+                       EXTRACT_32BITS(obj_tptr + 8)));
+                obj_tlen-=12;
+                obj_tptr+=12;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_STYLE:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1:
+                if (obj_tlen < 4)
+                    return-1;
+                ND_PRINT((ndo, "%s  Reservation Style: %s, Flags: [0x%02x]",
+                       ident,
+                       tok2str(rsvp_resstyle_values,
+                               "Unknown",
+                               EXTRACT_24BITS(obj_tptr+1)),
+                       *(obj_tptr)));
+                obj_tlen-=4;
+                obj_tptr+=4;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_SENDER_TEMPLATE:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, Source Port: %u",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 6)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                break;
+            case RSVP_CTYPE_IPV6:
+                if (obj_tlen < 20)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, Source Port: %u",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 18)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                break;
+            case RSVP_CTYPE_13: /* IPv6 p2mp LSP tunnel */
+                if (obj_tlen < 40)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv6 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+18),
+                       ident,
+                       ip6addr_string(ndo, obj_tptr+20),
+                       EXTRACT_16BITS(obj_tptr + 38)));
+                obj_tlen-=40;
+                obj_tptr+=40;
+                break;
+            case RSVP_CTYPE_TUNNEL_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv4 Tunnel Sender Address: %s, LSP-ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 6)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                break;
+            case RSVP_CTYPE_12: /* IPv4 p2mp LSP tunnel */
+                if (obj_tlen < 16)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv4 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+6),
+                       ident,
+                       ipaddr_string(ndo, obj_tptr+8),
+                       EXTRACT_16BITS(obj_tptr + 12)));
+                obj_tlen-=16;
+                obj_tptr+=16;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_LABEL_REQ:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1:
+                while(obj_tlen >= 4 ) {
+                    ND_PRINT((ndo, "%s  L3 Protocol ID: %s",
+                           ident,
+                           tok2str(ethertype_values,
+                                   "Unknown Protocol (0x%04x)",
+                                   EXTRACT_16BITS(obj_tptr + 2))));
+                    obj_tlen-=4;
+                    obj_tptr+=4;
+                }
+                break;
+            case RSVP_CTYPE_2:
+                if (obj_tlen < 12)
+                    return-1;
+                ND_PRINT((ndo, "%s  L3 Protocol ID: %s",
+                       ident,
+                       tok2str(ethertype_values,
+                               "Unknown Protocol (0x%04x)",
+                               EXTRACT_16BITS(obj_tptr + 2))));
+                ND_PRINT((ndo, ",%s merge capability",((*(obj_tptr + 4)) & 0x80) ? "no" : "" ));
+                ND_PRINT((ndo, "%s  Minimum VPI/VCI: %u/%u",
+                       ident,
+                       (EXTRACT_16BITS(obj_tptr+4))&0xfff,
+                       (EXTRACT_16BITS(obj_tptr + 6)) & 0xfff));
+                ND_PRINT((ndo, "%s  Maximum VPI/VCI: %u/%u",
+                       ident,
+                       (EXTRACT_16BITS(obj_tptr+8))&0xfff,
+                       (EXTRACT_16BITS(obj_tptr + 10)) & 0xfff));
+                obj_tlen-=12;
+                obj_tptr+=12;
+                break;
+            case RSVP_CTYPE_3:
+                if (obj_tlen < 12)
+                    return-1;
+                ND_PRINT((ndo, "%s  L3 Protocol ID: %s",
+                       ident,
+                       tok2str(ethertype_values,
+                               "Unknown Protocol (0x%04x)",
+                               EXTRACT_16BITS(obj_tptr + 2))));
+                ND_PRINT((ndo, "%s  Minimum/Maximum DLCI: %u/%u, %s%s bit DLCI",
+                       ident,
+                       (EXTRACT_32BITS(obj_tptr+4))&0x7fffff,
+                       (EXTRACT_32BITS(obj_tptr+8))&0x7fffff,
+                       (((EXTRACT_16BITS(obj_tptr+4)>>7)&3) == 0 ) ? "10" : "",
+                       (((EXTRACT_16BITS(obj_tptr + 4) >> 7) & 3) == 2 ) ? "23" : ""));
+                obj_tlen-=12;
+                obj_tptr+=12;
+                break;
+            case RSVP_CTYPE_4:
+                if (obj_tlen < 4)
+                    return-1;
+                ND_PRINT((ndo, "%s  LSP Encoding Type: %s (%u)",
+                       ident,
+                       tok2str(gmpls_encoding_values,
+                               "Unknown",
+                               *obj_tptr),
+		       *obj_tptr));
+                ND_PRINT((ndo, "%s  Switching Type: %s (%u), Payload ID: %s (0x%04x)",
+                       ident,
+                       tok2str(gmpls_switch_cap_values,
+                               "Unknown",
+                               *(obj_tptr+1)),
+		       *(obj_tptr+1),
+                       tok2str(gmpls_payload_values,
+                               "Unknown",
+                               EXTRACT_16BITS(obj_tptr+2)),
+		       EXTRACT_16BITS(obj_tptr + 2)));
+                obj_tlen-=4;
+                obj_tptr+=4;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_RRO:
+        case RSVP_OBJ_ERO:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_IPV4:
+                while(obj_tlen >= 4 ) {
+		    u_char length;
+
+		    ND_TCHECK2(*obj_tptr, 4);
+		    length = *(obj_tptr + 1);
+                    ND_PRINT((ndo, "%s  Subobject Type: %s, length %u",
+                           ident,
+                           tok2str(rsvp_obj_xro_values,
+                                   "Unknown %u",
+                                   RSVP_OBJ_XRO_MASK_SUBOBJ(*obj_tptr)),
+                           length));
+Out of scope prediction :  %u",
+                               ident,
+                               ((EXTRACT_32BITS(obj_tptr+4))>>31),
+                               ((EXTRACT_32BITS(obj_tptr+4))&0xFF),
+                               EXTRACT_32BITS(obj_tptr+8),
+                               EXTRACT_32BITS(obj_tptr+12)));
+                        break;
+Out of scope prediction :  %u",
+                       ident,
+                       EXTRACT_32BITS(obj_tptr),
+                       ident,
+                       EXTRACT_32BITS(obj_tptr+4),
+                       EXTRACT_32BITS(obj_tptr + 8)));
+                obj_tlen-=12;
+                obj_tptr+=12;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_STYLE:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1:
+                if (obj_tlen < 4)
+                    return-1;
+                ND_PRINT((ndo, "%s  Reservation Style: %s, Flags: [0x%02x]",
+                       ident,
+                       tok2str(rsvp_resstyle_values,
+                               "Unknown",
+                               EXTRACT_24BITS(obj_tptr+1)),
+                       *(obj_tptr)));
+                obj_tlen-=4;
+                obj_tptr+=4;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_SENDER_TEMPLATE:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, Source Port: %u",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 6)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                break;
+            case RSVP_CTYPE_IPV6:
+                if (obj_tlen < 20)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, Source Port: %u",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 18)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                break;
+            case RSVP_CTYPE_13: /* IPv6 p2mp LSP tunnel */
+                if (obj_tlen < 40)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv6 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+18),
+                       ident,
+                       ip6addr_string(ndo, obj_tptr+20),
+                       EXTRACT_16BITS(obj_tptr + 38)));
+                obj_tlen-=40;
+                obj_tptr+=40;
+                break;
+            case RSVP_CTYPE_TUNNEL_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv4 Tunnel Sender Address: %s, LSP-ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 6)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                break;
+            case RSVP_CTYPE_12: /* IPv4 p2mp LSP tunnel */
+                if (obj_tlen < 16)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv4 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+6),
+                       ident,
+                       ipaddr_string(ndo, obj_tptr+8),
+                       EXTRACT_16BITS(obj_tptr + 12)));
+                obj_tlen-=16;
+                obj_tptr+=16;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_LABEL_REQ:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1:
+                while(obj_tlen >= 4 ) {
+                    ND_PRINT((ndo, "%s  L3 Protocol ID: %s",
+                           ident,
+                           tok2str(ethertype_values,
+                                   "Unknown Protocol (0x%04x)",
+                                   EXTRACT_16BITS(obj_tptr + 2))));
+                    obj_tlen-=4;
+                    obj_tptr+=4;
+                }
+                break;
+            case RSVP_CTYPE_2:
+                if (obj_tlen < 12)
+                    return-1;
+                ND_PRINT((ndo, "%s  L3 Protocol ID: %s",
+                       ident,
+                       tok2str(ethertype_values,
+                               "Unknown Protocol (0x%04x)",
+                               EXTRACT_16BITS(obj_tptr + 2))));
+                ND_PRINT((ndo, ",%s merge capability",((*(obj_tptr + 4)) & 0x80) ? "no" : "" ));
+                ND_PRINT((ndo, "%s  Minimum VPI/VCI: %u/%u",
+                       ident,
+                       (EXTRACT_16BITS(obj_tptr+4))&0xfff,
+                       (EXTRACT_16BITS(obj_tptr + 6)) & 0xfff));
+                ND_PRINT((ndo, "%s  Maximum VPI/VCI: %u/%u",
+                       ident,
+                       (EXTRACT_16BITS(obj_tptr+8))&0xfff,
+                       (EXTRACT_16BITS(obj_tptr + 10)) & 0xfff));
+                obj_tlen-=12;
+                obj_tptr+=12;
+                break;
+            case RSVP_CTYPE_3:
+                if (obj_tlen < 12)
+                    return-1;
+                ND_PRINT((ndo, "%s  L3 Protocol ID: %s",
+                       ident,
+                       tok2str(ethertype_values,
+                               "Unknown Protocol (0x%04x)",
+                               EXTRACT_16BITS(obj_tptr + 2))));
+                ND_PRINT((ndo, "%s  Minimum/Maximum DLCI: %u/%u, %s%s bit DLCI",
+                       ident,
+                       (EXTRACT_32BITS(obj_tptr+4))&0x7fffff,
+                       (EXTRACT_32BITS(obj_tptr+8))&0x7fffff,
+                       (((EXTRACT_16BITS(obj_tptr+4)>>7)&3) == 0 ) ? "10" : "",
+                       (((EXTRACT_16BITS(obj_tptr + 4) >> 7) & 3) == 2 ) ? "23" : ""));
+                obj_tlen-=12;
+                obj_tptr+=12;
+                break;
+            case RSVP_CTYPE_4:
+                if (obj_tlen < 4)
+                    return-1;
+                ND_PRINT((ndo, "%s  LSP Encoding Type: %s (%u)",
+                       ident,
+                       tok2str(gmpls_encoding_values,
+                               "Unknown",
+                               *obj_tptr),
+		       *obj_tptr));
+                ND_PRINT((ndo, "%s  Switching Type: %s (%u), Payload ID: %s (0x%04x)",
+                       ident,
+                       tok2str(gmpls_switch_cap_values,
+                               "Unknown",
+                               *(obj_tptr+1)),
+		       *(obj_tptr+1),
+                       tok2str(gmpls_payload_values,
+                               "Unknown",
+                               EXTRACT_16BITS(obj_tptr+2)),
+		       EXTRACT_16BITS(obj_tptr + 2)));
+                obj_tlen-=4;
+                obj_tptr+=4;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_RRO:
+        case RSVP_OBJ_ERO:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_IPV4:
+                while(obj_tlen >= 4 ) {
+		    u_char length;
+
+		    ND_TCHECK2(*obj_tptr, 4);
+		    length = *(obj_tptr + 1);
+                    ND_PRINT((ndo, "%s  Subobject Type: %s, length %u",
+                           ident,
+                           tok2str(rsvp_obj_xro_values,
+                                   "Unknown %u",
+                                   RSVP_OBJ_XRO_MASK_SUBOBJ(*obj_tptr)),
+                           length));
+
+                    if (length == 0) { /* prevent infinite loops */
+                        ND_PRINT((ndo, "%s  ERROR: zero length ERO subtype", ident));
+                        break;
+                    }
+
+                    switch(RSVP_OBJ_XRO_MASK_SUBOBJ(*
+Out of scope prediction :  ",
+               avcodec_get_name(st->codecpar->codec_id));
+        for (k = 0; k < 16; k++) {
+            av_log(mxf->fc, AV_LOG_VERBOSE, "%.2x",
+                   descriptor->essence_codec_ul[k]);
+            if (!(k+1 & 19) || k == 5)
+                av_log(mxf->fc, AV_LOG_VERBOSE, ".");
+        }
+        av_log(mxf->fc, AV_LOG_VERBOSE, "\n");
+
+        mxf_add_umid_metadata(&st->metadata, "file_package_umid", source_package);
+        if (source_package->name && source_package->name[0])
+            av_dict_set(&st->metadata, "file_package_name", source_package->name, 0);
+        if (material_track->name && material_track->name[0])
+            av_dict_set(&st->metadata, "track_name", material_track->name, 0);
+
+        mxf_parse_physical_source_package(mxf, source_track, st);
+
+        if (st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+            source_track->intra_only = mxf_is_intra_only(descriptor);
+            container_ul = mxf_get_codec_ul(mxf_picture_essence_container_uls, essence_container_ul);
+            if (st->codecpar->codec_id == AV_CODEC_ID_NONE)
+                st->codecpar->codec_id = container_ul->id;
+            st->codecpar->width = descriptor->width;
+            st->codecpar->height = descriptor->height; /* Field height, not frame height */
+            switch (descriptor->frame_layout) {
+                case FullFrame:
+                    st->codecpar->field_order = AV_FIELD_PROGRESSIVE;
+                    break;
+                case OneField:
+                    /* Every other line is stored and needs to be duplicated. */
+                    av_log(mxf->fc, AV_LOG_INFO, "OneField frame layout isn't currently supported\n");
+                    break; /* The correct thing to do here is fall through, but by breaking we might be
+                              able to decode some streams at half the vertical resolution, rather than not al all.
+                              It's also for compatibility with the old behavior. */
+                case MixedFields:
+                    break;
+                case SegmentedFrame:
+                    st->codecpar->field_order = AV_FIELD_PROGRESSIVE;
+                case SeparateFields:
+                    av_log(mxf->fc, AV_LOG_DEBUG, "video_line_map: (%d, %d), field_dominance: %d\n",
+                           descriptor->video_line_map[0], descriptor->video_line_map[1],
+                           descriptor->field_dominance);
+                    if ((descriptor->video_line_map[0] > 0) && (descriptor->video_line_map[1] > 0)) {
+                        /* Detect coded field order from VideoLineMap:
+                         *  (even, even) => bottom field coded first
+                         *  (even, odd)  => top field coded first
+                         *  (odd, even)  => top field coded first
+                         *  (odd, odd)   => bottom field coded first
+                         */
+                        if ((descriptor->video_line_map[0] + descriptor->video_line_map[1]) % 2) {
+                            switch (descriptor->field_dominance) {
+                                case MXF_FIELD_DOMINANCE_DEFAULT:
+                                case MXF_FIELD_DOMINANCE_FF:
+                                    st->codecpar->field_order = AV_FIELD_TT;
+                                    break;
+                                case MXF_FIELD_DOMINANCE_FL:
+                                    st->codecpar->field_order = AV_FIELD_TB;
+                                    break;
+                                default:
+                                    avpriv_request_sample(mxf->fc,
+                                                          "Field dominance %d support",
+                                                          descriptor->field_dominance);
+                            }
+                        } else {
+                            switch (descriptor->field_dominance) {
+                                case MXF_FIELD_DOMINANCE_DEFAULT:
+                                case MXF_FIELD_DOMINANCE_FF:
+                                    st->codecpar->field_order = AV_FIELD_BB;
+                                    break;
+                                case MXF_FIELD_DOMINANCE_FL:
+                                    st->codecpar->field_order = AV_FIELD_BT;
+                                    break;
+                                default:
+                                    avpriv_request_sample(mxf->fc,
+                                                          "Field dominance %d support",
+                                                          descriptor->field_dominance);
+                            }
+                        }
+                    }
+                    /* Turn field height into frame height. */
+                    st->codecpar->height *= 2;
+                    break;
+                default:
+                    av_log(mxf->fc, AV_LOG_INFO, "Unknown frame layout type: %d\n", descriptor->frame_layout);
+            }
+            if (st->codecpar->codec_id == AV_CODEC_ID_RAWVIDEO) {
+                st->codecpar->format = descriptor->pix_fmt;
+                if (st->codecpar->format == AV_PIX_FMT_NONE) {
+                    pix_fmt_ul = mxf_get_codec_ul(ff_mxf_pixel_format_uls,
+                                                  &descriptor->essence_codec_ul);
+                    st->codecpar->format = (enum AVPixelFormat)pix_fmt_ul->id;
+                    if (st->codecpar->format== AV_PIX_FMT_NONE) {
+                        st->codecpar->codec_tag = mxf_get_codec_ul(ff_mxf_codec_tag_uls,
+                                                                   &descriptor->essence_codec_ul)->id;
+                        if (!st->codecpar->codec_tag) {
+                            /* support files created before RP224v10 by defaulting to UYVY422
+                               if subsampling is 4:2:2 and component depth is 8-bit */
+                            if (descriptor->horiz_subsampling == 2 &&
+                                descriptor->vert_subsampling == 1 &&
+                                descriptor->component_depth == 8) {
+                                st->codecpar->format = AV_PIX_FMT_UYVY422;
+                            }
+                        }
+                    }
+                }
+            }
+            st->need_parsing = AVSTREAM_PARSE_HEADERS;
+            if (material_track->sequence->origin) {
+                av_dict_set_int(&st->metadata, "material_track_origin", material_track->sequence->origin, 0);
+            }
+            if (source_track->sequence->origin) {
+                av_dict_set_int(&st->metadata, "source_track_origin", source_track->sequence->origin, 0);
+            }
+            if (descriptor->color_space) {
+Out of scope prediction :  ",
+               avcodec_get_name(st->codecpar->codec_id));
+        for (k = 0; k < 16; k++) {
+            av_log(mxf->fc, AV_LOG_VERBOSE, "%.2x",
+                   descriptor->essence_codec_ul[k]);
+            if (!(k+1 & 19) || k == 5)
+                av_log(mxf->fc, AV_LOG_VERBOSE, ".");
+        }
+        av_log(mxf->fc, AV_LOG_VERBOSE, "\n");
+
+        mxf_add_umid_metadata(&st->metadata, "file_package_umid", source_package);
+        if (source_package->name && source_package->name[0])
+            av_dict_set(&st->metadata, "file_package_name", source_package->name, 0);
+        if (material_track->name && material_track->name[0])
+            av_dict_set(&st->metadata, "track_name", material_track->name, 0);
+
+        mxf_parse_physical_source_package(mxf, source_track, st);
+
+        if (st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+            source_track->intra_only = mxf_is_intra_only(descriptor);
+            container_ul = mxf_get_codec_ul(mxf_picture_essence_container_uls, essence_container_ul);
+            if (st->codecpar->codec_id == AV_CODEC_ID_NONE)
+                st->codecpar->codec_id = container_ul->id;
+            st->codecpar->width = descriptor->width;
+            st->codecpar->height = descriptor->height; /* Field height, not frame height */
+            switch (descriptor->frame_layout) {
+                case FullFrame:
+                    st->codecpar->field_order = AV_FIELD_PROGRESSIVE;
+                    break;
+                case OneField:
+                    /* Every other line is stored and needs to be duplicated. */
+                    av_log(mxf->fc, AV_LOG_INFO, "OneField frame layout isn't currently supported\n");
+                    break; /* The correct thing to do here is fall through, but by breaking we might be
+                              able to decode some streams at half the vertical resolution, rather than not al all.
+                              It's also for compatibility with the old behavior. */
+                case MixedFields:
+                    break;
+                case SegmentedFrame:
+                    st->codecpar->field_order = AV_FIELD_PROGRESSIVE;
+                case SeparateFields:
+                    av_log(mxf->fc, AV_LOG_DEBUG, "video_line_map: (%d, %d), field_dominance: %d\n",
+                           descriptor->video_line_map[0], descriptor->video_line_map[1],
+                           descriptor->field_dominance);
+                    if ((descriptor->video_line_map[0] > 0) && (descriptor->video_line_map[1] > 0)) {
+                        /* Detect coded field order from VideoLineMap:
+                         *  (even, even) => bottom field coded first
+                         *  (even, odd)  => top field coded first
+                         *  (odd, even)  => top field coded first
+                         *  (odd, odd)   => bottom field coded first
+                         */
+                        if ((descriptor->video_line_map[0] + descriptor->video_line_map[1]) % 2) {
+                            switch (descriptor->field_dominance) {
+                                case MXF_FIELD_DOMINANCE_DEFAULT:
+                                case MXF_FIELD_DOMINANCE_FF:
+                                    st->codecpar->field_order = AV_FIELD_TT;
+                                    break;
+                                case MXF_FIELD_DOMINANCE_FL:
+                                    st->codecpar->field_order = AV_FIELD_TB;
+                                    break;
+                                default:
+                                    avpriv_request_sample(mxf->fc,
+                                                          "Field dominance %d support",
+                                                          descriptor->field_dominance);
+                            }
+                        } else {
+                            switch (descriptor->field_dominance) {
+                                case MXF_FIELD_DOMINANCE_DEFAULT:
+                                case MXF_FIELD_DOMINANCE_FF:
+                                    st->codecpar->field_order = AV_FIELD_BB;
+                                    break;
+                                case MXF_FIELD_DOMINANCE_FL:
+                                    st->codecpar->field_order = AV_FIELD_BT;
+                                    break;
+                                default:
+                                    avpriv_request_sample(mxf->fc,
+                                                          "Field dominance %d support",
+                                                          descriptor->field_dominance);
+                            }
+                        }
+                    }
+                    /* Turn field height into frame height. */
+                    st->codecpar->height *= 2;
+                    break;
+                default:
+                    av_log(mxf->fc, AV_LOG_INFO, "Unknown frame layout type: %d\n", descriptor->frame_layout);
+            }
+            if (st->codecpar->codec_id == AV_CODEC_ID_RAWVIDEO) {
+                st->codecpar->format = descriptor->pix_fmt;
+                if (st->codecpar->format == AV_PIX_FMT_NONE) {
+                    pix_fmt_ul = mxf_get_codec_ul(ff_mxf_pixel_format_uls,
+                                                  &descriptor->essence_codec_ul);
+                    st->codecpar->format = (enum AVPixelFormat)pix_fmt_ul->id;
+                    if (st->codecpar->format== AV_PIX_FMT_NONE) {
+                        st->codecpar->codec_tag = mxf_get_codec_ul(ff_mxf_codec_tag_uls,
+                                                                   &descriptor->essence_codec_ul)->id;
+                        if (!st->codecpar->codec_tag) {
+                            /* support files created before RP224v10 by defaulting to UYVY422
+                               if subsampling is 4:2:2 and component depth is 8-bit */
+                            if (descriptor->horiz_subsampling == 2 &&
+                                descriptor->vert_subsampling == 1 &&
+                                descriptor->component_depth == 8) {
+                                st->codecpar->format = AV_PIX_FMT_UYVY422;
+                            }
+                        }
+                    }
+                }
+            }
+            st->need_parsing = AVSTREAM_PARSE_HEADERS;
+            if (material_track->sequence->origin) {
+                av_dict_set_int(&st->metadata, "material_track_origin", material_track->sequence->origin, 0);
+            }
+            if (source_track->sequence->origin) {
+                av_dict_set_int(&st->metadata, "source_track_origin", source_track->sequence->origin, 0);
+            }
+            if (descriptor->color_space) {
+
+
+*** Evaluate model ****
+
+y_true: 870, y_pred: 870, pair_ids: 870
+Overall Accuracy: 0.4885
+Pairwise Accuracy: 0.0828
+Pairs where both were correct: 36
+Total complete pairs evaluated: 435
+
+Classification Report:
+              precision    recall  f1-score   support
+
+        Safe       0.49      0.63      0.55       435
+  Vulnerable       0.49      0.35      0.41       435
+
+   micro avg       0.49      0.49      0.49       870
+   macro avg       0.49      0.49      0.48       870
+weighted avg       0.49      0.49      0.48       870
+
+
+Confusion Matrix:
+[[274 158]
+ [282 151]]
+JOB FINISHED

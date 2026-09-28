@@ -1,0 +1,464 @@
+JOB ID 120782
+qwen3.5-9b   Qwen/Qwen3.5-9B
+--- Running with Model: qwen3.5-9b Qwen/Qwen3.5-9B | Dataset: primevul_paired ---
+
+
+*** Load model and tokenizer ***
+
+
+*** Load and preprocess dataset ***
+
+
+ Label distribution in Train set : 
+ label_text
+Vulnerable    3789
+Safe          3789
+Name: count, dtype: int64
+
+ Label distribution in Eval set : 
+ label_text
+Vulnerable    480
+Safe          480
+Name: count, dtype: int64
+
+ Label distribution in Test set : 
+ label_text
+Vulnerable    435
+Safe          435
+Name: count, dtype: int64
+
+*** Load embedding model and tokenizer ***
+
+
+*** Load index ***
+
+FAISS index and metadata loaded successfully.
+
+
+*** Generate prompts and Predict ***
+
+Out of scope prediction :  **V
+Out of scope prediction :  %u",
+                       ident,
+                       EXTRACT_32BITS(obj_tptr),
+                       ident,
+                       EXTRACT_32BITS(obj_tptr+4),
+                       EXTRACT_32BITS(obj_tptr + 8)));
+                obj_tlen-=12;
+                obj_tptr+=12;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_STYLE:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1:
+                if (obj_tlen < 4)
+                    return-1;
+                ND_PRINT((ndo, "%s  Reservation Style: %s, Flags: [0x%02x]",
+                       ident,
+                       tok2str(rsvp_resstyle_values,
+                               "Unknown",
+                               EXTRACT_24BITS(obj_tptr+1)),
+                       *(obj_tptr)));
+                obj_tlen-=4;
+                obj_tptr+=4;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_SENDER_TEMPLATE:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, Source Port: %u",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 6)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                break;
+            case RSVP_CTYPE_IPV6:
+                if (obj_tlen < 20)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Address: %s, Source Port: %u",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 18)));
+                obj_tlen-=20;
+                obj_tptr+=20;
+                break;
+            case RSVP_CTYPE_13: /* IPv6 p2mp LSP tunnel */
+                if (obj_tlen < 40)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv6 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ip6addr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+18),
+                       ident,
+                       ip6addr_string(ndo, obj_tptr+20),
+                       EXTRACT_16BITS(obj_tptr + 38)));
+                obj_tlen-=40;
+                obj_tptr+=40;
+                break;
+            case RSVP_CTYPE_TUNNEL_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv4 Tunnel Sender Address: %s, LSP-ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr + 6)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                break;
+            case RSVP_CTYPE_12: /* IPv4 p2mp LSP tunnel */
+                if (obj_tlen < 16)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv4 Tunnel Sender Address: %s, LSP ID: 0x%04x"
+                       "%s  Sub-Group Originator ID: %s, Sub-Group ID: 0x%04x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       EXTRACT_16BITS(obj_tptr+6),
+                       ident,
+                       ipaddr_string(ndo, obj_tptr+8),
+                       EXTRACT_16BITS(obj_tptr + 12)));
+                obj_tlen-=16;
+                obj_tptr+=16;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_LABEL_REQ:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1:
+                while(obj_tlen >= 4 ) {
+                    ND_PRINT((ndo, "%s  L3 Protocol ID: %s",
+                           ident,
+                           tok2str(ethertype_values,
+                                   "Unknown Protocol (0x%04x)",
+                                   EXTRACT_16BITS(obj_tptr + 2))));
+                    obj_tlen-=4;
+                    obj_tptr+=4;
+                }
+                break;
+            case RSVP_CTYPE_2:
+                if (obj_tlen < 12)
+                    return-1;
+                ND_PRINT((ndo, "%s  L3 Protocol ID: %s",
+                       ident,
+                       tok2str(ethertype_values,
+                               "Unknown Protocol (0x%04x)",
+                               EXTRACT_16BITS(obj_tptr + 2))));
+                ND_PRINT((ndo, ",%s merge capability",((*(obj_tptr + 4)) & 0x80) ? "no" : "" ));
+                ND_PRINT((ndo, "%s  Minimum VPI/VCI: %u/%u",
+                       ident,
+                       (EXTRACT_16BITS(obj_tptr+4))&0xfff,
+                       (EXTRACT_16BITS(obj_tptr + 6)) & 0xfff));
+                ND_PRINT((ndo, "%s  Maximum VPI/VCI: %u/%u",
+                       ident,
+                       (EXTRACT_16BITS(obj_tptr+8))&0xfff,
+                       (EXTRACT_16BITS(obj_tptr + 10)) & 0xfff));
+                obj_tlen-=12;
+                obj_tptr+=12;
+                break;
+            case RSVP_CTYPE_3:
+                if (obj_tlen < 12)
+                    return-1;
+                ND_PRINT((ndo, "%s  L3 Protocol ID: %s",
+                       ident,
+                       tok2str(ethertype_values,
+                               "Unknown Protocol (0x%04x)",
+                               EXTRACT_16BITS(obj_tptr + 2))));
+                ND_PRINT((ndo, "%s  Minimum/Maximum DLCI: %u/%u, %s%s bit DLCI",
+                       ident,
+                       (EXTRACT_32BITS(obj_tptr+4))&0x7fffff,
+                       (EXTRACT_32BITS(obj_tptr+8))&0x7fffff,
+                       (((EXTRACT_16BITS(obj_tptr+4)>>7)&3) == 0 ) ? "10" : "",
+                       (((EXTRACT_16BITS(obj_tptr + 4) >> 7) & 3) == 2 ) ? "23" : ""));
+                obj_tlen-=12;
+                obj_tptr+=12;
+                break;
+            case RSVP_CTYPE_4:
+                if (obj_tlen < 4)
+                    return-1;
+                ND_PRINT((ndo, "%s  LSP Encoding Type: %s (%u)",
+                       ident,
+                       tok2str(gmpls_encoding_values,
+                               "Unknown",
+                               *obj_tptr),
+		       *obj_tptr));
+                ND_PRINT((ndo, "%s  Switching Type: %s (%u), Payload ID: %s (0x%04x)",
+                       ident,
+                       tok2str(gmpls_switch_cap_values,
+                               "Unknown",
+                               *(obj_tptr+1)),
+		       *(obj_tptr+1),
+                       tok2str(gmpls_payload_values,
+                               "Unknown",
+                               EXTRACT_16BITS(obj_tptr+2)),
+		       EXTRACT_16BITS(obj_tptr + 2)));
+                obj_tlen-=4;
+                obj_tptr+=4;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_RRO:
+        case RSVP_OBJ_ERO:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_IPV4:
+                while(obj_tlen >= 4 ) {
+		    u_char length;
+
+		    ND_TCHECK2(*obj_tptr, 4);
+		    length = *(obj_tptr + 1);
+                    ND_PRINT((ndo, "%s  Subobject Type: %s, length %u",
+                           ident,
+                           tok2str(rsvp_obj_xro_values,
+                                   "Unknown %u",
+                                   RSVP_OBJ_XRO_MASK_SUBOBJ(*obj_tptr)),
+                           length));
+
+                    if (length == 0) { /* prevent infinite loops */
+                        ND_PRINT((ndo, "%s  ERROR: zero length ERO subtype", ident));
+                        break;
+                    }
+
+                    switch(RSVP_OBJ_XRO_MASK_SUBOBJ(*obj_tptr)) {
+		    u_char prefix_length;
+
+                    case RSVP_OBJ_XRO_IPV4:
+			if (length != 8) {
+				ND_PRINT((ndo, " ERROR: length != 8"));
+				goto invalid;
+			}
+			ND_TCHECK2(*obj_tptr, 8);
+			prefix_length = *(obj_tptr+6);
+			if (prefix_length != 32) {
+				ND_PRINT((ndo, " ERROR: Prefix length %u != 32",
+					  prefix_length));
+				goto invalid;
+			}
+                        ND_PRINT((ndo, ", %s, %s/%u, Flags: [%s]",
+                               RSVP_OBJ_XRO_MASK_LOOSE(*obj_tptr) ? "Loose" : "Strict",
+                               ipaddr_string(ndo, obj_tptr+2),
+                               *(obj_tptr+6),
+                               bittok2str(rsvp_obj_rro_flag_values,
+                                   "none",
+                                   *(obj_tptr + 7)))); /* rfc3209 says that this field is rsvd. */
+                    break;
+                    case RSVP_OBJ_XRO_LABEL:
+			if (length != 8) {
+				ND_PRINT((ndo, " ERROR: length != 8"));
+				goto invalid;
+			}
+			ND_TCHECK2(*obj_tptr, 8);
+                        ND_PRINT((ndo, ", Flags: [%s] (%#x), Class-Type: %s (%u), %u",
+                               bittok2str(rsvp_obj_rro_label_flag_values,
+                                   "none",
+                                   *(obj_tptr+2)),
+                               *(obj_tptr+2),
+                               tok2str(rsvp_ctype_values,
+                                       "Unknown",
+                                       *(obj_tptr+3) + 256*RSVP_OBJ_RRO),
+                               *(obj_tptr+3),
+                               EXTRACT_32BITS(obj_tptr + 4)));
+                    }
+                    obj_tlen-=*(obj_tptr+1);
+                    obj_tptr+=*(obj_tptr+1);
+                }
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_HELLO:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1:
+            case RSVP_CTYPE_2:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  Source Instance: 0x%08x, Destination Instance: 0x%08x",
+                       ident,
+                       EXTRACT_32BITS(obj_tptr),
+                       EXTRACT_32BITS(obj_tptr + 4)));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_RESTART_CAPABILITY:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_1:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  Restart Interval: %u, Flags: [%s]",
+                       ident,
+                       EXTRACT_32BITS(obj_tptr),
+                       bittok2str(rsvp_obj_restart_cap_values,
+                               "none",
+                               *(obj_tptr + 4))));
+                obj_tlen-=8;
+                obj_tptr+=8;
+                does not check for overflow
+                break;
+            default:
+                hexdump=
+                break;
+            }
+            break;
+
+        case RSVP_OBJ_FRR:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_IPV4:
+                if (obj_tlen < 8)
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv4 DestAddress: %s, Protocol ID: 0x%02x",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr),
+                       *(obj_tptr + sizeof(struct in_addr))));
+                ND_PRINT((ndo, "%s  Flags: [0x%02x], DestPort %u",
+                       ident,
+                       *(obj_tptr+5),
+                       EXTRACT_16BITS(obj_tptr + 6)));
+                obj_tlen-=8;
+                obj handles overflow
+                break;
+            case RSVP_CTYPE_IPV6:
+                if (rr
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_NOTIFY_REQ:
+            switch(rsvp_obj_ctype) {
+            case RSVP_CTYPE_IPV4:
+                if (obj_tlen < sizeof(struct in_addr))
+                    return-1;
+                ND_PRINT((ndo, "%s  IPv4 Notify Node Address: %s",
+                       ident,
+                       ipaddr_string(ndo, obj_tptr)));
+                obj_tlen-=sizeof(struct in_addr);
+                obj_tptr+=sizeof(struct in_addr);
+                break;
+            case RSVP_CTYPE_IPV6:
+                if (obj_tlen < sizeof(struct in6_addr))
+                    XML
+                break;
+            default:
+                hexdump=TRUE;
+            }
+            break;
+
+        case RSVP_OBJ_SUGGESTED_LABEL: /* fall through */
+        case RSVP_OBJ_UPSTREAM_LABEL:  /* fall through */
+        case RSVP_OBJ_RECOVERY_LABEL
+Out of scope prediction :  Vulner
+Out of scope prediction :  
+Out of scope prediction :  Capability Check
+Code: static int __init init_netns(struct net *net)
+{
+	struct netns_struct *ns;
+	int ret;
+
+	ns = kmem_cache_alloc(netns_cache, GFP_KERNEL);
+	if (!ns)
+		BUG();
+
+	ns->net = net;
+	ns->netns_list = NULL;
+	ns->netns_list = ns;
+	ns->netns_list->next = ns->netns_list;
+	ns->netns_init_net = net;
+	ns->netns_init_net = ns;
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cfunction_init_netns(ns);function_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup_init_net few
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cfunction_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup_init_netcapable(CAP_SYS_ADMIN);
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cfunction_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cfunction_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup_init_net contains
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup labels
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cfunction_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cfunction_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cgroup_init_netns(ns);
+	cfunction_init_netns(ns);
+	cgroup
+
+
+*** Evaluate model ****
+
+y_true: 870, y_pred: 870, pair_ids: 870
+Overall Accuracy: 0.5069
+Pairwise Accuracy: 0.1540
+Pairs where both were correct: 67
+Total complete pairs evaluated: 435
+
+Classification Report:
+              precision    recall  f1-score   support
+
+        Safe       0.51      0.41      0.46       435
+  Vulnerable       0.51      0.60      0.55       435
+
+   micro avg       0.51      0.51      0.51       870
+   macro avg       0.51      0.51      0.50       870
+weighted avg       0.51      0.51      0.50       870
+
+
+Confusion Matrix:
+[[179 253]
+ [171 262]]
+JOB FINISHED

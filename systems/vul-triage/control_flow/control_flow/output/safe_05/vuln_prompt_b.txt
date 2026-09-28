@@ -1,0 +1,26 @@
+文件: /Users/vinsontang/Desktop/test/graph_demo/control_flow/test_snippets/safe_05_sorting.c
+图构建模式: heuristic_c
+【AST】
+- 函数 global@L1：声明0个、赋值0个、分支0个、调用0个。
+- 函数 swap@L10：声明3个、赋值3个、分支0个、调用0个。
+- 函数 insertion_sort@L17：声明5个、赋值6个、分支2个、调用0个。
+  - 条件/循环：for (int i = 1; i < n; i++) {；while (j >= 0 && arr[j] > key) {
+- 函数 selection_sort@L30：声明2个、赋值5个、分支4个、调用1个。
+  - 调用链要点：swap。
+  - 条件/循环：for (int i = 0; i < n - 1; i++) {；for (int j = i + 1; j < n; j++) {；if (arr[j] < arr[min_idx]) {；if (min_idx != i) {
+- 函数 binary_search@L45：声明2个、赋值6个、分支3个、调用0个。
+  - 条件/循环：while (lo <= hi) {；if (arr[mid] == target) return mid;；if (arr[mid] < target) lo = mid + 1;
+- 函数 print_array@L56：声明0个、赋值1个、分支1个、调用2个。
+  - 调用链要点：printf。
+  - 条件/循环：for (int i = 0; i < n; i++) {
+- 函数 main@L63：声明2个、赋值6个、分支1个、调用9个。
+  - 调用链要点：binary_search -> insertion_sort -> printf -> selection_sort。
+  - 条件/循环：for (int i = 0; i < ARRAY_SIZE; i++) data2[i] = data1[i];
+
+【CFG】
+- 函数 global：保留控制点 15/71；分支节点 11；调用节点 0；线性段折叠 56。
+  - 分支/循环节点：for (int i = 1; i < n; i++) {@L18；while (j >= 0 && arr[j] > key) {@L21；for (int i = 0; i < n - 1; i++) {@L31；for (int j = i + 1; j < n; j++) {@L33；if (arr[j] < arr[min_idx]) {@L34；if (min_idx != i) {@L38；while (lo <= hi) {@L47；if (arr[mid] == target) return mid;@L49；if (arr[mid] < target) lo = mid + 1;@L50；for (int i = 0; i < n; i++) {@L57；for (int i = 0; i < ARRAY_SIZE; i++) data2[i] = data1[i];@L67
+  - 路径1: Entry -> /* -> * safe_05_sorting.c -> for (int i = 1; i < n; i++) { -> while (j >= 0 && arr[j] > key) { -> for (int i = 0; i < n - 1; i++) { -> for (int j = i + 1; j < n; j++) { -> if (arr[j] < arr[min_idx]) { -> ... -> if (arr[mid] < target) lo = mid + 1; -> return -1; -> for (int i = 0; i < n; i++) { -> for (int i = 0; i < ARRAY_SIZE; i++) data2[i] = data1[i]; -> return 0; -> } -> global EXIT
+
+【DFG】
+- 函数 global：边保留 21/28；参数源 0 个；抽取链路 0 条。
