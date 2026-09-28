@@ -23,8 +23,7 @@ This repository contains an adapted copy of the [replication package](https://gi
 	pip install -r req.txt --extra-index-url https://download.pytorch.org/whl/cu121
 	```
 3. Download the models/ and indexes/ folders from the original google drive link :  https://drive.google.com/drive/folders/1GtJNU1yXD0l4BdMSQ9YOtVgjhnac5tQM?usp=sharing as zip files, then unzip them into the main folder of the repository.
-4. Download the PrimeVul Paired test & train split jsonl, see `docs/DATASETS.md` in the main RAG4SVD repository. Load them into the `dataset/` folder.
-5. Go to  [meta-llama/Llama-3.1-8B · Hugging Face](https://huggingface.co/meta-llama/Llama-3.1-8B) , open section *You need to agree to share your contact information to access this model*, and follow the steps to get your huggingface token in order to access the models. Once you have your token, go to the terminal and write the following command : `huggingface-cli login` followed by your token.
+4. Go to  [meta-llama/Llama-3.1-8B · Hugging Face](https://huggingface.co/meta-llama/Llama-3.1-8B) , open section *You need to agree to share your contact information to access this model*, and follow the steps to get your huggingface token in order to access the models. Once you have your token, go to the terminal and write the following command : `huggingface-cli login` followed by your token.
 
 
 ## Repository Structure
