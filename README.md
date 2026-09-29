@@ -5,6 +5,10 @@
 **Retrieve, Reproduce, Reveal: Dissecting Retrieval-Augmented Software Vulnerability Detection**
 
 
+[**Sabrina Kaniewski**](https://www.hs-esslingen.de/personen/sabrina-kaniewski)<sup>1</sup> · **Tim Krämer**<sup>1</sup> · [**Julius Bächle**](https://www.hs-esslingen.de/personen/julius-baechle)<sup>1</sup> · [**Markus Enzweiler**](https://markus-enzweiler.de/)<sup>1</sup> · [**Michael Menth**](https://uni-tuebingen.de/fakultaeten/mathematisch-naturwissenschaftliche-fakultaet/fachbereiche/informatik/lehrstuehle/kommunikationsnetze/staff/michael-menth/)<sup>2</sup> · [**Tobias Heer**](https://www.hs-esslingen.de/personen/tobias-heer)<sup>1</sup>
+
+<sup>1</sup> **Esslingen University of Applied Sciences** · <sup>2</sup> **University of Tübingen**
+
 
 </div>
 
@@ -49,4 +53,14 @@ We reproduce and benchmark six open-source RAG-based software vulnerability dete
     ├── RAG4SVD_selection.md      # RAG4SVD study selection
     ├── DATASETS.md               # Dataset checkpoints
     └── MODELS.md                 # Model checkpoints
+```
+
+## 📝 Citation
+If you use **this work**, please cite! 📚 
+```bibtex
+@preprint{kaniewskiRAG4SVD2026,
+    title     = {{Retrieve, Reproduce, Reveal: Dissecting Retrieval-Augmented Software Vulnerability Detection}}, 
+    author    = {Kaniewski, Sabrina and Krämer, Tim and Bächle, Julius and Enzweiler, Markus and Menth, Michael and Heer, Tobias},
+    year      = {2026},
+}
 ```
