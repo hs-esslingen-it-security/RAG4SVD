@@ -8,7 +8,7 @@
       "CWE-252"
     ],
     "cve_description": "adts_decode_extradata in libavformat/adtsenc.c in FFmpeg 4.4 does not check the init_get_bits return value, which is a necessary step because the second argument to init_get_bits can be crafted.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -3,9 +3,11 @@\n     GetBitContext gb;\n     PutBitContext pb;\n     MPEG4AudioConfig m4ac;\n-    int off;\n+    int off, ret;\n \n-    init_get_bits(&gb, buf, size * 8);\n+    ret = init_get_bits8(&gb, buf, size);\n+    if (ret < 0)\n+        return ret;\n     off = avpriv_mpeg4audio_get_config2(&m4ac, buf, size, 1, s);\n     if (off < 0)\n         return off;",
     "original_vulnerable_label": 1,
     "project": "FFmpeg"
   }

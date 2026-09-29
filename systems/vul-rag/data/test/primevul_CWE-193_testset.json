@@ -8,7 +8,7 @@
       "CWE-193"
     ],
     "cve_description": "off-by-one in io_uring module.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -8,7 +8,7 @@\n \t    (cd->flags & IORING_ASYNC_CANCEL_FD_FIXED)) {\n \t\tunsigned long file_ptr;\n \n-\t\tif (unlikely(fd > ctx->nr_user_files))\n+\t\tif (unlikely(fd >= ctx->nr_user_files))\n \t\t\treturn -EBADF;\n \t\tfd = array_index_nospec(fd, ctx->nr_user_files);\n \t\tfile_ptr = io_fixed_file_slot(&ctx->file_table, fd)->file_ptr;",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -21,7 +21,7 @@
       "CWE-193"
     ],
     "cve_description": "Spice, versions 0.5.2 through 0.14.1, are vulnerable to an out-of-bounds read due to an off-by-one error in memslot_get_virt. This may lead to a denial of service, or, in the worst case, code-execution by unauthenticated attackers.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -7,13 +7,13 @@\n \n     MemSlot *slot;\n \n-    if (group_id > info->num_memslots_groups) {\n+    if (group_id >= info->num_memslots_groups) {\n         spice_critical(\"group_id too big\");\n         return NULL;\n     }\n \n     slot_id = memslot_get_id(info, addr);\n-    if (slot_id > info->num_memslots) {\n+    if (slot_id >= info->num_memslots) {\n         print_memslots(info);\n         spice_critical(\"slot_id %d too big, addr=%\" PRIx64, slot_id, addr);\n         return NULL;",
     "original_vulnerable_label": 1,
     "project": "spice"
   }

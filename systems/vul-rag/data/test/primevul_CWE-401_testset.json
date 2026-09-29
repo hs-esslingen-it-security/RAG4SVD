@@ -8,7 +8,7 @@
       "CWE-401"
     ],
     "cve_description": "Tensorflow is an Open Source Machine Learning Framework. If a graph node is invalid, TensorFlow can leak memory in the implementation of `ImmutableExecutorState::Initialize`. Here, we set `item->kernel` to `nullptr` but it is a simple `OpKernel*` pointer so the memory that was previously allocated to it would leak. The fix will be included in TensorFlow 2.8.0. We will also cherrypick this commit on TensorFlow 2.7.1, TensorFlow 2.6.3, and TensorFlow 2.5.3, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -48,6 +48,7 @@\n \n     Status s = params_.create_kernel(n->properties(), &item->kernel);\n     if (!s.ok()) {\n+      params_.delete_kernel(item->kernel);\n       item->kernel = nullptr;\n       s = AttachDef(s, *n);\n       return s;",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -21,7 +21,7 @@
       "CWE-401"
     ],
     "cve_description": "Tensorflow is an Open Source Machine Learning Framework. When decoding PNG images TensorFlow can produce a memory leak if the image is invalid. After calling `png::CommonInitDecode(..., &decode)`, the `decode` value contains allocated buffers which can only be freed by calling `png::CommonFreeDecode(&decode)`. However, several error case in the function implementation invoke the `OP_REQUIRES` macro which immediately terminates the execution of the function, without allowing for the memory free to occur. The fix will be included in TensorFlow 2.8.0. We will also cherrypick this commit on TensorFlow 2.7.1, TensorFlow 2.6.3, and TensorFlow 2.5.3, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -4,6 +4,16 @@\n     OP_REQUIRES(\n         context, png::CommonInitDecode(input, channels_, channel_bits, &decode),\n         errors::InvalidArgument(\"Invalid PNG. Failed to initialize decoder.\"));\n+\n+    // If we reach this point, then there is data in `decode` which must be\n+    // freed by the time we end execution in this function. We cannot call\n+    // `png::CommonFreeDecode()` before an `OP_REQUIRES` because if\n+    // `OP_REQUIRES` constraint is satisfied then the data would be freed\n+    // prematurely. Instead, let's use a `Cleanup` object.\n+    auto cleanup = gtl::MakeCleanup([&decode]() {\n+      std::cerr << \"Cleanup called...\\n\";\n+      png::CommonFreeDecode(&decode);\n+    });\n \n     // Verify that width and height are not too large:\n     // - verify width and height don't overflow int.",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -34,7 +34,7 @@
       "CWE-401"
     ],
     "cve_description": "A memory leak in the rsi_send_beacon() function in drivers/net/wireless/rsi/rsi_91x_mgmt.c in the Linux kernel through 5.3.11 allows attackers to cause a denial of service (memory consumption) by triggering rsi_prepare_beacon() failures, aka CID-d563131ef23c.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -14,6 +14,7 @@\n \t\tskb_pull(skb, (64 - dword_align_bytes));\n \tif (rsi_prepare_beacon(common, skb)) {\n \t\trsi_dbg(ERR_ZONE, \"Failed to prepare beacon\\n\");\n+\t\tdev_kfree_skb(skb);\n \t\treturn -EINVAL;\n \t}\n \tskb_queue_tail(&common->tx_queue[MGMT_BEACON_Q], skb);",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -47,7 +47,7 @@
       "CWE-401"
     ],
     "cve_description": "A memory leak in the fastrpc_dma_buf_attach() function in drivers/misc/fastrpc.c in the Linux kernel before 5.3.9 allows attackers to cause a denial of service (memory consumption) by triggering dma_get_sgtable() failures, aka CID-fc739a058d99.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -13,6 +13,7 @@\n \t\t\t      FASTRPC_PHYS(buffer->phys), buffer->size);\n \tif (ret < 0) {\n \t\tdev_err(buffer->dev, \"failed to get scatterlist from DMA API\\n\");\n+\t\tkfree(a);\n \t\treturn -EINVAL;\n \t}\n ",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -60,7 +60,7 @@
       "CWE-401"
     ],
     "cve_description": "A memory leak was found in Open vSwitch (OVS) during userspace IP fragmentation processing. An attacker could use this flaw to potentially exhaust available memory by keeping sending packet fragments.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -16,6 +16,8 @@\n             ovs_mutex_lock(&ipf->ipf_lock);\n             if (!ipf_handle_frag(ipf, pkt, dl_type, zone, now, hash_basis)) {\n                 dp_packet_batch_refill(pb, pkt, pb_idx);\n+            } else {\n+                dp_packet_delete(pkt);\n             }\n             ovs_mutex_unlock(&ipf->ipf_lock);\n         } else {",
     "original_vulnerable_label": 1,
     "project": "ovs"
   },
@@ -73,7 +73,7 @@
       "CWE-401"
     ],
     "cve_description": "A memory leak in the cx23888_ir_probe() function in drivers/media/pci/cx23885/cx23888-ir.c in the Linux kernel through 5.3.11 allows attackers to cause a denial of service (memory consumption) by triggering kfifo_alloc() failures, aka CID-a7b2df76b42b.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -10,8 +10,11 @@\n \t\treturn -ENOMEM;\n \n \tspin_lock_init(&state->rx_kfifo_lock);\n-\tif (kfifo_alloc(&state->rx_kfifo, CX23888_IR_RX_KFIFO_SIZE, GFP_KERNEL))\n+\tif (kfifo_alloc(&state->rx_kfifo, CX23888_IR_RX_KFIFO_SIZE,\n+\t\t\tGFP_KERNEL)) {\n+\t\tkfree(state);\n \t\treturn -ENOMEM;\n+\t}\n \n \tstate->dev = dev;\n \tsd = &state->sd;",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -86,7 +86,7 @@
       "CWE-401"
     ],
     "cve_description": "ImageMagick before 7.0.8-50 has a memory leak vulnerability in the function ReadBMPImage in coders/bmp.c.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -959,8 +959,8 @@\n         AcquireNextImage(image_info,image);\n         if (GetNextImageInList(image) == (Image *) NULL)\n           {\n-            image=DestroyImageList(image);\n-            return((Image *) NULL);\n+            status=MagickFalse;\n+            break;\n           }\n         image=SyncNextImageInList(image);\n         status=SetImageProgress(image,LoadImagesTag,TellBlob(image),\n@@ -970,5 +970,7 @@\n       }\n   } while (IsBMP(magick,2) != MagickFalse);\n   (void) CloseBlob(image);\n+  if (status == MagickFalse)\n+    return(DestroyImageList(image));\n   return(GetFirstImageInList(image));\n }",
     "original_vulnerable_label": 1,
     "project": "ImageMagick6"
   },
@@ -99,7 +99,7 @@
       "CWE-401"
     ],
     "cve_description": "A memory leak in the mlx5_fpga_conn_create_cq() function in drivers/net/ethernet/mellanox/mlx5/core/fpga/conn.c in the Linux kernel before 5.3.11 allows attackers to cause a denial of service (memory consumption) by triggering mlx5_vector2eqn() failures, aka CID-c8c2a057fdc7.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -37,8 +37,10 @@\n \t}\n \n \terr = mlx5_vector2eqn(mdev, smp_processor_id(), &eqn, &irqn);\n-\tif (err)\n+\tif (err) {\n+\t\tkvfree(in);\n \t\tgoto err_cqwq;\n+\t}\n \n \tcqc = MLX5_ADDR_OF(create_cq_in, in, cq_context);\n \tMLX5_SET(cqc, cqc, log_cq_size, ilog2(cq_size));",
     "original_vulnerable_label": 1,
     "project": "linux"
   }

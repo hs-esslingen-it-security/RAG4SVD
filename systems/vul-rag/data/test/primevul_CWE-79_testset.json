@@ -8,7 +8,7 @@
       "CWE-79"
     ],
     "cve_description": "A flaw was found in the Ceph Object Gateway, where it supports request sent by an anonymous user in Amazon S3. This flaw could lead to potential XSS attacks due to the lack of proper neutralization of untrusted input.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -112,6 +112,19 @@\n \tif (s->auth.identity->is_anonymous()) {\n \t  return -ERR_INVALID_REQUEST;\n \t}\n+        /* HTTP specification says no control characters should be present in\n+         * header values: https://tools.ietf.org/html/rfc7230#section-3.2\n+         *      field-vchar    = VCHAR / obs-text\n+         *\n+         * Failure to validate this permits a CRLF injection in HTTP headers,\n+         * whereas S3 GetObject only permits specific headers.\n+         */\n+        if(str_has_cntrl(val)) {\n+          /* TODO: return a more distinct error in future;\n+           * stating what the problem is */\n+          return -ERR_INVALID_REQUEST;\n+        }\n+\n \tif (strcmp(p->param, \"response-content-type\") != 0) {\n \t  response_attrs[p->http_attr] = val;\n \t} else {",
     "original_vulnerable_label": 1,
     "project": "ceph"
   },
@@ -21,7 +21,7 @@
       "CWE-79"
     ],
     "cve_description": "Persistent cross-site scripting (XSS) in http/cervlet.c in Tildeslash Monit before 5.25.3 allows a remote unauthenticated attacker to introduce arbitrary JavaScript via manipulation of an unsanitized user field of the Authorization header for HTTP Basic Authentication, which is mishandled during an _viewlog operation.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -12,7 +12,7 @@\n                         StringBuffer_append(res->outputbuffer, \"<br><p><form><textarea cols=120 rows=30 readonly>\");\n                         while ((n = fread(buf, sizeof(char), sizeof(buf) - 1, f)) > 0) {\n                                 buf[n] = 0;\n-                                StringBuffer_append(res->outputbuffer, \"%s\", buf);\n+                                escapeHTML(res->outputbuffer, buf);\n                         }\n                         fclose(f);\n                         StringBuffer_append(res->outputbuffer, \"</textarea></form>\");",
     "original_vulnerable_label": 1,
     "project": "monit"
   }

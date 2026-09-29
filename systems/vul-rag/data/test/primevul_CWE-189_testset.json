@@ -8,7 +8,7 @@
       "CWE-189"
     ],
     "cve_description": "Integer overflow in the ljpeg_start function in dcraw 7.00 and earlier allows remote attackers to cause a denial of service (crash) via a crafted image, which triggers a buffer overflow, related to the len variable.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,6 +1,7 @@\n int CLASS ljpeg_start (struct jhead *jh, int info_only)\n {\n-  int c, tag, len;\n+  int c, tag;\n+  ushort len;\n   uchar data[0x10000];\n   const uchar *dp;\n ",
     "original_vulnerable_label": 1,
     "project": "LibRaw"
   },
@@ -21,7 +21,7 @@
       "CWE-189"
     ],
     "cve_description": "Multiple integer overflows in the read_bitmap_file_data function in io-xbm.c in gdk-pixbuf before 2.26.1 allow remote attackers to cause a denial of service (application crash) via a negative (1) height or (2) width in an XBM file, which triggers a heap-based buffer overflow.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -37,10 +37,16 @@\n \t\t\t\ttype++;\n \t\t\t}\n \n-\t\t\tif (!strcmp (\"width\", type))\n+\t\t\tif (!strcmp (\"width\", type)) {\n+                                if (value <= 0)\n+                                        RETURN (FALSE);\n \t\t\t\tww = (unsigned int) value;\n-\t\t\tif (!strcmp (\"height\", type))\n+                        }\n+\t\t\tif (!strcmp (\"height\", type)) {\n+                                if (value <= 0)\n+                                        RETURN (FALSE);\n \t\t\t\thh = (unsigned int) value;\n+                        }\n \t\t\tif (!strcmp (\"hot\", type)) {\n \t\t\t\tif (type-- == name_and_type\n \t\t\t\t    || type-- == name_and_type)\n@@ -85,6 +91,8 @@\n \t\tbytes_per_line = (ww+7)/8 + padding;\n \n \t\tsize = bytes_per_line * hh;\n+                if (size / bytes_per_line != hh) /* overflow */\n+                        RETURN (FALSE);\n \t\tbits = g_malloc (size);\n \n \t\tif (version10p) {",
     "original_vulnerable_label": 1,
     "project": "gdk-pixbuf"
   },
@@ -34,7 +34,7 @@
       "CWE-189"
     ],
     "cve_description": "Integer underflow in the cli_scanpe function in pe.c in ClamAV before 0.97.8 allows remote attackers to cause a denial of service (crash) via a skewed offset larger than the size of the PE section in a UPX packed executable, which triggers an out-of-bounds read.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -4,7 +4,7 @@\n \n   if (!len) return NULL;\n   if (len>400) len=400;\n-  name = cli_malloc(len);\n+  name = cli_malloc(len+1);\n   if (!name) {\n     cli_dbgmsg(\"SIS: OOM\\n\");\n     return NULL;",
     "original_vulnerable_label": 1,
     "project": "clamav-devel"
   },
@@ -47,7 +47,7 @@
       "CWE-189"
     ],
     "cve_description": "Integer overflow in the sctp_setsockopt_auth_key function in net/sctp/socket.c in the Stream Control Transmission Protocol (sctp) implementation in the Linux kernel 2.6.24-rc1 through 2.6.26.3 allows remote attackers to cause a denial of service (panic) or possibly have unspecified other impact via a crafted sca_keylength field associated with the SCTP_AUTH_KEY option.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -21,7 +21,7 @@\n \t\tgoto out;\n \t}\n \n-\tif (authkey->sca_keylength > optlen) {\n+\tif (authkey->sca_keylength > optlen - sizeof(struct sctp_authkey)) {\n \t\tret = -EINVAL;\n \t\tgoto out;\n \t}",
     "original_vulnerable_label": 1,
     "project": "linux-2.6"
   },
@@ -60,7 +60,7 @@
       "CWE-189"
     ],
     "cve_description": "Integer underflow in the unlzw function in unlzw.c in gzip before 1.4 on 64-bit platforms, as used in ncompress and probably others, allows remote attackers to cause a denial of service (application crash) or possibly execute arbitrary code via a crafted archive that uses LZW compression, leading to an array index error.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -58,7 +58,8 @@\n \tint  o;\n \n     resetbuf:\n-\te = insize-(o = (posbits>>3));\n+\to = posbits >> 3;\n+\te = o <= insize ? insize - o : 0;\n \n \tfor (i = 0 ; i < e ; ++i) {\n \t    inbuf[i] = inbuf[i+o];",
     "original_vulnerable_label": 1,
     "project": "gzip"
   }

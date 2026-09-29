@@ -8,7 +8,7 @@
       "CWE-288"
     ],
     "cve_description": "Use-After-Free in str_escape in mruby/mruby in GitHub repository mruby/mruby prior to 3.2. Possible arbitrary code execution if being exploited.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1069,9 +1069,9 @@\n           }\n           if (ci->cci > CINFO_NONE) {\n             ci = cipop(mrb);\n+            mrb->exc = (struct RObject*)break_new(mrb, RBREAK_TAG_BREAK, proc, v);\n             mrb_gc_arena_restore(mrb, ai);\n             mrb->c->vmexec = FALSE;\n-            mrb->exc = (struct RObject*)break_new(mrb, RBREAK_TAG_BREAK, proc, v);\n             mrb->jmp = prev_jmp;\n             MRB_THROW(prev_jmp);\n           }",
     "original_vulnerable_label": 1,
     "project": "mruby"
   }

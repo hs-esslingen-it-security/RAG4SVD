@@ -8,7 +8,7 @@
       "CWE-415"
     ],
     "cve_description": "The binary MP4Box in Gpac 1.0.1 has a double-free vulnerability in the ilst_box_read function in box_code_apple.c, which allows attackers to cause a denial of service, even code execution and escalation of privileges.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -76,6 +76,7 @@\n \t\tsize -= (u32) obu_size;\n \t}\n \tgf_av1_reset_state(& state, GF_TRUE);\n+\tgf_bs_align(bs);\n \treturn cfg;\n #else\n \treturn NULL;",
     "original_vulnerable_label": 1,
     "project": "gpac"
   },
@@ -21,7 +21,7 @@
       "CWE-415"
     ],
     "cve_description": "The binary MP4Box in Gpac 1.0.1 has a double-free vulnerability in the gf_text_get_utf8_line function in load_text.c, which allows attackers to cause a denial of service, even code execution and escalation of privileges.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -2,7 +2,7 @@\n {\n \tu32 i, j, len;\n \tchar *sOK;\n-\tchar szLineConv[1024];\n+\tchar szLineConv[2048];\n \tunsigned short *sptr;\n \n \tmemset(szLine, 0, sizeof(char)*lineSize);\n@@ -75,7 +75,7 @@\n \t\t}\n \t}\n \tsptr = (u16 *)szLine;\n-\ti = (u32) gf_utf8_wcstombs(szLineConv, 1024, (const unsigned short **) &sptr);\n+\ti = (u32) gf_utf8_wcstombs(szLineConv, 2048, (const unsigned short **) &sptr);\n \tszLineConv[i] = 0;\n \tstrcpy(szLine, szLineConv);\n \t/*this is ugly indeed: since input is UTF16-LE, there are many chances the gf_fgets never reads the \\0 after a \\n*/",
     "original_vulnerable_label": 1,
     "project": "gpac"
   },
@@ -34,7 +34,7 @@
       "CWE-415"
     ],
     "cve_description": "The binary MP4Box in Gpac 1.0.1 has a double-free vulnerability in the gf_list_del function in list.c, which allows attackers to cause a denial of service.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -21,7 +21,8 @@\n \t}\n \n \tfor (i = 0; i < item_count; i++) {\n-\t\tGF_ItemLocationEntry *location_entry = (GF_ItemLocationEntry *)gf_malloc(sizeof(GF_ItemLocationEntry));\n+\t\tGF_ItemLocationEntry *location_entry;\n+\t\tGF_SAFEALLOC(location_entry, GF_ItemLocationEntry);\n \t\tif (!location_entry) return GF_OUT_OF_MEM;\n \n \t\tgf_list_add(ptr->location_entries, location_entry);\n@@ -50,7 +51,8 @@\n \t\textent_count = gf_bs_read_u16(bs);\n \t\tlocation_entry->extent_entries = gf_list_new();\n \t\tfor (j = 0; j < extent_count; j++) {\n-\t\t\tGF_ItemExtentEntry *extent_entry = (GF_ItemExtentEntry *)gf_malloc(sizeof(GF_ItemExtentEntry));\n+\t\t\tGF_ItemExtentEntry *extent_entry;\n+\t\t\tGF_SAFEALLOC(extent_entry, GF_ItemExtentEntry);\n \t\t\tif (!extent_entry) return GF_OUT_OF_MEM;\n \t\t\t\n \t\t\tgf_list_add(location_entry->extent_entries, extent_entry);",
     "original_vulnerable_label": 1,
     "project": "gpac"
   },
@@ -47,7 +47,7 @@
       "CWE-415"
     ],
     "cve_description": "The ECDSA operation of the micro-ecc library 1.0 is vulnerable to simple power analysis attacks which allows an adversary to extract the private ECC key.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -8,6 +8,7 @@\n     uECC_word_t tmp[uECC_MAX_WORDS];\n     uECC_word_t s[uECC_MAX_WORDS];\n     uECC_word_t *k2[2] = {tmp, s};\n+    uECC_word_t *initial_Z = 0;\n #if uECC_VLI_NATIVE_LITTLE_ENDIAN\n     uECC_word_t *p = (uECC_word_t *)signature;\n #else\n@@ -24,7 +25,15 @@\n     }\n \n     carry = regularize_k(k, tmp, s, curve);\n-    EccPoint_mult(p, curve->G, k2[!carry], 0, num_n_bits + 1, curve);\n+    /* If an RNG function was specified, try to get a random initial Z value to improve\n+       protection against side-channel attacks. */\n+    if (g_rng_function) {\n+        if (!uECC_generate_random_int(k2[carry], curve->p, num_words)) {\n+            return 0;\n+        }\n+        initial_Z = k2[carry];\n+    }\n+    EccPoint_mult(p, curve->G, k2[!carry], initial_Z, num_n_bits + 1, curve);\n     if (uECC_vli_isZero(p, num_words)) {\n         return 0;\n     }\n@@ -68,6 +77,6 @@\n     bcopy((uint8_t *) signature + curve->num_bytes, (uint8_t *) s, curve->num_bytes);\n #else\n     uECC_vli_nativeToBytes(signature + curve->num_bytes, curve->num_bytes, s);\n-#endif    \n+#endif\n     return 1;\n }",
     "original_vulnerable_label": 1,
     "project": "micro-ecc"
   },
@@ -60,7 +60,7 @@
       "CWE-415"
     ],
     "cve_description": "drivers/infiniband/ulp/rtrs/rtrs-clt.c in the Linux kernel before 5.16.12 has a double free related to rtrs_clt_dev_release.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -3,5 +3,7 @@\n \tstruct rtrs_clt_sess *clt = container_of(dev, struct rtrs_clt_sess,\n \t\t\t\t\t\t dev);\n \n+\tmutex_destroy(&clt->paths_ev_mutex);\n+\tmutex_destroy(&clt->paths_mutex);\n \tkfree(clt);\n }",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -73,7 +73,7 @@
       "CWE-415"
     ],
     "cve_description": "drivers/net/wireless/rsi/rsi_91x_usb.c in the Linux kernel through 5.2.9 has a Double Free via crafted USB device traffic (which may be remote via usbip or usbredir).",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -53,7 +53,6 @@\n \tkfree(rsi_dev->tx_buffer);\n \n fail_eps:\n-\tkfree(rsi_dev);\n \n \treturn status;\n }",
     "original_vulnerable_label": 1,
     "project": "wireless-drivers"
   },
@@ -86,7 +86,7 @@
       "CWE-415"
     ],
     "cve_description": "A double-free condition exists in contrib/shpsort.c of shapelib 1.5.0 and older releases. This issue may allow an attacker to cause a denial of service or have other unspecified impact via control over malloc.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -26,7 +26,6 @@\n \tfree(result[--i]);\n       }\n       free(result);\n-      free(copy);\n       return NULL;\n     }\n     result = tmp;",
     "original_vulnerable_label": 1,
     "project": "shapelib"
   },
@@ -99,7 +99,7 @@
       "CWE-415"
     ],
     "cve_description": "Rizin is a UNIX-like reverse engineering framework and command-line toolset. Versions 0.4.0 and prior are vulnerable to a double free in bobj.c:rz_bin_reloc_storage_free() when freeing relocations generated from qnx binary plugin. A user opening a malicious qnx binary could be affected by this vulnerability, allowing an attacker to execute code on the user's machine. Commit number a3d50c1ea185f3f642f2d8180715f82d98840784 contains a patch for this issue.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,5 +1,5 @@\n-static RzList *relocs(RzBinFile *bf) {\n+static RzList *maps(RzBinFile *bf) {\n \trz_return_val_if_fail(bf && bf->o, NULL);\n \tQnxObj *qo = bf->o->bin_obj;\n-\treturn rz_list_clone(qo->fixups);\n+\treturn rz_list_clone(qo->maps);\n }",
     "original_vulnerable_label": 1,
     "project": "rizin"
   },
@@ -112,7 +112,7 @@
       "CWE-415"
     ],
     "cve_description": "mcba_usb_start_xmit in drivers/net/can/usb/mcba_usb.c in the Linux kernel through 5.17.1 has a double free.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -58,7 +58,6 @@\n xmit_failed:\n \tcan_free_echo_skb(priv->netdev, ctx->ndx, NULL);\n \tmcba_usb_free_ctx(ctx);\n-\tdev_kfree_skb(skb);\n \tstats->tx_dropped++;\n \n \treturn NETDEV_TX_OK;",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -125,7 +125,7 @@
       "CWE-415"
     ],
     "cve_description": "rpmsg_virtio_add_ctrl_dev in drivers/rpmsg/virtio_rpmsg_bus.c in the Linux kernel before 5.18.4 has a double free.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -22,7 +22,7 @@\n \n \terr = rpmsg_ctrldev_register_device(rpdev_ctrl);\n \tif (err) {\n-\t\tkfree(vch);\n+\t\t/* vch will be free in virtio_rpmsg_release_device() */\n \t\treturn ERR_PTR(err);\n \t}\n ",
     "original_vulnerable_label": 1,
     "project": "linux"
   }

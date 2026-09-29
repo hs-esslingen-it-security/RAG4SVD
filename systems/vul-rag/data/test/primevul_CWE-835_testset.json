@@ -8,7 +8,7 @@
       "CWE-835"
     ],
     "cve_description": "In ImageMagick 7.0.8-13 Q16, there is an infinite loop in the ReadBMPImage function of the coders/bmp.c file. Remote attackers could leverage this vulnerability to cause a denial of service via a crafted bmp file.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -89,8 +89,7 @@\n     /*\n       Verify BMP identifier.\n     */\n-    if (bmp_info.ba_offset == 0)\n-      start_position=TellBlob(image)-2;\n+    start_position=TellBlob(image)-2;\n     bmp_info.ba_offset=0;\n     while (LocaleNCompare((char *) magick,\"BA\",2) == 0)\n     {",
     "original_vulnerable_label": 1,
     "project": "ImageMagick6"
   },
@@ -21,7 +21,7 @@
       "CWE-835"
     ],
     "cve_description": "A potential stack overflow via infinite loop issue was found in various NIC emulators of QEMU in versions up to and including 5.2.0. The issue occurs in loopback mode of a NIC wherein reentrant DMA checks get bypassed. A guest user/process may use this flaw to consume CPU cycles or crash the QEMU process on the host resulting in DoS scenario.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -5,7 +5,7 @@\n \n     NetClientState *nc = qemu_get_queue(s->nic);\n     if (s->phy_reg[PHY_CTRL] & MII_CR_LOOPBACK) {\n-        nc->info->receive(nc, buf, size);\n+        qemu_receive_packet(nc, buf, size);\n     } else {\n         qemu_send_packet(nc, buf, size);\n     }",
     "original_vulnerable_label": 1,
     "project": "qemu"
   },
@@ -34,7 +34,7 @@
       "CWE-835"
     ],
     "cve_description": "A potential stack overflow via infinite loop issue was found in various NIC emulators of QEMU in versions up to and including 5.2.0. The issue occurs in loopback mode of a NIC wherein reentrant DMA checks get bypassed. A guest user/process may use this flaw to consume CPU cycles or crash the QEMU process on the host resulting in DoS scenario.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -4,7 +4,7 @@\n     NetClientState *nc = qemu_get_queue(s->nic);\n \n     if (s->macregs[MAC_XIFCFG >> 2] & MAC_XIFCFG_LBCK) {\n-        nc->info->receive(nc, buf, size);\n+        qemu_receive_packet(nc, buf, size);\n     } else {\n         qemu_send_packet(nc, buf, size);\n     }",
     "original_vulnerable_label": 1,
     "project": "qemu"
   },
@@ -47,7 +47,7 @@
       "CWE-835"
     ],
     "cve_description": "A potential stack overflow via infinite loop issue was found in various NIC emulators of QEMU in versions up to and including 5.2.0. The issue occurs in loopback mode of a NIC wherein reentrant DMA checks get bypassed. A guest user/process may use this flaw to consume CPU cycles or crash the QEMU process on the host resulting in DoS scenario.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -107,8 +107,8 @@\n                 /* Send the packet somewhere */\n                 if (s->phy_loop || (s->regs[GEM_NWCTRL] &\n                                     GEM_NWCTRL_LOCALLOOP)) {\n-                    gem_receive(qemu_get_queue(s->nic), s->tx_packet,\n-                                total_bytes);\n+                    qemu_receive_packet(qemu_get_queue(s->nic), s->tx_packet,\n+                                        total_bytes);\n                 } else {\n                     qemu_send_packet(qemu_get_queue(s->nic), s->tx_packet,\n                                      total_bytes);",
     "original_vulnerable_label": 1,
     "project": "qemu"
   },
@@ -60,7 +60,7 @@
       "CWE-835"
     ],
     "cve_description": "lib-smtp in submission-login and lmtp in Dovecot 2.3.9 before 2.3.9.3 mishandles truncated UTF-8 data in command parameters, as demonstrated by the unauthenticated triggering of a submission-login infinite loop.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -4,6 +4,7 @@\n \tuoff_t max_size = (parser->auth_response ?\n \t\tparser->limits.max_auth_size :\n \t\tparser->limits.max_parameters_size);\n+\tint nch = 1;\n \n \t/* We assume parameters to match textstr (HT, SP, Printable US-ASCII).\n \t   For command parameters, we also accept valid UTF-8 characters.\n@@ -11,7 +12,6 @@\n \tp = parser->cur + parser->state.poff;\n \twhile (p < parser->end) {\n \t\tunichar_t ch;\n-\t\tint nch = 1;\n \n \t\tif (parser->auth_response)\n \t\t\tch = *p;\n@@ -19,6 +19,8 @@\n \t\t\tnch = uni_utf8_get_char_n(p, (size_t)(p - parser->end),\n \t\t\t\t\t\t  &ch);\n \t\t}\n+\t\tif (nch == 0)\n+\t\t\tbreak;\n \t\tif (nch < 0) {\n \t\t\tsmtp_command_parser_error(parser,\n \t\t\t\tSMTP_COMMAND_PARSE_ERROR_BAD_COMMAND,\n@@ -39,7 +41,7 @@\n \t\treturn -1;\n \t}\n \tparser->state.poff = p - parser->cur;\n-\tif (p == parser->end)\n+\tif (p == parser->end || nch == 0)\n \t\treturn 0;\n \n \t/* In the interest of improved interoperability, SMTP receivers SHOULD",
     "original_vulnerable_label": 1,
     "project": "core"
   }

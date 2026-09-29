@@ -8,7 +8,7 @@
       "CWE-787"
     ],
     "cve_description": "Tensorflow is an Open Source Machine Learning Framework. The implementation of `SparseCountSparseOutput` is vulnerable to a heap overflow. The fix will be included in TensorFlow 2.8.0. We will also cherrypick this commit on TensorFlow 2.7.1, TensorFlow 2.6.3, and TensorFlow 2.5.3, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,14 +1,9 @@\n   void Compute(OpKernelContext* context) override {\n-    const Tensor& indices = context->input(0);\n+    const Tensor& splits = context->input(0);\n     const Tensor& values = context->input(1);\n-    const Tensor& shape = context->input(2);\n-    const Tensor& weights = context->input(3);\n+    const Tensor& weights = context->input(2);\n     bool use_weights = weights.NumElements() > 0;\n-\n-    OP_REQUIRES(context, TensorShapeUtils::IsMatrix(indices.shape()),\n-                errors::InvalidArgument(\n-                    \"Input indices must be a 2-dimensional tensor. Got: \",\n-                    indices.shape().DebugString()));\n+    bool is_1d = false;\n \n     if (use_weights) {\n       OP_REQUIRES(\n@@ -19,64 +14,40 @@\n               \"; values shape: \", values.shape().DebugString()));\n     }\n \n-    OP_REQUIRES(context, shape.NumElements() != 0,\n-                errors::InvalidArgument(\n-                    \"The shape argument requires at least one element.\"));\n-\n-    bool is_1d = shape.NumElements() == 1;\n-    auto shape_vector = shape.flat<int64_t>();\n-    int num_batches = is_1d ? 1 : shape_vector(0);\n+    const auto splits_values = splits.flat<int64_t>();\n+    const auto values_values = values.flat<T>();\n+    const auto weight_values = weights.flat<W>();\n+    int num_batches = splits.NumElements() - 1;\n     int num_values = values.NumElements();\n \n-    for (int b = 0; b < shape_vector.size(); b++) {\n-      OP_REQUIRES(context, shape_vector(b) >= 0,\n-                  errors::InvalidArgument(\n-                      \"Elements in dense_shape must be >= 0. Instead got:\",\n-                      shape.DebugString()));\n-    }\n-\n-    OP_REQUIRES(context, num_values == indices.shape().dim_size(0),\n+    OP_REQUIRES(\n+        context, num_batches > 0,\n+        errors::InvalidArgument(\n+            \"Must provide at least 2 elements for the splits argument\"));\n+    OP_REQUIRES(context, splits_values(0) == 0,\n+                errors::InvalidArgument(\"Splits must start with 0, not with \",\n+                                        splits_values(0)));\n+    OP_REQUIRES(context, splits_values(num_batches) == num_values,\n                 errors::InvalidArgument(\n-                    \"Number of values must match first dimension of indices.\",\n-                    \"Got \", num_values,\n-                    \" values, indices shape: \", indices.shape().DebugString()));\n-\n-    const auto indices_values = indices.matrix<int64_t>();\n-    const auto values_values = values.flat<T>();\n-    const auto weight_values = weights.flat<W>();\n+                    \"Splits must end with the number of values, got \",\n+                    splits_values(num_batches), \" instead of \", num_values));\n \n     auto per_batch_counts = BatchedMap<W>(num_batches);\n-\n     T max_value = 0;\n-\n-    OP_REQUIRES(context, num_values <= indices.shape().dim_size(0),\n-                errors::InvalidArgument(\n-                    \"The first dimension of indices must be equal to or \"\n-                    \"greather than number of values. ( \",\n-                    indices.shape().dim_size(0), \" vs. \", num_values, \" )\"));\n-    OP_REQUIRES(context, indices.shape().dim_size(1) > 0,\n-                errors::InvalidArgument(\"The second dimension of indices must \"\n-                                        \"be greater than 0. Received: \",\n-                                        indices.shape().dim_size(1)));\n+    int batch_idx = 0;\n \n     for (int idx = 0; idx < num_values; ++idx) {\n-      int batch = is_1d ? 0 : indices_values(idx, 0);\n-      if (batch >= num_batches) {\n-        OP_REQUIRES(context, batch < num_batches,\n-                    errors::InvalidArgument(\n-                        \"Indices value along the first dimension must be \",\n-                        \"lower than the first index of the shape.\", \"Got \",\n-                        batch, \" as batch and \", num_batches,\n-                        \" as the first dimension of the shape.\"));\n+      while (idx >= splits_values(batch_idx)) {\n+        batch_idx++;\n       }\n       const auto& value = values_values(idx);\n       if (value >= 0 && (maxlength_ <= 0 || value < maxlength_)) {\n         if (binary_output_) {\n-          per_batch_counts[batch][value] = 1;\n+          per_batch_counts[batch_idx - 1][value] = 1;\n         } else if (use_weights) {\n-          per_batch_counts[batch][value] += weight_values(idx);\n+          per_batch_counts[batch_idx - 1][value] += weight_values(idx);\n         } else {\n-          per_batch_counts[batch][value]++;\n+          per_batch_counts[batch_idx - 1][value]++;\n         }\n         if (value > max_value) {\n           max_value = value;",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -21,7 +21,7 @@
       "CWE-787"
     ],
     "cve_description": "Tensorflow is an Open Source Machine Learning Framework. TensorFlow is vulnerable to a heap OOB write in `Grappler`. The `set_output` function writes to an array at the specified index. Hence, this gives a malicious user a write primitive. The fix will be included in TensorFlow 2.8.0. We will also cherrypick this commit on TensorFlow 2.7.1, TensorFlow 2.6.3, and TensorFlow 2.5.3, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -3,7 +3,12 @@\n         GetUnknownOutputShape(node, output_port);\n     InferenceContext* ctx = GetContext(node);\n     if (ctx == nullptr) {\n-      return errors::InvalidArgument(\"Missing context\");\n+      return errors::InvalidArgument(\"SetUnknownShape: Missing context\");\n+    }\n+    if (output_port < 0 || output_port >= ctx->num_outputs()) {\n+      return errors::InvalidArgument(\n+          \"SetUnknownShape: output_port must be in [0, \", ctx->num_outputs(),\n+          \") but was \", output_port);\n     }\n     ctx->set_output(output_port, shape);\n     return Status::OK();",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -34,7 +34,7 @@
       "CWE-787"
     ],
     "cve_description": "uWebSockets 18.11.0 and 18.12.0 has a stack-based buffer overflow in uWS::TopicTree::trimTree (called from uWS::TopicTree::unsubscribeAll). NOTE: the vendor's position is that this is \"a minor issue or not even an issue at all\" because the developer of an application (that uses uWebSockets) should not be allowing the large number of triggered topics to accumulate",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,8 +1,4 @@\n     void publish(Topic *iterator, size_t start, size_t stop, std::string_view topic, std::pair<std::string_view, std::string_view> message) {\n-        /* If we already have 64 triggered topics make sure to drain it here */\n-        if (numTriggeredTopics == 64) {\n-            drain();\n-        }\n \n         /* Iterate over all segments in given topic */\n         for (; stop != std::string::npos; start = stop + 1) {\n@@ -26,6 +22,11 @@\n \n                 /* Add this topic to triggered */\n                 if (!iterator->terminatingWildcardChild->triggered) {\n+                    /* If we already have 64 triggered topics make sure to drain it here */\n+                    if (numTriggeredTopics == 64) {\n+                        drain();\n+                    }\n+\n                     triggeredTopics[numTriggeredTopics++] = iterator->terminatingWildcardChild;\n                     iterator->terminatingWildcardChild->triggered = true;\n                 }\n@@ -50,6 +51,11 @@\n \n         /* Add this topic to triggered */\n         if (!iterator->triggered) {\n+            /* If we already have 64 triggered topics make sure to drain it here */\n+            if (numTriggeredTopics == 64) {\n+                drain();\n+            }\n+\n             triggeredTopics[numTriggeredTopics++] = iterator;\n             iterator->triggered = true;\n         }",
     "original_vulnerable_label": 1,
     "project": "uWebSockets"
   },
@@ -47,7 +47,7 @@
       "CWE-787"
     ],
     "cve_description": "Buffer overflow in the send_control_msg function in hw/char/virtio-serial-bus.c in QEMU before 2.4.0 allows guest users to cause a denial of service (QEMU process crash) via a crafted virtio control message.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -11,7 +11,8 @@\n         return 0;\n     }\n \n-    memcpy(elem.in_sg[0].iov_base, buf, len);\n+    /* TODO: detect a buffer that's too short, set NEEDS_RESET */\n+    iov_from_buf(elem.in_sg, elem.in_num, 0, buf, len);\n \n     virtqueue_push(vq, &elem, len);\n     virtio_notify(VIRTIO_DEVICE(vser), vq);",
     "original_vulnerable_label": 1,
     "project": "qemu"
   },
@@ -60,7 +60,7 @@
       "CWE-787"
     ],
     "cve_description": "PJSIP is a free and open source multimedia communication library written in C. A buffer overflow vulnerability in versions 2.12 and prior affects applications that use PJSIP DNS resolution. It doesn't affect PJSIP users who utilize an external resolver. This vulnerability is related to CVE-2023-27585. The difference is that this issue is in parsing the query record `parse_rr()`, while the issue in CVE-2023-27585 is in `parse_query()`. A patch is available in the `master` branch of the `pjsip/pjproject` GitHub repository. A workaround is to disable DNS resolution in PJSIP config (by setting `nameserver_count` to zero) or use an external resolver instead.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -22,6 +22,10 @@\n \n     p = (start + name_part_len);\n \n+    /* Check the size can accomodate next few fields. */\n+    if (p + 4 > max)\n+    \treturn PJLIB_UTIL_EDNSINSIZE;\n+\n     /* Get the type */\n     pj_memcpy(&q->type, p, 2);\n     q->type = pj_ntohs(q->type);",
     "original_vulnerable_label": 1,
     "project": "pjproject"
   },
@@ -73,7 +73,7 @@
       "CWE-787"
     ],
     "cve_description": "TensorFlow is an open source platform for machine learning. Prior to versions 2.9.0, 2.8.1, 2.7.2, and 2.6.4, the implementation of `tf.raw_ops.EditDistance` has incomplete validation. Users can pass negative values to cause a segmentation fault based denial of service. In multiple places throughout the code, one may compute an index for a write operation. However, the existing validation only checks against the upper bound of the array. Hence, it is possible to write before the array by massaging the input to generate negative values for `loc`. Versions 2.9.0, 2.8.1, 2.7.2, and 2.6.4 contain a patch for this issue.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -89,9 +89,9 @@\n         auto loc = std::inner_product(g_truth.begin(), g_truth.end(),\n                                       output_strides.begin(), int64_t{0});\n         OP_REQUIRES(\n-            ctx, loc < output_elements,\n+            ctx, 0 <= loc && loc < output_elements,\n             errors::Internal(\"Got an inner product \", loc,\n-                             \" which would require in writing to outside of \"\n+                             \" which would require writing to outside of \"\n                              \"the buffer for the output tensor (max elements \",\n                              output_elements, \")\"));\n         output_t(loc) =\n@@ -104,9 +104,9 @@\n         auto loc = std::inner_product(g_hypothesis.begin(), g_hypothesis.end(),\n                                       output_strides.begin(), int64_t{0});\n         OP_REQUIRES(\n-            ctx, loc < output_elements,\n+            ctx, 0 <= loc && loc < output_elements,\n             errors::Internal(\"Got an inner product \", loc,\n-                             \" which would require in writing to outside of \"\n+                             \" which would require writing to outside of \"\n                              \"the buffer for the output tensor (max elements \",\n                              output_elements, \")\"));\n         output_t(loc) = hypothesis_seq.size();\n@@ -118,9 +118,9 @@\n         auto loc = std::inner_product(g_truth.begin(), g_truth.end(),\n                                       output_strides.begin(), int64_t{0});\n         OP_REQUIRES(\n-            ctx, loc < output_elements,\n+            ctx, 0 <= loc && loc < output_elements,\n             errors::Internal(\"Got an inner product \", loc,\n-                             \" which would require in writing to outside of \"\n+                             \" which would require writing to outside of \"\n                              \"the buffer for the output tensor (max elements \",\n                              output_elements, \")\"));\n         output_t(loc) = (normalize_) ? 1.0 : truth_seq.size();\n@@ -134,9 +134,9 @@\n       auto loc = std::inner_product(g_hypothesis.begin(), g_hypothesis.end(),\n                                     output_strides.begin(), int64_t{0});\n       OP_REQUIRES(\n-          ctx, loc < output_elements,\n+          ctx, 0 <= loc && loc < output_elements,\n           errors::Internal(\"Got an inner product \", loc,\n-                           \" which would require in writing to outside of the \"\n+                           \" which would require writing to outside of the \"\n                            \"buffer for the output tensor (max elements \",\n                            output_elements, \")\"));\n       output_t(loc) = hypothesis_seq.size();\n@@ -152,9 +152,9 @@\n       auto loc = std::inner_product(g_truth.begin(), g_truth.end(),\n                                     output_strides.begin(), int64_t{0});\n       OP_REQUIRES(\n-          ctx, loc < output_elements,\n+          ctx, 0 <= loc && loc < output_elements,\n           errors::Internal(\"Got an inner product \", loc,\n-                           \" which would require in writing to outside of the \"\n+                           \" which would require writing to outside of the \"\n                            \"buffer for the output tensor (max elements \",\n                            output_elements, \")\"));\n       output_t(loc) = (normalize_) ? 1.0 : truth_seq.size();",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -86,7 +86,7 @@
       "CWE-787"
     ],
     "cve_description": "Heap-based Buffer Overflow in GitHub repository vim/vim prior to 8.2.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -18,7 +18,7 @@\n     {\n \tint s = bd->textlen + bd->endspaces;\n \n-\twhile (VIM_ISWHITE(*(bd->textstart + s - 1)) && s > 0)\n+\twhile (s > 0 && VIM_ISWHITE(*(bd->textstart + s - 1)))\n \t{\n \t    s = s - (*mb_head_off)(bd->textstart, bd->textstart + s - 1) - 1;\n \t    pnew--;",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -99,7 +99,7 @@
       "CWE-787"
     ],
     "cve_description": "heap-buffer-overflow in mrb_vm_exec in mruby/mruby in GitHub repository mruby/mruby prior to 3.2. Possible arbitrary code execution if being exploited.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -5,6 +5,9 @@\n   MRB_CLASS_ORIGIN(c);\n   h = c->mt;\n \n-  if (h && mt_del(mrb, h, mid)) return;\n+  if (h && mt_del(mrb, h, mid)) {\n+    mrb_mc_clear_by_class(mrb, c);\n+    return;\n+  }\n   mrb_name_error(mrb, mid, \"method '%n' not defined in %C\", mid, c);\n }",
     "original_vulnerable_label": 1,
     "project": "mruby"
   },
@@ -112,7 +112,7 @@
       "CWE-787"
     ],
     "cve_description": "Memory leak in the afra_box_read function in MP4Box in GPAC 1.0.1 allows attackers to read memory via a crafted file.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -17,6 +17,7 @@\n \tfor (i=0; i<ptr->entry_count; i++) {\n \t\tGF_AfraEntry *ae = gf_malloc(sizeof(GF_AfraEntry));\n \t\tif (!ae) return GF_OUT_OF_MEM;\n+\t\tgf_list_insert(ptr->local_access_entries, ae, i);\n \n \t\tISOM_DECREASE_SIZE(ptr, 8)\n \t\tae->time = gf_bs_read_u64(bs);\n@@ -27,8 +28,6 @@\n \t\t\tISOM_DECREASE_SIZE(ptr, 4)\n \t\t\tae->offset = gf_bs_read_u32(bs);\n \t\t}\n-\n-\t\tgf_list_insert(ptr->local_access_entries, ae, i);\n \t}\n \n \tif (ptr->global_entries) {\n@@ -37,6 +36,8 @@\n \t\tfor (i=0; i<ptr->global_entry_count; i++) {\n \t\t\tGF_GlobalAfraEntry *ae = gf_malloc(sizeof(GF_GlobalAfraEntry));\n \t\t\tif (!ae) return GF_OUT_OF_MEM;\n+\t\t\tgf_list_insert(ptr->global_access_entries, ae, i);\n+\n \t\t\tISOM_DECREASE_SIZE(ptr, 8)\n \t\t\tae->time = gf_bs_read_u64(bs);\n \t\t\tif (ptr->long_ids) {\n@@ -57,8 +58,6 @@\n \t\t\t\tae->afra_offset = gf_bs_read_u32(bs);\n \t\t\t\tae->offset_from_afra = gf_bs_read_u32(bs);\n \t\t\t}\n-\n-\t\t\tgf_list_insert(ptr->global_access_entries, ae, i);\n \t\t}\n \t}\n ",
     "original_vulnerable_label": 1,
     "project": "gpac"
   },
@@ -125,7 +125,7 @@
       "CWE-787"
     ],
     "cve_description": "Nginx NJS v0.7.3 was discovered to contain a stack overflow in the function njs_default_module_loader at /src/njs/src/njs_module.c. NOTE: multiple third parties dispute this report, e.g., the behavior is only found in unreleased development code that was not part of the 0.7.2, 0.7.3, or 0.7.4 release",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -9,7 +9,7 @@\n     length = info->name.length;\n \n     if (dir != NULL) {\n-        length = dir->length;\n+        length += dir->length;\n \n         if (length == 0) {\n             return NJS_DECLINED;",
     "original_vulnerable_label": 1,
     "project": "njs"
   },
@@ -138,7 +138,7 @@
       "CWE-787"
     ],
     "cve_description": "libjpeg 1.63 has a heap-based buffer over-read in HierarchicalBitmapRequester::FetchRegion in hierarchicalbitmaprequester.cpp because the MCU size can be different between allocation and use.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,35 +1,34 @@\n-void HierarchicalBitmapRequester::PrepareForDecoding(void)\n+void HierarchicalBitmapRequester::PrepareForEncoding(void)\n {\n #if ACCUSOFT_CODE\n-\n-  UBYTE i;\n-\n+  \n   BuildCommon();\n \n-  if (m_ppDecodingMCU == NULL) {\n-    m_ppDecodingMCU = (struct Line **)m_pEnviron->AllocMem(sizeof(struct Line *) * m_ucCount*8);\n-    memset(m_ppDecodingMCU,0,sizeof(struct Line *) * m_ucCount * 8);\n+  if (m_ppEncodingMCU == NULL) {\n+    m_ppEncodingMCU = (struct Line **)m_pEnviron->AllocMem(sizeof(struct Line *) * m_ucCount *8);\n+    memset(m_ppEncodingMCU,0,sizeof(struct Line *) * m_ucCount * 8);\n   }\n-\n-  if (m_ppUpsampler == NULL) {\n-    m_ppUpsampler = (class UpsamplerBase **)m_pEnviron->AllocMem(sizeof(class UpsamplerBase *) * m_ucCount);\n-    memset(m_ppUpsampler,0,sizeof(class Upsampler *) * m_ucCount);\n-\n-    for(i = 0;i < m_ucCount;i++) {\n+  \n+  if (m_ppDownsampler == NULL) {\n+    m_ppDownsampler = (class DownsamplerBase **)m_pEnviron->AllocMem(sizeof(class DownsamplerBase *) * m_ucCount);\n+    memset(m_ppDownsampler,0,sizeof(class DownsamplerBase *) * m_ucCount);\n+    \n+    for(UBYTE i = 0;i < m_ucCount;i++) {\n       class Component *comp = m_pFrame->ComponentOf(i);\n       UBYTE sx = comp->SubXOf();\n       UBYTE sy = comp->SubYOf();\n \n       if (sx > 1 || sy > 1) {\n-        m_ppUpsampler[i] = UpsamplerBase::CreateUpsampler(m_pEnviron,sx,sy,\n-                                                          m_ulPixelWidth,m_ulPixelHeight,\n-                                                          m_pFrame->TablesOf()->isChromaCentered());\n-        m_bSubsampling   = true;\n+        m_ppDownsampler[i] = DownsamplerBase::CreateDownsampler(m_pEnviron,sx,sy,\n+                                                                m_ulPixelWidth,m_ulPixelHeight,\n+                                                                m_pFrame->TablesOf()->\n+                                                                isDownsamplingInterpolated());\n+        m_bSubsampling     = true;\n       }\n     }\n   }\n \n   if (m_pLargestScale)\n-    m_pLargestScale->PrepareForDecoding();\n+    m_pLargestScale->PrepareForEncoding();\n #endif\n }",
     "original_vulnerable_label": 1,
     "project": "libjpeg"
   },
@@ -151,7 +151,7 @@
       "CWE-787"
     ],
     "cve_description": "wolfSSL wolfMQTT 1.9 has a heap-based buffer overflow in MqttDecode_Disconnect (called from MqttClient_DecodePacket and MqttClient_WaitType).",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -132,8 +132,9 @@\n             /* Determine if we received data for this request */\n             if ((wait_type == MQTT_PACKET_TYPE_ANY ||\n                  wait_type == packet_type ||\n-                 MqttIsPubRespPacket(packet_type) == MqttIsPubRespPacket(wait_type)) &&\n-               (wait_packet_id == 0 || wait_packet_id == packet_id))\n+                 (MqttIsPubRespPacket(packet_type) &&\n+                  MqttIsPubRespPacket(wait_type))) &&\n+                (wait_packet_id == 0 || wait_packet_id == packet_id))\n             {\n                 use_packet_obj = packet_obj;\n                 waitMatchFound = 1;",
     "original_vulnerable_label": 1,
     "project": "wolfMQTT"
   },
@@ -164,7 +164,7 @@
       "CWE-787"
     ],
     "cve_description": "An unauthenticated stack-based buffer overflow vulnerability in common.c's handle_PORT in uftpd FTP server versions 2.10 and earlier can be abused to cause a crash and could potentially lead to remote code execution.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -12,7 +12,7 @@\n \n \t/* Convert PORT command's argument to IP address + port */\n \tsscanf(str, \"%d,%d,%d,%d,%d,%d\", &a, &b, &c, &d, &e, &f);\n-\tsprintf(addr, \"%d.%d.%d.%d\", a, b, c, d);\n+\tsnprintf(addr, sizeof(addr), \"%d.%d.%d.%d\", a, b, c, d);\n \n \t/* Check IPv4 address using inet_aton(), throw away converted result */\n \tif (!inet_aton(addr, &(sin.sin_addr))) {",
     "original_vulnerable_label": 1,
     "project": "uftpd"
   },
@@ -177,7 +177,7 @@
       "CWE-787"
     ],
     "cve_description": "PJSIP is a free and open source multimedia communication library written in C language implementing standard based protocols such as SIP, SDP, RTP, STUN, TURN, and ICE. In versions prior to and including 2.12.1 a stack buffer overflow vulnerability affects PJSIP users that use STUN in their applications, either by: setting a STUN server in their account/media config in PJSUA/PJSUA2 level, or directly using `pjlib-util/stun_simple` API. A patch is available in commit 450baca which should be included in the next release. There are no known workarounds for this issue.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -3,6 +3,7 @@\n {\n     pj_uint16_t msg_type, msg_len;\n     char *p_attr;\n+    int attr_max_cnt = PJ_ARRAY_SIZE(msg->attr);\n \n     PJ_CHECK_STACK();\n \n@@ -32,7 +33,7 @@\n     msg->attr_count = 0;\n     p_attr = (char*)buf + sizeof(pjstun_msg_hdr);\n \n-    while (msg_len > 0) {\n+    while (msg_len > 0 && msg->attr_count < attr_max_cnt) {\n \tpjstun_attr_hdr **attr = &msg->attr[msg->attr_count];\n \tpj_uint32_t len;\n \tpj_uint16_t attr_type;\n@@ -60,6 +61,10 @@\n \tp_attr += len;\n \t++msg->attr_count;\n     }\n+    if (msg->attr_count == attr_max_cnt) {\n+\tPJ_LOG(4, (THIS_FILE, \"Warning: max number attribute %d reached.\",\n+\t\t   attr_max_cnt));\n+    }\n \n     return PJ_SUCCESS;\n }",
     "original_vulnerable_label": 1,
     "project": "pjproject"
   },
@@ -190,7 +190,7 @@
       "CWE-787"
     ],
     "cve_description": "In Das U-Boot through 2022.07-rc5, an integer signedness error and resultant stack-based buffer overflow in the \"i2c md\" command enables the corruption of the return address pointer of the do_i2c_md function.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -3,8 +3,8 @@\n {\n \tuint\tchip;\n \tuint\taddr, length;\n-\tint alen;\n-\tint\tj, nbytes, linebytes;\n+\tuint\talen;\n+\tuint\tj, nbytes, linebytes;\n \tint ret;\n #if CONFIG_IS_ENABLED(DM_I2C)\n \tstruct udevice *dev;",
     "original_vulnerable_label": 1,
     "project": "u-boot"
   },
@@ -203,7 +203,7 @@
       "CWE-787"
     ],
     "cve_description": "Buffer Over-read in GitHub repository bfabiszewski/libmobi prior to 0.11. This vulnerability is capable of arbitrary code execution.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -19,17 +19,13 @@\n             }\n             pos -= c - 10;\n             dir = 0;\n-            if (pos < 0 || pos > *decoded_size) {\n-                debug_print(\"Position setting failed (%s)\\n\", decoded);\n-                return MOBI_DATA_CORRUPT;\n-            }\n         }\n         else {\n             if (mod == 'i') {\n                 const unsigned char *s = decoded + pos;\n                 unsigned char *d = decoded + pos + 1;\n                 const int l = *decoded_size - pos;\n-                if (l < 0 || d + l > decoded + INDX_INFLBUF_SIZEMAX) {\n+                if (pos < 0 || l < 0 || d + l > decoded + INDX_INFLBUF_SIZEMAX) {\n                     debug_print(\"Out of buffer in %s at pos: %i\\n\", decoded, pos);\n                     return MOBI_DATA_CORRUPT;\n                 }\n@@ -42,7 +38,7 @@\n                 const unsigned char *s = decoded + pos + 1;\n                 unsigned char *d = decoded + pos;\n                 const int l = *decoded_size - pos;\n-                if (l < 0 || d + l > decoded + INDX_INFLBUF_SIZEMAX) {\n+                if (pos < 0 || l < 0 || s + l > decoded + INDX_INFLBUF_SIZEMAX) {\n                     debug_print(\"Out of buffer in %s at pos: %i\\n\", decoded, pos);\n                     return MOBI_DATA_CORRUPT;\n                 }",
     "original_vulnerable_label": 1,
     "project": "libmobi"
   },
@@ -216,7 +216,7 @@
       "CWE-787"
     ],
     "cve_description": "Heap-based Buffer Overflow in GitHub repository vim/vim prior to 8.2.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -48,6 +48,8 @@\n     }\n \n     appended_lines_mark(n, count);\n+    if (VIsual_active)\n+\tcheck_pos(curbuf, &VIsual);\n \n     msgmore((long)count);\n }",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -229,7 +229,7 @@
       "CWE-787"
     ],
     "cve_description": "XMFile::read in XMFile.cpp in milkyplay in MilkyTracker 1.02.00 has a heap-based buffer overflow.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -28,7 +28,11 @@\n \t\treturn MP_OUT_OF_MEMORY;\n \t\n \theader->insnum = f.readWord(); // number of instruments\n-\theader->patnum = f.readWord(); // number of patterns\t\n+\tif (header->insnum > MP_MAXINS)\n+\t\treturn MP_LOADER_FAILED;\n+\theader->patnum = f.readWord(); // number of patterns\n+\tif (header->patnum > 256)\n+\t\treturn MP_LOADER_FAILED;\n \t\n \tmp_sint32 flags = f.readWord(); // st3 flags\t\n ",
     "original_vulnerable_label": 1,
     "project": "MilkyTracker"
   },
@@ -242,7 +242,7 @@
       "CWE-787"
     ],
     "cve_description": "Heap-based Buffer Overflow in GitHub repository vim/vim prior to 8.2.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -153,6 +153,11 @@\n \t    if (ptr[col] == NUL)\n \t\tbreak;\n \t    vcol += chartabsize(ptr + col, (colnr_T)vcol);\n+\t    if (vcol >= MAXCOL)\n+\t    {\n+\t\temsg(_(e_resulting_text_too_long));\n+\t\tbreak;\n+\t    }\n \t    if (has_mbyte)\n \t\tcol += (*mb_ptr2len)(ptr + col);\n \t    else",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -255,7 +255,7 @@
       "CWE-787"
     ],
     "cve_description": "MilkyTracker v1.03.00 was discovered to contain a stack overflow via the component LoaderXM::load. This vulnerability is triggered when the program is supplied a crafted XM module file.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -416,7 +416,7 @@\n \t\t\n \t\t\tf.readDwords(&instr[y].size,1);\n \t\t\t\n-\t\t\tif (instr[y].size < 29)\n+\t\t\tif (instr[y].size >= 4 && instr[y].size < 29)\n \t\t\t{\n \t\t\t\tmp_ubyte buffer[29];\n \t\t\t\tmemset(buffer, 0, sizeof(buffer));",
     "original_vulnerable_label": 1,
     "project": "MilkyTracker"
   },
@@ -268,7 +268,7 @@
       "CWE-787"
     ],
     "cve_description": "The ReadMATImageV4 function in coders/mat.c in ImageMagick 7.0.8-7 uses an uninitialized variable, leading to memory corruption.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -43,9 +43,9 @@\n   unsigned int\n     depth;\n \n-\n   quantum_info=(QuantumInfo *) NULL;\n   (void) SeekBlob(image,0,SEEK_SET);\n+  status=MagickTrue;\n   while (EOFBlob(image) == MagickFalse)\n   {\n     /*",
     "original_vulnerable_label": 1,
     "project": "ImageMagick"
   },
@@ -281,7 +281,7 @@
       "CWE-787"
     ],
     "cve_description": "A buffer overflow vulnerability in pcx_write_rle() in contrib/japanese/gdev10v.c of Artifex Software GhostScript v9.50 allows a remote attacker to cause a denial of service via a crafted PDF file. This is fixed in v9.51.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -11,7 +11,7 @@\n         byte data = *from;\n \n         from += step;\n-        if (data != *from || from == end) {\n+        if (from >= end || data != *from) {\n             if (data >= 0xc0)\n                 gp_fputc(0xc1, file);\n         } else {",
     "original_vulnerable_label": 1,
     "project": "ghostpdl"
   },
@@ -294,7 +294,7 @@
       "CWE-787"
     ],
     "cve_description": "Out-of-bounds Read in GitHub repository vim/vim prior to 8.2.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -714,7 +714,8 @@\n \t\t\t    sp->ts_isdiff = (newscore != 0)\n \t\t\t\t\t\t       ? DIFF_YES : DIFF_NONE;\n \t\t\t}\n-\t\t\telse if (sp->ts_isdiff == DIFF_INSERT)\n+\t\t\telse if (sp->ts_isdiff == DIFF_INSERT\n+\t\t\t\t\t\t\t    && sp->ts_fidx > 0)\n \t\t\t    // When inserting trail bytes don't advance in the\n \t\t\t    // bad word.\n \t\t\t    --sp->ts_fidx;",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -307,7 +307,7 @@
       "CWE-787"
     ],
     "cve_description": "An issue was discovered in ncurses through v6.2-1. _nc_captoinfo in captoinfo.c has a heap-based buffer overflow.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -35,12 +35,15 @@\n \t}\n \tbreak;\n     case '^':\n+\tlen = 2;\n \tc = UChar(*++sp);\n-\tif (c == '?')\n+\tif (c == '?') {\n \t    c = 127;\n-\telse\n+\t} else if (c == '\\0') {\n+\t    len = 1;\n+\t} else {\n \t    c &= 0x1f;\n-\tlen = 2;\n+\t}\n \tbreak;\n     default:\n \tc = UChar(*sp);",
     "original_vulnerable_label": 1,
     "project": "ncurses"
   },
@@ -320,7 +320,7 @@
       "CWE-787"
     ],
     "cve_description": "Buffer Over-read in function grab_file_name in GitHub repository vim/vim prior to 8.2.4956. This vulnerability is capable of crashing the software, memory modification, and possible remote execution.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -30,9 +30,16 @@\n \t}\n \tif (**pp == NUL)\n \t    *lenp = 0;\n-\tif (has_mbyte && *lenp > 0)\n-\t    // Correct the length to include all bytes of the last character.\n-\t    *lenp += (*mb_ptr2len)(*pp + (*lenp - 1)) - 1;\n+\tif (*lenp > 0)\n+\t{\n+\t    if (has_mbyte)\n+\t\t// Correct the length to include all bytes of the last\n+\t\t// character.\n+\t\t*lenp += (*mb_ptr2len)(*pp + (*lenp - 1)) - 1;\n+\t    else if ((*pp)[*lenp - 1] == NUL)\n+\t\t// Do not include a trailing NUL.\n+\t\t*lenp -= 1;\n+\t}\n     }\n     reset_VIsual_and_resel();\n     return OK;",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -333,7 +333,7 @@
       "CWE-787"
     ],
     "cve_description": "PJSIP is a free and open source multimedia communication library written in C. Versions 2.12 and prior contain a stack buffer overflow vulnerability that affects PJSUA2 users or users that call the API `pjmedia_sdp_print(), pjmedia_sdp_media_print()`. Applications that do not use PJSUA2 and do not directly call `pjmedia_sdp_print()` or `pjmedia_sdp_media_print()` should not be affected. A patch is available on the `master` branch of the `pjsip/pjproject` GitHub repository. There are currently no known workarounds.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -25,12 +25,21 @@\n     pj_memcpy(p, m->desc.transport.ptr, m->desc.transport.slen);\n     p += m->desc.transport.slen;\n     for (i=0; i<m->desc.fmt_count; ++i) {\n-\t*p++ = ' ';\n-\tpj_memcpy(p, m->desc.fmt[i].ptr, m->desc.fmt[i].slen);\n-\tp += m->desc.fmt[i].slen;\n+\tif (end-p > m->desc.fmt[i].slen) {\n+\t    *p++ = ' ';\n+\t    pj_memcpy(p, m->desc.fmt[i].ptr, m->desc.fmt[i].slen);\n+\t    p += m->desc.fmt[i].slen;\n+\t} else {\n+\t    return -1;\n+\t}\n     }\n-    *p++ = '\\r';\n-    *p++ = '\\n';\n+\n+    if (end-p >= 2) {\n+\t*p++ = '\\r';\n+\t*p++ = '\\n';\n+    } else {\n+\treturn -1;\n+    }\n \n     /* print connection info, if present. */\n     if (m->conn) {",
     "original_vulnerable_label": 1,
     "project": "pjproject"
   },
@@ -346,7 +346,7 @@
       "CWE-787"
     ],
     "cve_description": "An out-of-bounds write vulnerability exists in the drill format T-code tool number functionality of Gerbv 2.7.0, dev (commit b5f1eacd), and the forked version of Gerbv (commit 71493260). A specially-crafted drill file can lead to code execution. An attacker can provide a malicious file to trigger this vulnerability.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -65,6 +65,7 @@\n \t\t_(\"Out of bounds drill number %d \"\n \t\t    \"at line %ld in file \\\"%s\\\"\"),\n \t\ttool_num, file_line, fd->filename);\n+\treturn -1;\n     }\n \n     /* Set the current tool to the correct one */",
     "original_vulnerable_label": 1,
     "project": "gerbv"
   },
@@ -359,7 +359,7 @@
       "CWE-787"
     ],
     "cve_description": "Stack-based Buffer Overflow in GitHub repository vim/vim prior to 8.2.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -17,7 +17,7 @@\n     {\n \tsame_len = 1;\n \ts = p;\n-\tc = mb_ptr2char_adv(&s);\n+\tc = mb_cptr2char_adv(&s);\n \tclen = s - p;\n \twhile (*s != NUL && c == mb_ptr2char(s))\n \t{",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -372,7 +372,7 @@
       "CWE-787"
     ],
     "cve_description": "ImageMagick 7.1.0-27 is vulnerable to Buffer Overflow.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -72,6 +72,8 @@\n   image->endian=(magick[0] == 0x80) && (magick[1] == 0x2a) &&\n     (magick[2] == 0x5f) && (magick[3] == 0xd7) ? MSBEndian : LSBEndian;\n   cin.file.image_offset=ReadBlobLong(image);\n+  if (cin.file.image_offset < 712)\n+    ThrowReaderException(CorruptImageError,\"ImproperImageHeader\");\n   offset+=4;\n   cin.file.generic_length=ReadBlobLong(image);\n   offset+=4;",
     "original_vulnerable_label": 1,
     "project": "ImageMagick6"
   },
@@ -385,7 +385,7 @@
       "CWE-787"
     ],
     "cve_description": "Heap-based Buffer Overflow in GitHub repository vim/vim prior to 9.0.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -394,6 +394,8 @@\n \t\t    vim_memset(ptr, ' ', (size_t)spaces);\n \t\t    ptr += spaces;\n \t\t}\n+\t\telse\n+\t\t    totlen -= spaces;  // didn't use these spaces\n \t    }\n \n \t    // may insert some spaces after the new text",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -398,7 +398,7 @@
       "CWE-787"
     ],
     "cve_description": "A flaw was found in cairo's image-compositor.c in all versions prior to 1.17.4. This flaw allows an attacker who can provide a crafted input file to cairo's image-compositor (for example, by convincing a user to open a file in an application using cairo, or if an application uses cairo on untrusted input) to cause a stack buffer overflow -> out-of-bounds WRITE. The highest impact from this vulnerability is to confidentiality, integrity, as well as system availability.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -3,14 +3,14 @@\n \t\t    unsigned num_spans)\n {\n     cairo_image_span_renderer_t *r = abstract_renderer;\n-    uint8_t *m;\n+    uint8_t *m, *base = (uint8_t*)pixman_image_get_data(r->mask);\n     int x0;\n \n     if (num_spans == 0)\n \treturn CAIRO_STATUS_SUCCESS;\n \n     x0 = spans[0].x;\n-    m = r->_buf;\n+    m = base;\n     do {\n \tint len = spans[1].x - spans[0].x;\n \tif (len >= r->u.composite.run_length && spans[0].coverage == 0xff) {\n@@ -48,7 +48,7 @@\n \t\t\t\t      spans[0].x, y,\n \t\t\t\t      spans[1].x - spans[0].x, h);\n \n-\t    m = r->_buf;\n+\t    m = base;\n \t    x0 = spans[1].x;\n \t} else if (spans[0].coverage == 0x0) {\n \t    if (spans[0].x != x0) {\n@@ -77,7 +77,7 @@\n #endif\n \t    }\n \n-\t    m = r->_buf;\n+\t    m = base;\n \t    x0 = spans[1].x;\n \t} else {\n \t    *m++ = spans[0].coverage;",
     "original_vulnerable_label": 1,
     "project": "cairo"
   },
@@ -411,7 +411,7 @@
       "CWE-787"
     ],
     "cve_description": "Qt 5.x before 5.15.6 and 6.x through 6.1.2 has an out-of-bounds write in QOutlineMapper::convertPath (called from QRasterPaintEngine::fill and QPaintEngineEx::stroke).",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -39,7 +39,7 @@\n             patternLength *= pen.widthF();\n         if (qFuzzyIsNull(patternLength)) {\n             pen.setStyle(Qt::NoPen);\n-        } else if (extent / patternLength > 10000) {\n+        } else if (qFuzzyIsNull(extent) || extent / patternLength > 10000) {\n             // approximate stream of tiny dashes with semi-transparent solid line\n             pen.setStyle(Qt::SolidLine);\n             QColor color(pen.color());",
     "original_vulnerable_label": 1,
     "project": "qtbase"
   },
@@ -424,7 +424,7 @@
       "CWE-787"
     ],
     "cve_description": "Heap-based Buffer Overflow in vim/vim prior to 8.2.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -54,24 +54,9 @@\n \t}\n \n \tif (has_mbyte && spaces > 0)\n-\t{\n-\t    int off;\n+\t    // avoid copying part of a multi-byte character\n+\t    offset -= (*mb_head_off)(oldp, oldp + offset);\n \n-\t    // Avoid starting halfway a multi-byte character.\n-\t    if (b_insert)\n-\t    {\n-\t\toff = (*mb_head_off)(oldp, oldp + offset + spaces);\n-\t\tspaces -= off;\n-\t\tcount -= off;\n-\t    }\n-\t    else\n-\t    {\n-\t\t// spaces fill the gap, the character that's at the edge moves\n-\t\t// right\n-\t\toff = (*mb_head_off)(oldp, oldp + offset);\n-\t\toffset -= off;\n-\t    }\n-\t}\n \tif (spaces < 0)  // can happen when the cursor was moved\n \t    spaces = 0;\n ",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -437,7 +437,7 @@
       "CWE-787"
     ],
     "cve_description": "A buffer overflow vulnerability in lprn_is_black() in contrib/lips4/gdevlprn.c of Artifex Software GhostScript v9.50 allows a remote attacker to cause a denial of service via a crafted PDF file. This is fixed in v9.51.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -11,9 +11,16 @@\n     y0 = (r + h - bh) % maxY;\n     for (y = 0; y < bh; y++) {\n         p = &lprn->ImageBuf[(y0 + y) * bpl + bx * lprn->nBw];\n-        for (x = 0; x < lprn->nBw; x++)\n+        for (x = 0; x < lprn->nBw; x++) {\n+            /* bpl isn't necessarily a multiple of lprn->nBw, so\n+            we need to explicitly stop after the last byte in this\n+            line to avoid accessing either the next line's data or\n+            going off the end of our buffer completely. This avoids\n+            https://bugs.ghostscript.com/show_bug.cgi?id=701785. */\n+            if (bx * lprn->nBw + x >= bpl)  break;\n             if (p[x] != 0)\n                 return 1;\n+        }\n     }\n     return 0;\n }",
     "original_vulnerable_label": 1,
     "project": "ghostpdl"
   },
@@ -450,7 +450,7 @@
       "CWE-787"
     ],
     "cve_description": "A memory corruption issue was found in Artifex Ghostscript 9.50 and 9.52. Use of a non-standard PostScript operator can allow overriding of file access controls. The 'rsearch' calculation for the 'post' size resulted in a size that was too large, and could underflow to max uint32_t. This was fixed in commit 5d499272b95a6b890a1397e11d20937de000d31b.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -34,13 +34,18 @@\n     return 0;\n found:\n     op->tas.type_attrs = op1->tas.type_attrs;\n-    op->value.bytes = ptr;\n-    r_set_size(op, size);\n+    op->value.bytes = ptr;\t\t\t\t/* match */\n+    op->tas.rsize = size;\t\t\t\t/* match */\n     push(2);\n-    op[-1] = *op1;\n-    r_set_size(op - 1, ptr - op[-1].value.bytes);\n-    op1->value.bytes = ptr + size;\n-    r_set_size(op1, count + (!forward ? (size - 1) : 0));\n+    op[-1] = *op1;\t\t\t\t\t/* pre */\n+    op[-3].value.bytes = ptr + size;\t\t\t/* post */\n+    if (forward) {\n+        op[-1].tas.rsize = ptr - op[-1].value.bytes;\t/* pre */\n+        op[-3].tas.rsize = count;\t\t\t/* post */\n+    } else {\n+        op[-1].tas.rsize = count;\t\t\t/* pre */\n+        op[-3].tas.rsize -= count + size;\t\t/* post */\n+    }\n     make_true(op);\n     return 0;\n }",
     "original_vulnerable_label": 1,
     "project": "ghostpdl"
   },
@@ -463,7 +463,7 @@
       "CWE-787"
     ],
     "cve_description": "A heap buffer overflow flaw was found in IPsec ESP transformation code in net/ipv4/esp4.c and net/ipv6/esp6.c. This flaw allows a local attacker with a normal user privilege to overwrite kernel heap objects and may cause a local privilege escalation threat.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -6,6 +6,7 @@\n \tstruct page *page;\n \tstruct sk_buff *trailer;\n \tint tailen = esp->tailen;\n+\tunsigned int allocsz;\n \n \t/* this is non-NULL only with TCP/UDP Encapsulation */\n \tif (x->encap) {\n@@ -14,6 +15,10 @@\n \t\tif (err < 0)\n \t\t\treturn err;\n \t}\n+\n+\tallocsz = ALIGN(skb->data_len + tailen, L1_CACHE_BYTES);\n+\tif (allocsz > ESP_SKB_FRAG_MAXSIZE)\n+\t\tgoto cow;\n \n \tif (!skb_cloned(skb)) {\n \t\tif (tailen <= skb_tailroom(skb)) {",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -476,7 +476,7 @@
       "CWE-787"
     ],
     "cve_description": "A heap buffer overflow flaw was found in IPsec ESP transformation code in net/ipv4/esp4.c and net/ipv6/esp6.c. This flaw allows a local attacker with a normal user privilege to overwrite kernel heap objects and may cause a local privilege escalation threat.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -6,6 +6,7 @@\n \tstruct page *page;\n \tstruct sk_buff *trailer;\n \tint tailen = esp->tailen;\n+\tunsigned int allocsz;\n \n \tif (x->encap) {\n \t\tint err = esp6_output_encap(x, skb, esp);\n@@ -13,6 +14,10 @@\n \t\tif (err < 0)\n \t\t\treturn err;\n \t}\n+\n+\tallocsz = ALIGN(skb->data_len + tailen, L1_CACHE_BYTES);\n+\tif (allocsz > ESP_SKB_FRAG_MAXSIZE)\n+\t\tgoto cow;\n \n \tif (!skb_cloned(skb)) {\n \t\tif (tailen <= skb_tailroom(skb)) {",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -489,7 +489,7 @@
       "CWE-787"
     ],
     "cve_description": "An issue in the component luaG_runerror of Lua v5.4.4 and below leads to a heap-buffer overflow when a recursive error occurs.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -6,7 +6,10 @@\n   va_start(argp, fmt);\n   msg = luaO_pushvfstring(L, fmt, argp);  /* format message */\n   va_end(argp);\n-  if (isLua(ci))  /* if Lua function, add source:line information */\n+  if (isLua(ci)) {  /* if Lua function, add source:line information */\n     luaG_addinfo(L, msg, ci_func(ci)->p->source, getcurrentline(ci));\n+    setobjs2s(L, L->top - 2, L->top - 1);  /* remove 'msg' from the stack */\n+    L->top--;\n+  }\n   luaG_errormsg(L);\n }",
     "original_vulnerable_label": 1,
     "project": "lua"
   },
@@ -502,7 +502,7 @@
       "CWE-787"
     ],
     "cve_description": "In the Linux kernel through 5.15.2, hw_atl_utils_fw_rpc_wait in drivers/net/ethernet/aquantia/atlantic/hw_atl/hw_atl_utils.c allows an attacker (who can introduce a crafted device) to trigger an out-of-bounds write via a crafted length value.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -22,6 +22,11 @@\n \t\t\tgoto err_exit;\n \n \t\tif (fw.len == 0xFFFFU) {\n+\t\t\tif (sw.len > sizeof(self->rpc)) {\n+\t\t\t\tprintk(KERN_INFO \"Invalid sw len: %x\\n\", sw.len);\n+\t\t\t\terr = -EINVAL;\n+\t\t\t\tgoto err_exit;\n+\t\t\t}\n \t\t\terr = hw_atl_utils_fw_rpc_call(self, sw.len);\n \t\t\tif (err < 0)\n \t\t\t\tgoto err_exit;\n@@ -30,6 +35,11 @@\n \n \tif (rpc) {\n \t\tif (fw.len) {\n+\t\t\tif (fw.len > sizeof(self->rpc)) {\n+\t\t\t\tprintk(KERN_INFO \"Invalid fw len: %x\\n\", fw.len);\n+\t\t\t\terr = -EINVAL;\n+\t\t\t\tgoto err_exit;\n+\t\t\t}\n \t\t\terr =\n \t\t\thw_atl_utils_fw_downld_dwords(self,\n \t\t\t\t\t\t      self->rpc_addr,",
     "original_vulnerable_label": 1,
     "project": "net"
   },
@@ -515,7 +515,7 @@
       "CWE-787"
     ],
     "cve_description": "Access of Memory Location Before Start of Buffer in GitHub repository vim/vim prior to 8.2.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -12,6 +12,7 @@\n     char_u\t*start_leader, *end_leader;\n     int\t\tret = OK;\n     char_u\t*alias;\n+    static\tint recurse = 0;\n \n     /*\n      * Initialise variable so that clear_tv() can't mistake this for a\n@@ -37,6 +38,15 @@\n \t++*arg;\n \treturn FAIL;\n     }\n+\n+    // Limit recursion to 1000 levels.  At least at 10000 we run out of stack\n+    // and crash.\n+    if (recurse == 1000)\n+    {\n+\tsemsg(_(e_expression_too_recursive_str), *arg);\n+\treturn FAIL;\n+    }\n+    ++recurse;\n \n     switch (**arg)\n     {\n@@ -267,5 +277,7 @@\n      */\n     if (ret == OK && evaluate && end_leader > start_leader)\n \tret = eval7_leader(rettv, FALSE, start_leader, &end_leader);\n+\n+    --recurse;\n     return ret;\n }",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -528,7 +528,7 @@
       "CWE-787"
     ],
     "cve_description": "The eBPF RINGBUF bpf_ringbuf_reserve() function in the Linux kernel did not check that the allocated size was smaller than the ringbuf size, allowing an attacker to perform out-of-bounds writes within the kernel and therefore, arbitrary code execution. This issue was fixed via commit 4b81ccebaeee (\"bpf, ringbuf: Deny reserve of buffers larger than ringbuf\") (v5.13-rc4) and backported to the stable kernels in v5.12.4, v5.11.21, and v5.10.37. It was introduced via 457f44363a88 (\"bpf: Implement BPF ring buffer and verifier support for it\") (v5.8-rc1).",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -8,6 +8,9 @@\n \t\treturn NULL;\n \n \tlen = round_up(size + BPF_RINGBUF_HDR_SZ, 8);\n+\tif (len > rb->mask + 1)\n+\t\treturn NULL;\n+\n \tcons_pos = smp_load_acquire(&rb->consumer_pos);\n \n \tif (in_nmi()) {",
     "original_vulnerable_label": 1,
     "project": "bpf"
   },
@@ -541,7 +541,7 @@
       "CWE-787"
     ],
     "cve_description": "Rizin is a UNIX-like reverse engineering framework and command-line toolset. Versions 0.4.0 and prior are vulnerable to an out-of-bounds write when getting data from PYC(python) files. A user opening a malicious PYC file could be affected by this vulnerability, allowing an attacker to execute code on the user's machine. Commit number 68948017423a12786704e54227b8b2f918c2fd27 contains a patch.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,7 +1,6 @@\n static pyc_object *get_complex_object(RzBinPycObj *pyc, RzBuffer *buffer) {\n \tpyc_object *ret = NULL;\n \tbool error = false;\n-\tut32 size = 0;\n \tut32 n1 = 0;\n \tut32 n2 = 0;\n \n@@ -15,7 +14,7 @@\n \t} else {\n \t\tn1 = get_st32(buffer, &error);\n \t}\n-\tif (error) {\n+\tif (error || UT32_ADD_OVFCHK(n1, 1)) {\n \t\tfree(ret);\n \t\treturn NULL;\n \t}\n@@ -24,8 +23,7 @@\n \t\treturn NULL;\n \t}\n \t/* object contain string representation of the number */\n-\tsize = rz_buf_read(buffer, s1, n1);\n-\tif (size != n1) {\n+\tif (rz_buf_read(buffer, s1, n1) != n1) {\n \t\tRZ_FREE(s1);\n \t\tRZ_FREE(ret);\n \t\treturn NULL;\n@@ -34,9 +32,10 @@\n \n \tif ((pyc->magic_int & 0xffff) <= 62061) {\n \t\tn2 = get_ut8(buffer, &error);\n-\t} else\n+\t} else {\n \t\tn2 = get_st32(buffer, &error);\n-\tif (error) {\n+\t}\n+\tif (error || UT32_ADD_OVFCHK(n2, 1)) {\n \t\treturn NULL;\n \t}\n \tut8 *s2 = malloc(n2 + 1);\n@@ -44,8 +43,7 @@\n \t\treturn NULL;\n \t}\n \t/* object contain string representation of the number */\n-\tsize = rz_buf_read(buffer, s2, n2);\n-\tif (size != n2) {\n+\tif (rz_buf_read(buffer, s2, n2) != n2) {\n \t\tRZ_FREE(s1);\n \t\tRZ_FREE(s2);\n \t\tRZ_FREE(ret);",
     "original_vulnerable_label": 1,
     "project": "rizin"
   },
@@ -554,7 +554,7 @@
       "CWE-787"
     ],
     "cve_description": "Out-of-bounds Write in GitHub repository vim/vim prior to 9.0.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -336,9 +336,11 @@\n \t\tsize_t len = STRLEN(cmd_start);\n \n \t\t// Special case: empty command uses \"+\":\n-\t\t//  \"'<,'>mods\" -> \"mods'<,'>+\n+\t\t//  \"'<,'>mods\" -> \"mods *+\n+\t\t//  Use \"*\" instead of \"'<,'>\" to avoid the command getting\n+\t\t//  longer, in case is was allocated.\n \t\tmch_memmove(orig_cmd, cmd_start, len);\n-\t\tSTRCPY(orig_cmd + len, \"'<,'>+\");\n+\t\tSTRCPY(orig_cmd + len, \" *+\");\n \t    }\n \t    else\n \t    {",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -567,7 +567,7 @@
       "CWE-787"
     ],
     "cve_description": "Heap-based Buffer Overflow in GitHub repository vim/vim prior to 8.2.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -244,7 +244,7 @@\n #endif\n \n \t    // delete characters until we are at or before want_vcol\n-\t    while (vcol > want_vcol\n+\t    while (vcol > want_vcol && curwin->w_cursor.col > 0\n \t\t    && (cc = *(ml_get_cursor() - 1), VIM_ISWHITE(cc)))\n \t\tins_bs_one(&vcol);\n ",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -580,7 +580,7 @@
       "CWE-787"
     ],
     "cve_description": "raptor_xml_writer_start_element_common in raptor_xml_writer.c in Raptor RDF Syntax Library 2.0.15 miscalculates the maximum nspace declarations for the XML writer, leading to heap-based buffer overflows (sometimes seen in raptor_qname_format_as_xml).",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -10,9 +10,10 @@\n   size_t nspace_declarations_count = 0;  \n   unsigned int i;\n \n-  /* max is 1 per element and 1 for each attribute + size of declared */\n   if(nstack) {\n-    int nspace_max_count = element->attribute_count+1;\n+    int nspace_max_count = element->attribute_count * 2; /* attr and value */\n+    if(element->name->nspace)\n+      nspace_max_count++;\n     if(element->declared_nspaces)\n       nspace_max_count += raptor_sequence_size(element->declared_nspaces);\n     if(element->xml_language)\n@@ -66,7 +67,7 @@\n         }\n       }\n \n-      /* Add the attribute + value */\n+      /* Add the attribute's value */\n       nspace_declarations[nspace_declarations_count].declaration=\n         raptor_qname_format_as_xml(element->attributes[i],\n                                    &nspace_declarations[nspace_declarations_count].length);",
     "original_vulnerable_label": 1,
     "project": "raptor"
   },
@@ -593,7 +593,7 @@
       "CWE-787"
     ],
     "cve_description": "AutoTrace v0.40.0 was discovered to contain a heap overflow via the ReadImage function at input-bmp.c:660.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,7 +1,7 @@\n at_bitmap input_bmp_reader(gchar * filename, at_input_opts_type * opts, at_msg_func msg_func, gpointer msg_data, gpointer user_data)\n {\n   FILE *fd;\n-  unsigned char buffer[64];\n+  unsigned char buffer[128];\n   int ColormapSize, rowbytes, Maps;\n   gboolean Grey = FALSE;\n   unsigned char ColorMap[256][3];",
     "original_vulnerable_label": 1,
     "project": "autotrace"
   },
@@ -606,7 +606,7 @@
       "CWE-787"
     ],
     "cve_description": "Rizin is a UNIX-like reverse engineering framework and command-line toolset. In versions up to and including 0.3.1 there is a heap-based out of bounds write in parse_die() when reversing an AMD64 ELF binary with DWARF debug info. When a malicious AMD64 ELF binary is opened by a victim user, Rizin may crash or execute unintended actions. No workaround are known and users are advised to upgrade.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -3,25 +3,27 @@\n \tsize_t i;\n \tconst char *comp_dir = NULL;\n \tut64 line_info_offset = UT64_MAX;\n-\tfor (i = 0; i < abbrev->count - 1; i++) {\n-\t\tmemset(&die->attr_values[i], 0, sizeof(die->attr_values[i]));\n+\tif (abbrev->count) {\n+\t\tfor (i = 0; i < abbrev->count - 1; i++) {\n+\t\t\tmemset(&die->attr_values[i], 0, sizeof(die->attr_values[i]));\n \n-\t\tbuf = parse_attr_value(buf, buf_end - buf, &abbrev->defs[i],\n-\t\t\t&die->attr_values[i], hdr, debug_str, debug_str_len, big_endian);\n+\t\t\tbuf = parse_attr_value(buf, buf_end - buf, &abbrev->defs[i],\n+\t\t\t\t&die->attr_values[i], hdr, debug_str, debug_str_len, big_endian);\n \n-\t\tRzBinDwarfAttrValue *attribute = &die->attr_values[i];\n+\t\t\tRzBinDwarfAttrValue *attribute = &die->attr_values[i];\n \n-\t\tif (attribute->attr_name == DW_AT_comp_dir && (attribute->attr_form == DW_FORM_strp || attribute->attr_form == DW_FORM_string) && attribute->string.content) {\n-\t\t\tcomp_dir = attribute->string.content;\n+\t\t\tif (attribute->attr_name == DW_AT_comp_dir && (attribute->attr_form == DW_FORM_strp || attribute->attr_form == DW_FORM_string) && attribute->string.content) {\n+\t\t\t\tcomp_dir = attribute->string.content;\n+\t\t\t}\n+\t\t\tif (attribute->attr_name == DW_AT_stmt_list) {\n+\t\t\t\tif (attribute->kind == DW_AT_KIND_CONSTANT) {\n+\t\t\t\t\tline_info_offset = attribute->uconstant;\n+\t\t\t\t} else if (attribute->kind == DW_AT_KIND_REFERENCE) {\n+\t\t\t\t\tline_info_offset = attribute->reference;\n+\t\t\t\t}\n+\t\t\t}\n+\t\t\tdie->count++;\n \t\t}\n-\t\tif (attribute->attr_name == DW_AT_stmt_list) {\n-\t\t\tif (attribute->kind == DW_AT_KIND_CONSTANT) {\n-\t\t\t\tline_info_offset = attribute->uconstant;\n-\t\t\t} else if (attribute->kind == DW_AT_KIND_REFERENCE) {\n-\t\t\t\tline_info_offset = attribute->reference;\n-\t\t\t}\n-\t\t}\n-\t\tdie->count++;\n \t}\n \n \t// If this is a compilation unit dir attribute, we want to cache it so the line info parsing",
     "original_vulnerable_label": 1,
     "project": "rizin"
   },
@@ -619,7 +619,7 @@
       "CWE-787"
     ],
     "cve_description": "Improper Validation of Specified Quantity in Input in GitHub repository vim/vim prior to 9.0.0218.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,5 +1,6 @@\n-display_dollar(colnr_T col)\n+display_dollar(colnr_T col_arg)\n {\n+    colnr_T col = col_arg < 0 ? 0 : col_arg;\n     colnr_T save_col;\n \n     if (!redrawing())",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -632,7 +632,7 @@
       "CWE-787"
     ],
     "cve_description": "Heap-based Buffer Overflow in GitHub repository vim prior to 8.2.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -51,7 +51,8 @@\n \t\t    break;\n \n \t\tcase PASTE_EX:\n-\t\t    if (gap != NULL && ga_grow(gap, idx) == OK)\n+\t\t    // add one for the NUL that is going to be appended\n+\t\t    if (gap != NULL && ga_grow(gap, idx + 1) == OK)\n \t\t    {\n \t\t\tmch_memmove((char *)gap->ga_data + gap->ga_len,\n \t\t\t\t\t\t\t     buf, (size_t)idx);",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -645,7 +645,7 @@
       "CWE-787"
     ],
     "cve_description": "Integer Overflow or Wraparound in GitHub repository vim/vim prior to 9.0.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -82,6 +82,7 @@\n \tif (*tp == ESC && !p_ek && (State & MODE_INSERT))\n \t    continue;\n \n+\ttp[len] = NUL;\n \tkey_name[0] = NUL;\t// no key name found yet\n \tkey_name[1] = NUL;\t// no key name found yet\n \tmodifiers = 0;\t\t// no modifiers yet",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -658,7 +658,7 @@
       "CWE-787"
     ],
     "cve_description": "Buffer Over-read in GitHub repository vim/vim prior to 8.2.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -2,6 +2,7 @@\n {\n     int\t\ti;\n     int\t\tc;\n+    int\t\tsave_new_cmdpos = new_cmdpos;\n \n #ifdef USE_ON_FLY_SCROLL\n     dont_scroll = TRUE;\t// disallow scrolling here\n@@ -20,8 +21,6 @@\n #ifdef FEAT_EVAL\n     /*\n      * Insert the result of an expression.\n-     * Need to save the current command line, to be able to enter\n-     * a new one...\n      */\n     new_cmdpos = -1;\n     if (c == '=')\n@@ -62,6 +61,8 @@\n \t}\n #endif\n     }\n+    new_cmdpos = save_new_cmdpos;\n+\n     // remove the double quote\n     redrawcmd();\n ",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -671,7 +671,7 @@
       "CWE-787"
     ],
     "cve_description": "cdf_read_property_info in cdf.c in file through 5.37 does not restrict the number of CDF_VECTOR elements, which allows a heap-based buffer overflow (4-byte out-of-bounds write).",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -57,8 +57,9 @@\n \t\t\t\tgoto out;\n \t\t\t}\n \t\t\tnelements = CDF_GETUINT32(q, 1);\n-\t\t\tif (nelements == 0) {\n-\t\t\t\tDPRINTF((\"CDF_VECTOR with nelements == 0\\n\"));\n+\t\t\tif (nelements > CDF_ELEMENT_LIMIT || nelements == 0) {\n+\t\t\t\tDPRINTF((\"CDF_VECTOR with nelements == %\"\n+\t\t\t\t    SIZE_T_FORMAT \"u\\n\", nelements));\n \t\t\t\tgoto out;\n \t\t\t}\n \t\t\tslen = 2;\n@@ -100,8 +101,6 @@\n \t\t\t\t\tgoto out;\n \t\t\t\tinp += nelem;\n \t\t\t}\n-\t\t\tDPRINTF((\"nelements = %\" SIZE_T_FORMAT \"u\\n\",\n-\t\t\t    nelements));\n \t\t\tfor (j = 0; j < nelements && i < sh.sh_properties;\n \t\t\t    j++, i++)\n \t\t\t{",
     "original_vulnerable_label": 1,
     "project": "file"
   },
@@ -684,7 +684,7 @@
       "CWE-787"
     ],
     "cve_description": "fs/seq_file.c in the Linux kernel 3.16 through 5.13.x before 5.13.4 does not properly restrict seq buffer allocations, leading to an integer overflow, an Out-of-bounds Write, and escalation to root by an unprivileged user, aka CID-8cae8cd89f05.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,4 +1,7 @@\n static void *seq_buf_alloc(unsigned long size)\n {\n+\tif (unlikely(size > MAX_RW_COUNT))\n+\t\treturn NULL;\n+\n \treturn kvmalloc(size, GFP_KERNEL_ACCOUNT);\n }",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -697,7 +697,7 @@
       "CWE-787"
     ],
     "cve_description": "ImageMagick 7.1.0-27 is vulnerable to Buffer Overflow.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -72,6 +72,8 @@\n   image->endian=(magick[0] == 0x80) && (magick[1] == 0x2a) &&\n     (magick[2] == 0x5f) && (magick[3] == 0xd7) ? MSBEndian : LSBEndian;\n   cin.file.image_offset=ReadBlobLong(image);\n+  if (cin.file.image_offset < 712)\n+    ThrowReaderException(CorruptImageError,\"ImproperImageHeader\");\n   offset+=4;\n   cin.file.generic_length=ReadBlobLong(image);\n   offset+=4;",
     "original_vulnerable_label": 1,
     "project": "ImageMagick"
   },
@@ -710,7 +710,7 @@
       "CWE-787"
     ],
     "cve_description": "NULL Pointer Dereference in GitHub repository vim/vim prior to 9.0.0240.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -22,10 +22,12 @@\n \n     /*\n      * Go through the whole case-folded tree, soundfold each word and put it\n-     * in the trie.\n+     * in the trie.  Bail out if the tree is empty.\n      */\n     byts = slang->sl_fbyts;\n     idxs = slang->sl_fidxs;\n+    if (byts == NULL || idxs == NULL)\n+\treturn FAIL;\n \n     arridx[0] = 0;\n     curi[0] = 1;",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -723,7 +723,7 @@
       "CWE-787"
     ],
     "cve_description": "Heap Buffer Overflow in parseDragons in GitHub repository radareorg/radare2 prior to 5.6.8.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,11 +1,14 @@\n static RCoreSymCacheElement *parseDragons(RBinFile *bf, RBuffer *buf, int off, int bits, R_OWN char *file_name) {\n \tD eprintf (\"Dragons at 0x%x\\n\", off);\n-\tut64 size = r_buf_size (buf);\n+\tst64 size = r_buf_size (buf);\n \tif (off >= size) {\n \t\treturn NULL;\n \t}\n \tsize -= off;\n \tif (!size) {\n+\t\treturn NULL;\n+\t}\n+\tif (size < 32) {\n \t\treturn NULL;\n \t}\n \tut8 *b = malloc (size);",
     "original_vulnerable_label": 1,
     "project": "radare2"
   },
@@ -736,7 +736,7 @@
       "CWE-787"
     ],
     "cve_description": "In LibTIFF 4.0.9, a heap-based buffer overflow occurs in the function LZWDecodeCompat in tif_lzw.c via a crafted TIFF file, as demonstrated by tiff2ps.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -7,6 +7,7 @@\n \tchar *tp;\n \tunsigned char *bp;\n \tint code, nbits;\n+\tint len;\n \tlong nextbits, nextdata, nbitsmask;\n \tcode_t *codep, *free_entp, *maxcodep, *oldcodep;\n \n@@ -158,13 +159,18 @@\n \t\t\t\t}  while (--occ);\n \t\t\t\tbreak;\n \t\t\t}\n-\t\t\tassert(occ >= codep->length);\n-\t\t\top += codep->length;\n-\t\t\tocc -= codep->length;\n-\t\t\ttp = op;\n-\t\t\tdo {\n-\t\t\t\t*--tp = codep->value;\n-\t\t\t} while( (codep = codep->next) != NULL );\n+\t\t\tlen = codep->length;\n+\t\t\ttp = op + len;\n+\t\t\tdo {\n+\t\t\t\tint t;\n+\t\t\t\t--tp;\n+\t\t\t\tt = codep->value;\n+\t\t\t\tcodep = codep->next;\n+\t\t\t\t*tp = (char)t;\n+\t\t\t} while (codep && tp > op);\n+\t\t\tassert(occ >= len);\n+\t\t\top += len;\n+\t\t\tocc -= len;\n \t\t} else {\n \t\t\t*op++ = (char)code;\n \t\t\tocc--;",
     "original_vulnerable_label": 1,
     "project": "libtiff"
   },
@@ -749,7 +749,7 @@
       "CWE-787"
     ],
     "cve_description": "Rizin is a UNIX-like reverse engineering framework and command-line toolset. Versions 0.4.0 and prior are vulnerable to an out-of-bounds write when getting data from dyld cache files. A user opening a malicious dyld cache file could be affected by this vulnerability, allowing an attacker to execute code on the user's machine. Commit number 556ca2f9eef01ec0f4a76d1fbacfcf3a87a44810 contains a patch.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -5,7 +5,7 @@\n \t}\n \n \tif (!cache->hdr->slideInfoOffset || !cache->hdr->slideInfoSize) {\n-\t\tut32 total_slide_infos = 0;\n+\t\tsize_t total_slide_infos = 0;\n \t\tut32 n_slide_infos[MAX_N_HDR];\n \n \t\tut32 i;\n@@ -14,7 +14,12 @@\n \t\t\tif (!rz_buf_read_le32_at(cache->buf, 0x13c + hdr_offset, &n_slide_infos[i])) {\n \t\t\t\tgoto beach;\n \t\t\t}\n-\t\t\ttotal_slide_infos += n_slide_infos[i];\n+\t\t\tut32 total = total_slide_infos + n_slide_infos[i];\n+\t\t\tif (total < total_slide_infos) {\n+\t\t\t\t// overflow\n+\t\t\t\tgoto beach;\n+\t\t\t}\n+\t\t\ttotal_slide_infos = total;\n \t\t}\n \n \t\tif (!total_slide_infos) {",
     "original_vulnerable_label": 1,
     "project": "rizin"
   },
@@ -762,7 +762,7 @@
       "CWE-787"
     ],
     "cve_description": "zlib through 1.2.12 has a heap-based buffer over-read or buffer overflow in inflate in inflate.c via a large gzip header extra field. NOTE: only applications that call inflateGetHeader are affected. Some common applications bundle the affected zlib source code but may be unable to call inflateGetHeader (e.g., see the nodejs/node reference).",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -141,9 +141,10 @@\n                 copy = state->length;\n                 if (copy > have) copy = have;\n                 if (copy) {\n+                    len = state->head->extra_len - state->length;\n                     if (state->head != Z_NULL &&\n-                        state->head->extra != Z_NULL) {\n-                        len = state->head->extra_len - state->length;\n+                        state->head->extra != Z_NULL &&\n+                        len < state->head->extra_max) {\n                         zmemcpy(state->head->extra + len, next,\n                                 len + copy > state->head->extra_max ?\n                                 state->head->extra_max - len : copy);",
     "original_vulnerable_label": 1,
     "project": "zlib"
   },
@@ -775,7 +775,7 @@
       "CWE-787"
     ],
     "cve_description": "Heap-based Buffer Overflow in GitHub repository vim/vim prior to 8.2.4436.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -99,6 +99,8 @@\n \t\tnew_cursor_col += (*mb_ptr2len)(ptr + new_cursor_col);\n \t    else\n \t\t++new_cursor_col;\n+\t    if (ptr[new_cursor_col] == NUL)\n+\t\tbreak;\n \t    vcol += lbr_chartabsize(ptr, ptr + new_cursor_col, (colnr_T)vcol);\n \t}\n \tvcol = last_vcol;",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -788,7 +788,7 @@
       "CWE-787"
     ],
     "cve_description": "A heap buffer overflow issue was found in ImageMagick. When an application processes a malformed TIFF file, it could lead to undefined behavior or a crash causing a denial of service.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -726,7 +726,7 @@\n         /*\n           Convert stripped TIFF image.\n         */\n-        extent=4*(samples_per_pixel+1)*TIFFStripSize(tiff);\n+        extent=4*((image->depth+7)/8)*(samples_per_pixel+1)*TIFFStripSize(tiff);\n         strip_pixels=(unsigned char *) AcquireQuantumMemory(extent,\n           sizeof(*strip_pixels));\n         if (strip_pixels == (unsigned char *) NULL)",
     "original_vulnerable_label": 1,
     "project": "ImageMagick6"
   },
@@ -801,7 +801,7 @@
       "CWE-787"
     ],
     "cve_description": "An issue was discovered in disable_priv_mode in shell.c in GNU Bash through 5.0 patch 11. By default, if Bash is run with its effective UID not equal to its real UID, it will drop privileges by setting its effective UID to its real UID. However, it does so incorrectly. On Linux and other systems that support \"saved UID\" functionality, the saved UID is not dropped. An attacker with command execution in the shell can use \"enable -f\" for runtime loading of a new builtin, which can be a shared object that calls setuid() and therefore regains privileges. However, binaries running with an effective UID of 0 are unaffected.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -2,7 +2,11 @@\n {\n   int e;\n \n+#if HAVE_DECL_SETRESUID\n+  if (setresuid (current_user.uid, current_user.uid, current_user.uid) < 0)\n+#else\n   if (setuid (current_user.uid) < 0)\n+#endif\n     {\n       e = errno;\n       sys_error (_(\"cannot set uid to %d: effective uid %d\"), current_user.uid, current_user.euid);\n@@ -11,7 +15,11 @@\n \texit (e);\n #endif\n     }\n+#if HAVE_DECL_SETRESGID\n+  if (setresgid (current_user.gid, current_user.gid, current_user.gid) < 0)\n+#else\n   if (setgid (current_user.gid) < 0)\n+#endif\n     sys_error (_(\"cannot set gid to %d: effective gid %d\"), current_user.gid, current_user.egid);\n \n   current_user.euid = current_user.uid;",
     "original_vulnerable_label": 1,
     "project": "bash"
   },
@@ -814,7 +814,7 @@
       "CWE-787"
     ],
     "cve_description": "prealloc_elems_and_freelist in kernel/bpf/stackmap.c in the Linux kernel before 5.14.12 allows unprivileged users to trigger an eBPF multiplication integer overflow with a resultant out-of-bounds write.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,6 +1,7 @@\n static int prealloc_elems_and_freelist(struct bpf_stack_map *smap)\n {\n-\tu32 elem_size = sizeof(struct stack_map_bucket) + smap->map.value_size;\n+\tu64 elem_size = sizeof(struct stack_map_bucket) +\n+\t\t\t(u64)smap->map.value_size;\n \tint err;\n \n \tsmap->elems = bpf_map_area_alloc(elem_size * smap->map.max_entries,",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -827,7 +827,7 @@
       "CWE-787"
     ],
     "cve_description": "A vulnerability classified as problematic was found in GhostPCL 9.55.0. This vulnerability affects the function chunk_free_object of the file gsmchunk.c. The manipulation with a malicious file leads to a memory corruption. The attack can be initiated remotely but requires user interaction. The exploit has been disclosed to the public as a POC and may be used. It is recommended to apply the patches to fix this issue.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -8,6 +8,7 @@\n     pcs->status.read_pos += count;\n     if (pcs->status.read_pos == pcs->status.write_pos) {\n         gs_free_object(pcs->memory, pcs->status.buffer, \"status buffer\");\n+        pcs->status.buffer = NULL;\n         pcs->status.write_pos = pcs->status.read_pos = 0;\n     }\n     return count;",
     "original_vulnerable_label": 1,
     "project": "ghostpdl"
   },
@@ -840,7 +840,7 @@
       "CWE-787"
     ],
     "cve_description": "Improper Neutralization of Special Elements used in an OS Command in bookmarking function of Newsbeuter versions 0.7 through 2.9 allows remote attackers to perform user-assisted code execution by crafting an RSS item that includes shell code in its title and/or URL.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -7,12 +7,12 @@\n \tstd::string bookmark_cmd = cfg.get_configvalue(\"bookmark-cmd\");\n \tbool is_interactive = cfg.get_configvalue_as_bool(\"bookmark-interactive\");\n \tif (bookmark_cmd.length() > 0) {\n-\t\tstd::string cmdline = strprintf::fmt(\"%s '%s' %s %s %s\",\n+\t\tstd::string cmdline = strprintf::fmt(\"%s '%s' '%s' '%s' '%s'\",\n \t\t                                       bookmark_cmd,\n \t\t                                       utils::replace_all(url,\"'\", \"%27\"),\n-\t\t                                       quote_empty(stfl::quote(title)),\n-\t\t                                       quote_empty(stfl::quote(description)),\n-\t\t                                       quote_empty(stfl::quote(feed_title)));\n+\t\t                                       utils::replace_all(title,\"'\", \"%27\"),\n+\t\t                                       utils::replace_all(description,\"'\", \"%27\"),\n+\t\t                                       utils::replace_all(feed_title,\"'\", \"%27\"));\n \n \t\tLOG(level::DEBUG, \"controller::bookmark: cmd = %s\", cmdline);\n ",
     "original_vulnerable_label": 1,
     "project": "newsbeuter"
   },
@@ -853,7 +853,7 @@
       "CWE-787"
     ],
     "cve_description": "Heap-based Buffer Overflow occurs in vim in GitHub repository vim/vim prior to 8.2.4563.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -44,6 +44,10 @@\n \t    curwin->w_cursor.col = VIsual.col;\n \t++badlen;\n \tend_visual_mode();\n+\t// make sure we don't include the NUL at the end of the line\n+\tline = ml_get_curline();\n+\tif (badlen > STRLEN(line) - curwin->w_cursor.col)\n+\t    badlen = STRLEN(line) - curwin->w_cursor.col;\n     }\n     // Find the start of the badly spelled word.\n     else if (spell_move_to(curwin, FORWARD, TRUE, TRUE, NULL) == 0",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -866,7 +866,7 @@
       "CWE-787"
     ],
     "cve_description": "LibVNC before commit 7b1ef0ffc4815cab9a96c7278394152bdc89dc4d contains heap out-of-bound write vulnerability inside structure in VNC client code that can result remote code execution",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -16,7 +16,7 @@\n \n     client->GotFillRect(client, rx, ry, rw, rh, pix);\n \n-    if (hdr.nSubrects * (4 + (BPP / 8)) > RFB_BUFFER_SIZE || !ReadFromRFBServer(client, client->buffer, hdr.nSubrects * (4 + (BPP / 8))))\n+    if (hdr.nSubrects > RFB_BUFFER_SIZE / (4 + (BPP / 8)) || !ReadFromRFBServer(client, client->buffer, hdr.nSubrects * (4 + (BPP / 8))))\n \treturn FALSE;\n \n     ptr = (uint8_t *)client->buffer;",
     "original_vulnerable_label": 1,
     "project": "libvncserver"
   },
@@ -879,7 +879,7 @@
       "CWE-787"
     ],
     "cve_description": "Heap-based Buffer Overflow in GitHub repository radareorg/radare2 prior to 5.6.2.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -6,6 +6,10 @@\n \tut64 offset = 0, curpos;\n \tattr = r_bin_java_default_attr_new (bin, buffer, sz, buf_offset);\n \toffset += 6;\n+\tif (buf_offset + offset + 8 > sz) {\n+\t\teprintf (\"Invalid amount of inner classes\\n\");\n+\t\treturn NULL;\n+\t}\n \tif (attr == NULL) {\n \t\t// TODO eprintf\n \t\treturn attr;\n@@ -16,7 +20,7 @@\n \tattr->info.inner_classes_attr.classes = r_list_newf (r_bin_java_inner_classes_attr_entry_free);\n \tfor (i = 0; i < attr->info.inner_classes_attr.number_of_classes; i++) {\n \t\tcurpos = buf_offset + offset;\n-\t\tif (offset + 8 > sz) {\n+\t\tif (buf_offset + offset + 8 > sz) {\n \t\t\teprintf (\"Invalid amount of inner classes\\n\");\n \t\t\tbreak;\n \t\t}",
     "original_vulnerable_label": 1,
     "project": "radare2"
   },
@@ -892,7 +892,7 @@
       "CWE-787"
     ],
     "cve_description": "arch/powerpc/kvm/book3s_rtas.c in the Linux kernel through 5.13.5 on the powerpc platform allows KVM guest OS users to cause host OS memory corruption via rtas_args.nargs, aka CID-f62f3c20647e.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -25,6 +25,17 @@\n \t * value so we can restore it on the way out.\n \t */\n \torig_rets = args.rets;\n+\tif (be32_to_cpu(args.nargs) >= ARRAY_SIZE(args.args)) {\n+\t\t/*\n+\t\t * Don't overflow our args array: ensure there is room for\n+\t\t * at least rets[0] (even if the call specifies 0 nret).\n+\t\t *\n+\t\t * Each handler must then check for the correct nargs and nret\n+\t\t * values, but they may always return failure in rets[0].\n+\t\t */\n+\t\trc = -EINVAL;\n+\t\tgoto fail;\n+\t}\n \targs.rets = &args.args[be32_to_cpu(args.nargs)];\n \n \tmutex_lock(&vcpu->kvm->arch.rtas_token_lock);\n@@ -52,9 +63,17 @@\n fail:\n \t/*\n \t * We only get here if the guest has called RTAS with a bogus\n-\t * args pointer. That means we can't get to the args, and so we\n-\t * can't fail the RTAS call. So fail right out to userspace,\n-\t * which should kill the guest.\n+\t * args pointer or nargs/nret values that would overflow the\n+\t * array. That means we can't get to the args, and so we can't\n+\t * fail the RTAS call. So fail right out to userspace, which\n+\t * should kill the guest.\n+\t *\n+\t * SLOF should actually pass the hcall return value from the\n+\t * rtas handler call in r3, so enter_rtas could be modified to\n+\t * return a failure indication in r3 and we could return such\n+\t * errors to the guest rather than failing to host userspace.\n+\t * However old guests that don't test for failure could then\n+\t * continue silently after errors, so for now we won't do this.\n \t */\n \treturn rc;\n }",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -905,7 +905,7 @@
       "CWE-787"
     ],
     "cve_description": "Liblouis 3.21.0 has an out-of-bounds write in compileRule in compileTranslationTable.c, as demonstrated by lou_trace.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -974,12 +974,14 @@\n \n \t\tcase CTO_SeqAfterExpression:\n \t\t\tif (!getRuleCharsText(file, &ruleChars)) return 0;\n-\t\t\tfor ((*table)->seqAfterExpressionLength = 0;\n-\t\t\t\t\t(*table)->seqAfterExpressionLength < ruleChars.length;\n-\t\t\t\t\t(*table)->seqAfterExpressionLength++)\n-\t\t\t\t(*table)->seqAfterExpression[(*table)->seqAfterExpressionLength] =\n-\t\t\t\t\t\truleChars.chars[(*table)->seqAfterExpressionLength];\n-\t\t\t(*table)->seqAfterExpression[(*table)->seqAfterExpressionLength] = 0;\n+\t\t\tif ((ruleChars.length + 1) > SEQPATTERNSIZE) {\n+\t\t\t\tcompileError(file, \"More than %d characters\", SEQPATTERNSIZE);\n+\t\t\t\treturn 0;\n+\t\t\t}\n+\t\t\tfor (int k = 0; k < ruleChars.length; k++)\n+\t\t\t\t(*table)->seqAfterExpression[k] = ruleChars.chars[k];\n+\t\t\t(*table)->seqAfterExpression[ruleChars.length] = 0;\n+\t\t\t(*table)->seqAfterExpressionLength = ruleChars.length;\n \t\t\treturn 1;\n \n \t\tcase CTO_CapsModeChars:",
     "original_vulnerable_label": 1,
     "project": "liblouis"
   },
@@ -918,7 +918,7 @@
       "CWE-787"
     ],
     "cve_description": "libmobi is vulnerable to Out-of-bounds Write",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -9,8 +9,8 @@\n         }\n         source += aoffset;\n     } else {\n-        if (buf->offset < aoffset) {\n-            debug_print(\"%s\", \"End of buffer\\n\");\n+        if ( (buf->offset < aoffset) || (buf->offset + len > buf->maxlen) ) {\n+            debug_print(\"%s\", \"Beyond start/end of buffer\\n\");\n             buf->error = MOBI_BUFFER_END;\n             return;\n         }",
     "original_vulnerable_label": 1,
     "project": "libmobi"
   }

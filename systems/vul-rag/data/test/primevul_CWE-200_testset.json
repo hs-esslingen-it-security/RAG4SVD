@@ -8,7 +8,7 @@
       "CWE-200"
     ],
     "cve_description": "The kernel in Amazon Web Services FreeRTOS before 10.4.3 has an integer overflow in queue.c for queue creation.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -15,6 +15,9 @@\n \r\n         /* Check for multiplication overflow. */\r\n         configASSERT( ( uxItemSize == 0 ) || ( uxQueueLength == ( xQueueSizeInBytes / uxItemSize ) ) );\r\n+\r\n+        /* Check for addition overflow. */\r\n+        configASSERT( ( sizeof( Queue_t ) + xQueueSizeInBytes ) >  xQueueSizeInBytes );\r\n \r\n         /* Allocate the queue and storage area.  Justification for MISRA\r\n          * deviation as follows:  pvPortMalloc() always ensures returned memory\r",
     "original_vulnerable_label": 1,
     "project": "FreeRTOS-Kernel"
   },
@@ -21,7 +21,7 @@
       "CWE-200"
     ],
     "cve_description": "crypto/digest.c in Pengutronix barebox through 2021.07.0 leaks timing information because memcmp is used during digest verification.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -10,8 +10,10 @@\n \tif (ret)\n \t\tgoto end;\n \n-\tret = memcmp(md, tmp, len);\n-\tret = ret ? -EINVAL : 0;\n+\tif (crypto_memneq(md, tmp, len))\n+\t\tret = -EINVAL;\n+\telse\n+\t\tret = 0;\n end:\n \tfree(tmp);\n \treturn ret;",
     "original_vulnerable_label": 1,
     "project": "barebox"
   },
@@ -34,7 +34,7 @@
       "CWE-200"
     ],
     "cve_description": "PJSIP is a free and open source multimedia communication library written in C. PJSIP versions 2.12 and prior do not parse incoming RTCP feedback RPSI (Reference Picture Selection Indication) packet, but any app that directly uses pjmedia_rtcp_fb_parse_rpsi() will be affected. A patch is available in the `master` branch of the `pjsip/pjproject` GitHub repository. There are currently no known workarounds.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -3,24 +3,43 @@\n \t\t\t\t\tpj_size_t length,\n \t\t\t\t\tpjmedia_rtcp_fb_rpsi *rpsi)\n {\n-    pjmedia_rtcp_common *hdr = (pjmedia_rtcp_common*) buf;\n+    pjmedia_rtcp_fb_common *hdr = (pjmedia_rtcp_fb_common*) buf;\n     pj_uint8_t *p;\n     pj_uint8_t padlen;\n     pj_size_t rpsi_len;\n \n     PJ_ASSERT_RETURN(buf && rpsi, PJ_EINVAL);\n-    PJ_ASSERT_RETURN(length >= sizeof(pjmedia_rtcp_common), PJ_ETOOSMALL);\n+    PJ_ASSERT_RETURN(length >= sizeof(pjmedia_rtcp_fb_common), PJ_ETOOSMALL);\n \n     /* RPSI uses pt==RTCP_PSFB and FMT==3 */\n-    if (hdr->pt != RTCP_PSFB || hdr->count != 3)\n+    if (hdr->rtcp_common.pt != RTCP_PSFB || hdr->rtcp_common.count != 3)\n \treturn PJ_ENOTFOUND;\n \n-    rpsi_len = (pj_ntohs((pj_uint16_t)hdr->length)-2) * 4;\n+    if (hdr->rtcp_common.length < 3) {    \n+        PJ_PERROR(3, (THIS_FILE, PJ_ETOOSMALL,\n+                      \"Failed parsing FB RPSI, invalid header length\"));\n+\treturn PJ_ETOOSMALL;\n+    }\n+\n+    rpsi_len = (pj_ntohs((pj_uint16_t)hdr->rtcp_common.length)-2) * 4;\n     if (length < rpsi_len + 12)\n \treturn PJ_ETOOSMALL;\n \n     p = (pj_uint8_t*)hdr + sizeof(*hdr);\n     padlen = *p++;\n+\n+    if (padlen >= 32) {\n+        PJ_PERROR(3, (THIS_FILE, PJ_ETOOBIG,\n+                      \"Failed parsing FB RPSI, invalid RPSI padding len\"));\n+\treturn PJ_ETOOBIG;\n+    }\n+\n+    if ((rpsi_len * 8) < (unsigned)(16 + padlen)) {\n+        PJ_PERROR(3, (THIS_FILE, PJ_ETOOSMALL,\n+                      \"Failed parsing FB RPSI, invalid RPSI bit len\"));\n+\treturn PJ_ETOOSMALL;\n+    }\n+\n     rpsi->pt = (*p++ & 0x7F);\n     rpsi->rpsi_bit_len = rpsi_len*8 - 16 - padlen;\n     pj_strset(&rpsi->rpsi, (char*)p, (rpsi->rpsi_bit_len + 7)/8);",
     "original_vulnerable_label": 1,
     "project": "pjproject"
   },
@@ -47,7 +47,7 @@
       "CWE-200"
     ],
     "cve_description": "common/password.c in Pengutronix barebox through 2021.07.0 leaks timing information because strncmp is used during hash comparison.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -45,7 +45,7 @@\n \t\tif (ret)\n \t\t\tgoto err;\n \n-\t\tif (strncmp(passwd1_sum, key, keylen) == 0)\n+\t\tif (!crypto_memneq(passwd1_sum, key, keylen))\n \t\t\tret = 1;\n \t} else {\n \t\tret = digest_digest(d, passwd, length, passwd1_sum);\n@@ -53,7 +53,7 @@\n \t\tif (ret)\n \t\t\tgoto err;\n \n-\t\tif (strncmp(passwd1_sum, passwd2_sum, hash_len) == 0)\n+\t\tif (!crypto_memneq(passwd1_sum, passwd2_sum, hash_len))\n \t\t\tret = 1;\n \t}\n ",
     "original_vulnerable_label": 1,
     "project": "barebox"
   },
@@ -60,7 +60,7 @@
       "CWE-200"
     ],
     "cve_description": "In drivers/hid/hid-elo.c in the Linux kernel before 5.16.11, a memory leak exists for a certain hid_parse error condition.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -36,6 +36,7 @@\n \n \treturn 0;\n err_free:\n+\tusb_put_dev(udev);\n \tkfree(priv);\n \treturn ret;\n }",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -73,7 +73,7 @@
       "CWE-200"
     ],
     "cve_description": "An information leak flaw was found due to uninitialized memory in the Linux kernel's TIPC protocol subsystem, in the way a user sends a TIPC datagram to one or more destinations. This flaw allows a local user to read some kernel memory. This issue is limited to no more than 7 bytes, and the user cannot control what is read. This flaw affects the Linux kernel versions prior to 5.17-rc1.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -53,6 +53,8 @@\n \t\t\ttsk->conn_addrtype = atype;\n \t\tmsg_set_syn(hdr, 1);\n \t}\n+\n+\tmemset(&skaddr, 0, sizeof(skaddr));\n \n \t/* Determine destination */\n \tif (atype == TIPC_SERVICE_RANGE) {",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -86,7 +86,7 @@
       "CWE-200"
     ],
     "cve_description": "squashfs_opendir in unsquash-2.c in Squashfs-Tools 4.5 allows Directory Traversal, a different vulnerability than CVE-2021-40153. A squashfs filesystem that has been crafted to include a symbolic link and then contents under the same filename in a filesystem can cause unsquashfs to first create the symbolic link pointing outside the expected directory, and then the subsequent write operation will cause the unsquashfs process to write through the symbolic link elsewhere in the filesystem.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,10 +1,10 @@\n static struct dir *squashfs_opendir(unsigned int block_start, unsigned int offset,\n \tstruct inode **i)\n {\n-\tsquashfs_dir_header_2 dirh;\n-\tchar buffer[sizeof(squashfs_dir_entry_2) + SQUASHFS_NAME_LEN + 1]\n+\tsquashfs_dir_header_3 dirh;\n+\tchar buffer[sizeof(squashfs_dir_entry_3) + SQUASHFS_NAME_LEN + 1]\n \t\t__attribute__((aligned));\n-\tsquashfs_dir_entry_2 *dire = (squashfs_dir_entry_2 *) buffer;\n+\tsquashfs_dir_entry_3 *dire = (squashfs_dir_entry_3 *) buffer;\n \tlong long start;\n \tint bytes = 0;\n \tint dir_count, size, res;\n@@ -29,7 +29,7 @@\n \tdir->xattr = (*i)->xattr;\n \tdir->dirs = NULL;\n \n-\tif ((*i)->data == 0)\n+\tif ((*i)->data == 3)\n \t\t/*\n \t\t * if the directory is empty, skip the unnecessary\n \t\t * lookup_entry, this fixes the corner case with\n@@ -40,17 +40,17 @@\n \n \tstart = sBlk.s.directory_table_start + (*i)->start;\n \toffset = (*i)->offset;\n-\tsize = (*i)->data + bytes;\n+\tsize = (*i)->data + bytes - 3;\n \n-\twhile(bytes < size) {\n+\twhile(bytes < size) {\t\t\t\n \t\tif(swap) {\n-\t\t\tsquashfs_dir_header_2 sdirh;\n+\t\t\tsquashfs_dir_header_3 sdirh;\n \t\t\tres = read_directory_data(&sdirh, &start, &offset, sizeof(sdirh));\n \t\t\tif(res)\n-\t\t\t\tSQUASHFS_SWAP_DIR_HEADER_2(&dirh, &sdirh);\n+\t\t\t\tSQUASHFS_SWAP_DIR_HEADER_3(&dirh, &sdirh);\n \t\t} else\n \t\t\tres = read_directory_data(&dirh, &start, &offset, sizeof(dirh));\n-\n+\t\n \t\tif(res == FALSE)\n \t\t\tgoto corrupted;\n \n@@ -67,11 +67,11 @@\n \n \t\twhile(dir_count--) {\n \t\t\tif(swap) {\n-\t\t\t\tsquashfs_dir_entry_2 sdire;\n+\t\t\t\tsquashfs_dir_entry_3 sdire;\n \t\t\t\tres = read_directory_data(&sdire, &start,\n \t\t\t\t\t&offset, sizeof(sdire));\n \t\t\t\tif(res)\n-\t\t\t\t\tSQUASHFS_SWAP_DIR_ENTRY_2(dire, &sdire);\n+\t\t\t\t\tSQUASHFS_SWAP_DIR_ENTRY_3(dire, &sdire);\n \t\t\t} else\n \t\t\t\tres = read_directory_data(dire, &start,\n \t\t\t\t\t&offset, sizeof(*dire));\n@@ -124,6 +124,12 @@\n \t\t}\n \t}\n \n+\t/* check directory for duplicate names and sorting */\n+\tif(check_directory(dir) == FALSE) {\n+\t\tERROR(\"File system corrupted: directory has duplicate names or is unsorted\\n\");\n+\t\tgoto corrupted;\n+\t}\n+\n \treturn dir;\n \n corrupted:",
     "original_vulnerable_label": 1,
     "project": "squashfs-tools"
   },
@@ -99,7 +99,7 @@
       "CWE-200"
     ],
     "cve_description": "squashfs_opendir in unsquash-2.c in Squashfs-Tools 4.5 allows Directory Traversal, a different vulnerability than CVE-2021-40153. A squashfs filesystem that has been crafted to include a symbolic link and then contents under the same filename in a filesystem can cause unsquashfs to first create the symbolic link pointing outside the expected directory, and then the subsequent write operation will cause the unsquashfs process to write through the symbolic link elsewhere in the filesystem.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -124,6 +124,12 @@\n \t\t}\n \t}\n \n+\t/* check directory for duplicate names and sorting */\n+\tif(check_directory(dir) == FALSE) {\n+\t\tERROR(\"File system corrupted: directory has duplicate names or is unsorted\\n\");\n+\t\tgoto corrupted;\n+\t}\n+\n \treturn dir;\n \n corrupted:",
     "original_vulnerable_label": 1,
     "project": "squashfs-tools"
   },
@@ -112,7 +112,7 @@
       "CWE-200"
     ],
     "cve_description": "squashfs_opendir in unsquash-2.c in Squashfs-Tools 4.5 allows Directory Traversal, a different vulnerability than CVE-2021-40153. A squashfs filesystem that has been crafted to include a symbolic link and then contents under the same filename in a filesystem can cause unsquashfs to first create the symbolic link pointing outside the expected directory, and then the subsequent write operation will cause the unsquashfs process to write through the symbolic link elsewhere in the filesystem.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -110,6 +110,12 @@\n \t\t}\n \t}\n \n+\t/* check directory for duplicate names and sorting */\n+\tif(check_directory(dir) == FALSE) {\n+\t\tERROR(\"File system corrupted: directory has duplicate names or is unsorted\\n\");\n+\t\tgoto corrupted;\n+\t}\n+\n \treturn dir;\n \n corrupted:",
     "original_vulnerable_label": 1,
     "project": "squashfs-tools"
   },
@@ -125,7 +125,7 @@
       "CWE-200"
     ],
     "cve_description": "A flaw was found in the Linux kernel's OverlayFS subsystem in the way the user mounts the TmpFS filesystem with OverlayFS. This flaw allows a local user to gain access to hidden files that should not be accessible.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -3,10 +3,19 @@\n \tstruct mount *old_mnt = real_mount(path->mnt);\n \tstruct mount *new_mnt;\n \n+\tdown_read(&namespace_sem);\n \tif (IS_MNT_UNBINDABLE(old_mnt))\n-\t\treturn ERR_PTR(-EINVAL);\n+\t\tgoto invalid;\n+\n+\tif (!check_mnt(old_mnt))\n+\t\tgoto invalid;\n+\n+\tif (has_locked_children(old_mnt, path->dentry))\n+\t\tgoto invalid;\n \n \tnew_mnt = clone_mnt(old_mnt, path->dentry, CL_PRIVATE);\n+\tup_read(&namespace_sem);\n+\n \tif (IS_ERR(new_mnt))\n \t\treturn ERR_CAST(new_mnt);\n \n@@ -14,4 +23,8 @@\n \tnew_mnt->mnt_ns = MNT_NS_INTERNAL;\n \n \treturn &new_mnt->mnt;\n+\n+invalid:\n+\tup_read(&namespace_sem);\n+\treturn ERR_PTR(-EINVAL);\n }",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -138,7 +138,7 @@
       "CWE-200"
     ],
     "cve_description": "The gpg_ctx_add_recipient function in camel/camel-gpg-context.c in GNOME Evolution 3.8.4 and earlier and Evolution Data Server 3.9.5 and earlier does not properly select the GPG key to use for email encryption, which might cause the email to be encrypted with the wrong key and allow remote attackers to obtain sensitive information.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,11 +1,23 @@\n gpg_ctx_add_recipient (struct _GpgCtx *gpg,\n                        const gchar *keyid)\n {\n+\tgchar *safe_keyid;\n+\n \tif (gpg->mode != GPG_CTX_MODE_ENCRYPT && gpg->mode != GPG_CTX_MODE_EXPORT)\n \t\treturn;\n \n \tif (!gpg->recipients)\n \t\tgpg->recipients = g_ptr_array_new ();\n \n-\tg_ptr_array_add (gpg->recipients, g_strdup (keyid));\n+\tg_return_if_fail (keyid != NULL);\n+\n+\t/* If the recipient looks like an email address,\n+\t * enclose it in brackets to ensure an exact match. */\n+\tif (strchr (keyid, '@') != NULL) {\n+\t\tsafe_keyid = g_strdup_printf (\"<%s>\", keyid);\n+\t} else {\n+\t\tsafe_keyid = g_strdup (keyid);\n+\t}\n+\n+\tg_ptr_array_add (gpg->recipients, safe_keyid);\n }",
     "original_vulnerable_label": 1,
     "project": "evolution-data-server"
   },
@@ -151,7 +151,7 @@
       "CWE-200"
     ],
     "cve_description": "The openssl_encrypt function in ext/openssl/openssl.c in PHP 5.3.9 through 5.3.13 does not initialize a certain variable, which allows remote attackers to obtain sensitive information from process memory by providing zero bytes of input data.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,21 +1,35 @@\n-PHP_FUNCTION(openssl_encrypt)\n+PHP_FUNCTION(openssl_decrypt)\n {\n-\tzend_bool raw_output = 0;\n+\tzend_bool raw_input = 0;\n \tchar *data, *method, *password, *iv = \"\";\n-\tint data_len, method_len, password_len, iv_len = 0, max_iv_len;\n+\tint data_len, method_len, password_len, iv_len = 0;\n \tconst EVP_CIPHER *cipher_type;\n \tEVP_CIPHER_CTX cipher_ctx;\n \tint i, outlen, keylen;\n \tunsigned char *outbuf, *key;\n+\tint base64_str_len;\n+\tchar *base64_str = NULL;\n \tzend_bool free_iv;\n \n-\tif (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, \"sss|bs\", &data, &data_len, &method, &method_len, &password, &password_len, &raw_output, &iv, &iv_len) == FAILURE) {\n+\tif (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, \"sss|bs\", &data, &data_len, &method, &method_len, &password, &password_len, &raw_input, &iv, &iv_len) == FAILURE) {\n \t\treturn;\n \t}\n+\n+\tif (!method_len) {\n+\t\tphp_error_docref(NULL TSRMLS_CC, E_WARNING, \"Unknown cipher algorithm\");\n+\t\tRETURN_FALSE;\n+\t}\n+\n \tcipher_type = EVP_get_cipherbyname(method);\n \tif (!cipher_type) {\n \t\tphp_error_docref(NULL TSRMLS_CC, E_WARNING, \"Unknown cipher algorithm\");\n \t\tRETURN_FALSE;\n+\t}\n+\n+\tif (!raw_input) {\n+\t\tbase64_str = (char*)php_base64_decode((unsigned char*)data, data_len, &base64_str_len);\n+\t\tdata_len = base64_str_len;\n+\t\tdata = base64_str;\n \t}\n \n \tkeylen = EVP_CIPHER_key_length(cipher_type);\n@@ -27,35 +41,22 @@\n \t\tkey = (unsigned char*)password;\n \t}\n \n-\tmax_iv_len = EVP_CIPHER_iv_length(cipher_type);\n-\tif (iv_len <= 0 && max_iv_len > 0) {\n-\t\tphp_error_docref(NULL TSRMLS_CC, E_WARNING, \"Using an empty Initialization Vector (iv) is potentially insecure and not recommended\");\n-\t}\n-\tfree_iv = php_openssl_validate_iv(&iv, &iv_len, max_iv_len TSRMLS_CC);\n+\tfree_iv = php_openssl_validate_iv(&iv, &iv_len, EVP_CIPHER_iv_length(cipher_type) TSRMLS_CC);\n \n \toutlen = data_len + EVP_CIPHER_block_size(cipher_type);\n \toutbuf = emalloc(outlen + 1);\n \n-\tEVP_EncryptInit(&cipher_ctx, cipher_type, NULL, NULL);\n+\tEVP_DecryptInit(&cipher_ctx, cipher_type, NULL, NULL);\n \tif (password_len > keylen) {\n \t\tEVP_CIPHER_CTX_set_key_length(&cipher_ctx, password_len);\n \t}\n-\tEVP_EncryptInit_ex(&cipher_ctx, NULL, NULL, key, (unsigned char *)iv);\n-\tEVP_EncryptUpdate(&cipher_ctx, outbuf, &i, (unsigned char *)data, data_len);\n+\tEVP_DecryptInit_ex(&cipher_ctx, NULL, NULL, key, (unsigned char *)iv);\n+\tEVP_DecryptUpdate(&cipher_ctx, outbuf, &i, (unsigned char *)data, data_len);\n \toutlen = i;\n-\tif (EVP_EncryptFinal(&cipher_ctx, (unsigned char *)outbuf + i, &i)) {\n+\tif (EVP_DecryptFinal(&cipher_ctx, (unsigned char *)outbuf + i, &i)) {\n \t\toutlen += i;\n-\t\tif (raw_output) {\n-\t\t\toutbuf[outlen] = '\\0';\n-\t\t\tRETVAL_STRINGL((char *)outbuf, outlen, 0);\n-\t\t} else {\n-\t\t\tint base64_str_len;\n-\t\t\tchar *base64_str;\n-\n-\t\t\tbase64_str = (char*)php_base64_encode(outbuf, outlen, &base64_str_len);\n-\t\t\tefree(outbuf);\n-\t\t\tRETVAL_STRINGL(base64_str, base64_str_len, 0);\n-\t\t}\n+\t\toutbuf[outlen] = '\\0';\n+\t\tRETVAL_STRINGL((char *)outbuf, outlen, 0);\n \t} else {\n \t\tefree(outbuf);\n \t\tRETVAL_FALSE;\n@@ -66,5 +67,8 @@\n \tif (free_iv) {\n \t\tefree(iv);\n \t}\n-\tEVP_CIPHER_CTX_cleanup(&cipher_ctx);\n+\tif (base64_str) {\n+\t\tefree(base64_str);\n+\t}\n+ \tEVP_CIPHER_CTX_cleanup(&cipher_ctx);\n }",
     "original_vulnerable_label": 1,
     "project": "php-src"
   },
@@ -164,7 +164,7 @@
       "CWE-200"
     ],
     "cve_description": "The Linux kernel through 5.7.11 allows remote attackers to make observations that help to obtain sensitive information about the internal state of the network RNG, aka CID-f227e3ec3b5c. This is related to drivers/char/random.c and kernel/time/timer.c.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -23,6 +23,7 @@\n \n \tfast_mix(fast_pool);\n \tadd_interrupt_bench(cycles);\n+\tthis_cpu_add(net_rand_state.s1, fast_pool->pool[cycles & 3]);\n \n \tif (unlikely(crng_init == 0)) {\n \t\tif ((fast_pool->count >= 64) &&",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -177,7 +177,7 @@
       "CWE-200"
     ],
     "cve_description": "The Linux kernel through 5.7.11 allows remote attackers to make observations that help to obtain sensitive information about the internal state of the network RNG, aka CID-f227e3ec3b5c. This is related to drivers/char/random.c and kernel/time/timer.c.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -13,4 +13,11 @@\n \tscheduler_tick();\n \tif (IS_ENABLED(CONFIG_POSIX_TIMERS))\n \t\trun_posix_cpu_timers();\n+\n+\t/* The current CPU might make use of net randoms without receiving IRQs\n+\t * to renew them often enough. Let's update the net_rand_state from a\n+\t * non-constant value that's not affine to the number of calls to make\n+\t * sure it's updated when there's some activity (we don't care in idle).\n+\t */\n+\tthis_cpu_add(net_rand_state.s1, rol32(jiffies, 24) + user_tick);\n }",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -190,7 +190,7 @@
       "CWE-200"
     ],
     "cve_description": "(a) mount and (b) umount in util-linux 2.14.1, 2.17.2, and probably other versions allow local users to determine the existence of restricted directories by (1) using the --guess-fstype command-line option or (2) attempting to mount a non-existent device, which generates different error messages depending on whether the directory exists.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -290,6 +290,9 @@\n \t} else\n \t\tusage(stderr);\n \n+\tif (mnt_context_is_restricted(cxt))\n+\t\tsanitize_paths(cxt);\n+\n \tif (oper) {\n \t\t/* MS_PROPAGATION operations, let's set the mount flags */\n \t\tmnt_context_set_mflags(cxt, oper);",
     "original_vulnerable_label": 1,
     "project": "util-linux"
   },
@@ -203,7 +203,7 @@
       "CWE-200"
     ],
     "cve_description": "vim is vulnerable to Heap-based Buffer Overflow",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -45,12 +45,13 @@\n \tp = NameBuff;\n \tlen = (int)STRLEN(p);\n \n-\tif (bt_help(wp->w_buffer)\n+\tif ((bt_help(wp->w_buffer)\n #ifdef FEAT_QUICKFIX\n-\t\t|| wp->w_p_pvw\n+\t\t    || wp->w_p_pvw\n #endif\n-\t\t|| bufIsChanged(wp->w_buffer)\n-\t\t|| wp->w_buffer->b_p_ro)\n+\t\t    || bufIsChanged(wp->w_buffer)\n+\t\t    || wp->w_buffer->b_p_ro)\n+\t\t&& len < MAXPATHL - 1)\n \t    *(p + len++) = ' ';\n \tif (bt_help(wp->w_buffer))\n \t{",
     "original_vulnerable_label": 1,
     "project": "vim"
   }

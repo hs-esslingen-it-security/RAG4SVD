@@ -8,7 +8,7 @@
       "CWE-264"
     ],
     "cve_description": "Exim 4.72 and earlier allows local users to gain privileges by leveraging the ability of the exim user account to specify an alternate configuration file with a directive that contains arbitrary commands, as demonstrated by the spool_directory directive.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -82,10 +82,10 @@\n       \"configuration file %s\", filename));\n   }\n \n-/* Check the status of the file we have opened, unless it was specified on\n-the command line, in which case privilege was given away at the start. */\n-\n-if (!config_changed)\n+/* Check the status of the file we have opened, if we have retained root\n+privileges. */\n+\n+if (trusted_config)\n   {\n   if (fstat(fileno(config_file), &statbuf) != 0)\n     log_write(0, LOG_MAIN|LOG_PANIC_DIE, \"failed to stat configuration file %s\",",
     "original_vulnerable_label": 1,
     "project": "exim"
   }

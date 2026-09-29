@@ -8,7 +8,7 @@
       "CWE-125"
     ],
     "cve_description": "Tensorflow is an Open Source Machine Learning Framework. TensorFlow's type inference can cause a heap out of bounds read as the bounds checking is done in a `DCHECK` (which is a no-op during production). An attacker can control the `input_idx` variable such that `ix` would be larger than the number of values in `node_t.args`. The fix will be included in TensorFlow 2.8.0. This is the only affected version.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -38,10 +38,16 @@\n       const auto& node_t = node->def().experimental_type();\n       if (node_t.type_id() != TFT_UNSET) {\n         int ix = input_idx[i];\n-        DCHECK(ix < node_t.args_size())\n-            << \"input \" << i << \" should have an output \" << ix\n-            << \" but instead only has \" << node_t.args_size()\n-            << \" outputs: \" << node_t.DebugString();\n+        if (ix >= node_t.args_size()) {\n+          LOG(WARNING) << name() << \" has bad type information: input \" << i\n+                       << \" should have an output \" << ix\n+                       << \" but instead only has \" << node_t.args_size()\n+                       << \" outputs: \" << node_t.DebugString()\n+                       << \"\\nThis indicates either \"\n+                          \"a bug in op registration or a corrupted graph.\";\n+          ClearTypeInfo();\n+          return;\n+        }\n         input_types.emplace_back(node_t.args(ix));\n       } else {\n         input_types.emplace_back(*no_type);",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -21,7 +21,7 @@
       "CWE-125"
     ],
     "cve_description": "PJSIP is a free and open source multimedia communication library. In version 2.11.1 and prior, if incoming RTCP XR message contain block, the data field is not checked against the received packet size, potentially resulting in an out-of-bound read access. This affects all users that use PJMEDIA and RTCP XR. A malicious actor can send a RTCP XR message with an invalid packet size.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -28,16 +28,32 @@\n \tif (rb_len) {\n \t    switch (rb_hdr->bt) {\n \t\tcase BT_RR_TIME:\n-\t\t    rb_rr_time = (pjmedia_rtcp_xr_rb_rr_time*) rb_hdr;\n+\t\t    if ((char*)rb_hdr + sizeof(*rb_rr_time) <=\n+\t\t\t(char*)pkt + size) \n+\t\t    {\n+\t\t\trb_rr_time = (pjmedia_rtcp_xr_rb_rr_time*)rb_hdr;\n+\t\t    }\n \t\t    break;\n \t\tcase BT_DLRR:\n-\t\t    rb_dlrr = (pjmedia_rtcp_xr_rb_dlrr*) rb_hdr;\n+\t\t    if ((char*)rb_hdr + sizeof(*rb_dlrr) <=\n+\t\t\t(char*)pkt + size)\n+\t\t    {\n+\t\t\trb_dlrr = (pjmedia_rtcp_xr_rb_dlrr*)rb_hdr;\n+\t\t    }\n \t\t    break;\n \t\tcase BT_STATS:\n-\t\t    rb_stats = (pjmedia_rtcp_xr_rb_stats*) rb_hdr;\n+\t\t    if ((char*)rb_hdr + sizeof(*rb_stats) <=\n+\t\t\t(char*)pkt + size)\n+\t\t    {\n+\t\t\trb_stats = (pjmedia_rtcp_xr_rb_stats*)rb_hdr;\n+\t\t    }\n \t\t    break;\n \t\tcase BT_VOIP_METRICS:\n-\t\t    rb_voip_mtc = (pjmedia_rtcp_xr_rb_voip_mtc*) rb_hdr;\n+\t\t    if ((char*)rb_hdr + sizeof(*rb_voip_mtc) <=\n+\t\t\t(char*)pkt + size)\n+\t\t    {\n+\t\t\trb_voip_mtc = (pjmedia_rtcp_xr_rb_voip_mtc*)rb_hdr;\n+\t\t    }\n \t\t    break;\n \t\tdefault:\n \t\t    break;",
     "original_vulnerable_label": 1,
     "project": "pjproject"
   },
@@ -34,7 +34,7 @@
       "CWE-125"
     ],
     "cve_description": "An out-of-bounds read vulnerability was discovered in the PCRE2 library in the compile_xclass_matchingpath() function of the pcre2_jit_compile.c file. This involves a unicode property matching issue in JIT-compiled regular expressions. The issue occurs because the character was not fully read in case-less matching within JIT.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -58,7 +58,7 @@\n     {\n     SLJIT_ASSERT(*cc == XCL_PROP || *cc == XCL_NOTPROP);\n     cc++;\n-    if (*cc == PT_CLIST && *cc == XCL_PROP)\n+    if (*cc == PT_CLIST && cc[-1] == XCL_PROP)\n       {\n       other_cases = PRIV(ucd_caseless_sets) + cc[1];\n       while (*other_cases != NOTACHAR)",
     "original_vulnerable_label": 1,
     "project": "pcre2"
   },
@@ -47,7 +47,7 @@
       "CWE-125"
     ],
     "cve_description": "Out-of-bounds Read in mrb_get_args in GitHub repository mruby/mruby prior to 3.2. Possible arbitrary code execution if being exploited.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -110,7 +110,7 @@\n           }\n         }\n         if (tree->cdr->car) {       /* keyword arguments */\n-          if (n == 14) {\n+          if (n == 13 || n == 14) {\n             pop_n(n);\n             genop_2(s, OP_ARRAY, cursp(), n);\n             push();",
     "original_vulnerable_label": 1,
     "project": "mruby"
   },
@@ -60,7 +60,7 @@
       "CWE-125"
     ],
     "cve_description": "Tensorflow is an Open Source Machine Learning Framework. The implementation of `FractionalAvgPoolGrad` does not consider cases where the input tensors are invalid allowing an attacker to read from outside of bounds of heap. The fix will be included in TensorFlow 2.8.0. We will also cherrypick this commit on TensorFlow 2.7.1, TensorFlow 2.6.3, and TensorFlow 2.5.3, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -96,15 +96,26 @@\n     for (int64_t b = 0; b < out_batch; ++b) {\n       for (int64_t r = 0; r < out_rows; ++r) {\n         const int64_t in_row_start = row_seq_tensor_flat(r);\n+\n         int64_t in_row_end = overlapping_ ? row_seq_tensor_flat(r + 1)\n                                           : row_seq_tensor_flat(r + 1) - 1;\n         in_row_end = std::min(in_row_end, in_max_row_index);\n+        OP_REQUIRES(context, in_row_start >= 0 && in_row_end >= 0,\n+                    errors::InvalidArgument(\n+                        \"Row sequence tensor values must not be negative, got \",\n+                        row_seq_tensor_flat));\n+\n         for (int64_t c = 0; c < out_cols; ++c) {\n           const int64_t in_col_start = col_seq_tensor_flat(c);\n           int64_t in_col_end = overlapping_ ? col_seq_tensor_flat(c + 1)\n                                             : col_seq_tensor_flat(c + 1) - 1;\n           in_col_end = std::min(in_col_end, in_max_col_index);\n \n+          OP_REQUIRES(\n+              context, in_col_start >= 0 && in_col_end >= 0,\n+              errors::InvalidArgument(\n+                  \"Column sequence tensor values must not be negative, got \",\n+                  col_seq_tensor_flat));\n           const int64_t num_elements_in_pooling_cell =\n               (in_row_end - in_row_start + 1) * (in_col_end - in_col_start + 1);\n           const int64_t out_index = (b * out_rows + r) * out_cols + c;",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -73,7 +73,7 @@
       "CWE-125"
     ],
     "cve_description": "In ImageMagick before 6.9.9-0 and 7.x before 7.0.6-1, the ReadOneMNGImage function in coders/png.c has an out-of-bounds read with the MNG CLIP chunk.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -810,6 +810,9 @@\n \n                 for (i=(int) first_object; i <= (int) last_object; i++)\n                 {\n+                  if ((i < 0) || (i >= MNG_MAX_OBJECTS))\n+                    continue;\n+\n                   if (mng_info->exists[i] && !mng_info->frozen[i])\n                     {\n                       MngBox",
     "original_vulnerable_label": 1,
     "project": "ImageMagick"
   },
@@ -86,7 +86,7 @@
       "CWE-125"
     ],
     "cve_description": "TensorFlow is an open source platform for machine learning. In affected versions the implementation of `SparseFillEmptyRows` can be made to trigger a heap OOB access. This occurs whenever the size of `indices` does not match the size of `values`. The fix will be included in TensorFlow 2.7.0. We will also cherrypick this commit on TensorFlow 2.6.1, TensorFlow 2.5.2, and TensorFlow 2.4.4, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -30,6 +30,12 @@\n                                             values_t.shape().DebugString()),\n                     done);\n   OP_REQUIRES_ASYNC(\n+      context, indices_t.dim_size(0) == values_t.dim_size(0),\n+      errors::InvalidArgument(\"The length of `values` (\", values_t.dim_size(0),\n+                              \") must match the first dimension of `indices` (\",\n+                              indices_t.dim_size(0), \").\"),\n+      done);\n+  OP_REQUIRES_ASYNC(\n       context, TensorShapeUtils::IsScalar(default_value_t.shape()),\n       errors::InvalidArgument(\"default_value must be a scalar, saw: \",\n                               default_value_t.shape().DebugString()),",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -99,7 +99,7 @@
       "CWE-125"
     ],
     "cve_description": "TensorFlow is an open source platform for machine learning. In affected versions the shape inference functions for `SparseCountSparseOutput` can trigger a read outside of bounds of heap allocated array. The fix will be included in TensorFlow 2.7.0. We will also cherrypick this commit on TensorFlow 2.6.1, TensorFlow 2.5.2, and TensorFlow 2.4.4, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,4 +1,6 @@\n Status SparseCountSparseOutputShapeFn(InferenceContext *c) {\n+  ShapeHandle unused;\n+  TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 2, &unused));\n   auto rank = c->Dim(c->input(0), 1);\n   auto nvals = c->UnknownDim();\n   c->set_output(0, c->Matrix(nvals, rank));  // out.indices",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -112,7 +112,7 @@
       "CWE-125"
     ],
     "cve_description": "Out-of-bounds Read in GitHub repository mruby/mruby prior to 3.2.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -137,8 +137,12 @@\n       if (val) {\n         gen_move(s, top, cursp(), 1);\n       }\n-      if (n < 14) {\n+      if (n < 15) {\n         n++;\n+        if (n == 15) {\n+          pop_n(14);\n+          genop_2(s, OP_ARRAY, cursp(), 15);\n+        }\n       }\n       else {\n         pop();",
     "original_vulnerable_label": 1,
     "project": "mruby"
   },
@@ -125,7 +125,7 @@
       "CWE-125"
     ],
     "cve_description": "TensorFlow is an open source platform for machine learning. In affected versions the code for sparse matrix multiplication is vulnerable to undefined behavior via binding a reference to `nullptr`. This occurs whenever the dimensions of `a` or `b` are 0 or less. In the case on one of these is 0, an empty output tensor should be allocated (to conserve the invariant that output tensors are always allocated when the operation is successful) but nothing should be written to it (that is, we should return early from the kernel implementation). Otherwise, attempts to write to this empty tensor would result in heap OOB access. The fix will be included in TensorFlow 2.7.0. We will also cherrypick this commit on TensorFlow 2.6.1, TensorFlow 2.5.2, and TensorFlow 2.4.4, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -15,8 +15,17 @@\n                 errors::InvalidArgument(\n                     \"Matrix size incompatible: a: \", a.shape().DebugString(),\n                     \", b: \", b.shape().DebugString()));\n+    OP_REQUIRES(ctx, m >= 0 && n >= 0 && k >= 0,\n+                errors::InvalidArgument(\n+                    \"Matrix dimensions cannot be negative: a: \",\n+                    a.shape().DebugString(), \", b: \", b.shape().DebugString()));\n     Tensor* output = nullptr;\n     OP_REQUIRES_OK(ctx, ctx->allocate_output(0, TensorShape({m, n}), &output));\n+\n+    // Return early if at least one of the output dimension size is 0.\n+    if (m == 0 || n == 0) {\n+      return;\n+    }\n \n     if (k == 0) {\n       // If the inner dimension k in the matrix multiplication is zero, we fill",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -138,7 +138,7 @@
       "CWE-125"
     ],
     "cve_description": "TensorFlow is an end-to-end open source platform for machine learning. In affected versions an attacker can cause undefined behavior via binding a reference to null pointer in `tf.raw_ops.RaggedTensorToVariant`. The [implementation](https://github.com/tensorflow/tensorflow/blob/460e000de3a83278fb00b61a16d161b1964f15f4/tensorflow/core/kernels/ragged_tensor_to_variant_op.cc#L129) has an incomplete validation of the splits values, missing the case when the argument would be empty. We have patched the issue in GitHub commit be7a4de6adfbd303ce08be4332554dff70362612. The fix will be included in TensorFlow 2.6.0. We will also cherrypick this commit on TensorFlow 2.5.1, TensorFlow 2.4.3, and TensorFlow 2.3.4, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -22,6 +22,12 @@\n       return;\n     }\n \n+    // Checked here instead of at input in case batched_input_ is false\n+    OP_REQUIRES(context, ragged_nested_splits_len > 0,\n+                errors::InvalidArgument(\n+                    \"rt_nested_splits must be a list of one or more, but \"\n+                    \"received rt_nested_splits of length 0.\"));\n+\n     // Unbatch the Ragged Tensor and encode the components.\n     std::vector<RaggedTensorVariant> unbatched_ragged_input;\n     auto batched_splits_top_vec =",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -151,7 +151,7 @@
       "CWE-125"
     ],
     "cve_description": "TensorFlow is an end-to-end open source platform for machine learning. In affected versions TFLite's [`GatherNd` implementation](https://github.com/tensorflow/tensorflow/blob/149562d49faa709ea80df1d99fc41d005b81082a/tensorflow/lite/kernels/gather_nd.cc#L124) does not support negative indices but there are no checks for this situation. Hence, an attacker can read arbitrary data from the heap by carefully crafting a model with negative values in `indices`. Similar issue exists in [`Gather` implementation](https://github.com/tensorflow/tensorflow/blob/149562d49faa709ea80df1d99fc41d005b81082a/tensorflow/lite/kernels/gather.cc). We have patched the issue in GitHub commits bb6a0383ed553c286f87ca88c207f6774d5c4a8f and eb921122119a6b6e470ee98b89e65d721663179d. The fix will be included in TensorFlow 2.6.0. We will also cherrypick this commit on TensorFlow 2.5.1, TensorFlow 2.4.3, and TensorFlow 2.3.4, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,5 +1,16 @@\n TfLiteStatus EvalGatherNd(TfLiteContext* context, const TfLiteTensor* params,\n                           const TfLiteTensor* indices, TfLiteTensor* output) {\n+  bool indices_has_only_positive_elements = true;\n+  const auto* indices_values = GetTensorData<IndicesT>(indices);\n+  const size_t num_indices = indices->bytes / sizeof(IndicesT);\n+  for (size_t i = 0; i < num_indices; i++) {\n+    if (indices_values[i] < 0) {\n+      indices_has_only_positive_elements = false;\n+      break;\n+    }\n+  }\n+  TF_LITE_ENSURE(context, indices_has_only_positive_elements);\n+\n   switch (params->type) {\n     case kTfLiteFloat32:\n       return GatherNd<float, IndicesT>(params, indices, output);",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -164,7 +164,7 @@
       "CWE-125"
     ],
     "cve_description": "Out-of-bounds Read in GitHub repository radareorg/radare2 prior to 5.7.0.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -69,19 +69,19 @@\n \tfree (charset);\n \tRConsIsBreaked is_breaked = (bin && bin->consb.is_breaked)? bin->consb.is_breaked: NULL;\n \t// may oobread\n-\twhile (needle < to) {\n+\twhile (needle < to && needle < UT64_MAX - 4) {\n \t\tif (is_breaked && is_breaked ()) {\n \t\t\tbreak;\n \t\t}\n \t\t// smol optimization\n-\t\tif (needle + 4 < to) {\n-\t\t\tut32 n1 = r_read_le32 (buf + needle - from);\n+\t\tif (needle < to - 4) {\n+\t\t\tut32 n1 = r_read_le32 (buf + (needle - from));\n \t\t\tif (!n1) {\n \t\t\t\tneedle += 4;\n \t\t\t\tcontinue;\n \t\t\t}\n \t\t}\n-\t\trc = r_utf8_decode (buf + needle - from, to - needle, NULL);\n+\t\trc = r_utf8_decode (buf + (needle - from), to - needle, NULL);\n \t\tif (!rc) {\n \t\t\tneedle++;\n \t\t\tcontinue;\n@@ -89,7 +89,7 @@\n \t\tbool addr_aligned = !(needle % 4);\n \n \t\tif (type == R_STRING_TYPE_DETECT) {\n-\t\t\tchar *w = (char *)buf + needle + rc - from;\n+\t\t\tchar *w = (char *)buf + (needle + rc - from);\n \t\t\tif (((to - needle) > 8 + rc)) {\n \t\t\t\t// TODO: support le and be\n \t\t\t\tbool is_wide32le = (needle + rc + 2 < to) && (!w[0] && !w[1] && !w[2] && w[3] && !w[4]);\n@@ -139,7 +139,7 @@\n \t\t\t\t\trc = 2;\n \t\t\t\t}\n \t\t\t} else {\n-\t\t\t\trc = r_utf8_decode (buf + needle - from, to - needle, &r);\n+\t\t\t\trc = r_utf8_decode (buf + (needle - from), to - needle, &r);\n \t\t\t\tif (rc > 1) {\n \t\t\t\t\tstr_type = R_STRING_TYPE_UTF8;\n \t\t\t\t}",
     "original_vulnerable_label": 1,
     "project": "radare2"
   },
@@ -177,7 +177,7 @@
       "CWE-125"
     ],
     "cve_description": "TensorFlow is an end-to-end open source platform for machine learning. In affected versions the implementation of sparse reduction operations in TensorFlow can trigger accesses outside of bounds of heap allocated data. The [implementation](https://github.com/tensorflow/tensorflow/blob/a1bc56203f21a5a4995311825ffaba7a670d7747/tensorflow/core/kernels/sparse_reduce_op.cc#L217-L228) fails to validate that each reduction group does not overflow and that each corresponding index does not point to outside the bounds of the input tensor. We have patched the issue in GitHub commit 87158f43f05f2720a374f3e6d22a7aaa3a33f750. The fix will be included in TensorFlow 2.6.0. We will also cherrypick this commit on TensorFlow 2.5.1, TensorFlow 2.4.3, and TensorFlow 2.3.4, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -60,7 +60,20 @@\n     sp.Reorder<T>(reduction.reorder_dims);\n     for (const auto &g : sp.group(reduction.group_by_dims)) {\n       Op::template Run<T>(ctx, reduced_val, g.template values<T>());\n+      OP_REQUIRES(ctx,\n+                  output_strides.empty() ||\n+                  (g.group().size() == output_strides.size()),\n+                  errors::Internal(\n+                      \"Expected group size and output_strides size to match\",\n+                      \", but got \", g.group().size(), \" and \",\n+                      output_strides.size()));\n       const int64_t idx = CoordinatesToFlatIndex(g.group(), output_strides);\n+      OP_REQUIRES(ctx,\n+                  idx >= 0 && idx < out_flat.size(),\n+                  errors::Internal(\n+                      \"Obtained a write index of \", idx,\n+                      \" which is outside of bounds of [0, \",\n+                      out_flat.size(), \")\"));\n       out_flat(idx) = reduced_val();\n       VLOG(2) << \"coords: \" << absl::StrJoin(g.group(), \",\")\n               << \"; idx: \" << idx << \"; group \" << Op::Name() << \": \"",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -190,7 +190,7 @@
       "CWE-125"
     ],
     "cve_description": "Heap-based buffer overflow in the CalcMinMax function in coders/mat.c in ImageMagick before 6.9.4-0 allows remote attackers to cause a denial of service (out-of-bounds read and application crash) via a crafted mat file.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -328,6 +328,7 @@\n   }\n       }\n     } while(z-- >= 2);\n+    quantum_info=DestroyQuantumInfo(quantum_info);\n ExitLoop:\n \n ",
     "original_vulnerable_label": 1,
     "project": "ImageMagick"
   },
@@ -203,7 +203,7 @@
       "CWE-125"
     ],
     "cve_description": "net/xfrm/xfrm_policy.c in the Linux kernel through 4.12.3, when CONFIG_XFRM_MIGRATE is enabled, does not ensure that the dir value of xfrm_userpolicy_id is XFRM_POLICY_MAX or less, which allows local users to cause a denial of service (out-of-bounds access) or possibly have unspecified other impact via an XFRM_MSG_MIGRATE xfrm Netlink message.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -10,8 +10,14 @@\n \tstruct xfrm_state *x_new[XFRM_MAX_DEPTH];\n \tstruct xfrm_migrate *mp;\n \n+\t/* Stage 0 - sanity checks */\n \tif ((err = xfrm_migrate_check(m, num_migrate)) < 0)\n \t\tgoto out;\n+\n+\tif (dir >= XFRM_POLICY_MAX) {\n+\t\terr = -EINVAL;\n+\t\tgoto out;\n+\t}\n \n \t/* Stage 1 - find policy */\n \tif ((pol = xfrm_migrate_policy_find(sel, dir, type, net)) == NULL) {",
     "original_vulnerable_label": 1,
     "project": "ipsec"
   },
@@ -216,7 +216,7 @@
       "CWE-125"
     ],
     "cve_description": "LuaJit through 2.1.0-beta3 has an out-of-bounds read because __gc handler frame traversal is mishandled.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -34,6 +34,7 @@\n       if (cframe_canyield(cf)) return 0;\n       if (cframe_errfunc(cf) >= 0)\n \treturn cframe_errfunc(cf);\n+      cf = cframe_prev(cf);\n       frame = frame_prevd(frame);\n       break;\n     case FRAME_PCALL:",
     "original_vulnerable_label": 1,
     "project": "LuaJIT"
   },
@@ -229,7 +229,7 @@
       "CWE-125"
     ],
     "cve_description": "Out-of-bounds Read in r_bin_ne_get_entrypoints function in GitHub repository radareorg/radare2 prior to 5.6.8. This vulnerability may allow attackers to read sensitive information or cause a crash.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -56,14 +56,21 @@\n \t\t\t\toff += 2;\n \t\t\t\tut8 segnum = *(bin->entry_table + off);\n \t\t\t\toff++;\n-\t\t\t\tut16 segoff = *(ut16 *)(bin->entry_table + off);\n-\t\t\t\tif (segnum > 0) {\n+\t\t\t\tif (off > bin->ne_header->EntryTableLength) {\n+\t\t\t\t\tbreak;\n+\t\t\t\t}\n+\t\t\t\tut16 segoff = r_read_le16 (bin->entry_table + off);\n+\t\t\t\tif (segnum > 0 && segnum < bin->ne_header->SegCount) {\n \t\t\t\t\tentry->paddr = (ut64)bin->segment_entries[segnum - 1].offset * bin->alignment + segoff;\n \t\t\t\t}\n \t\t\t} else { // Fixed\n+\t\t\t\tif (off + 2 >= bin->ne_header->EntryTableLength) {\n+\t\t\t\t\tbreak;\n+\t\t\t\t}\n+\t\t\t\tut16 delta = r_read_le16 (bin->entry_table + off);\n \t\t\t\tif (bundle_type < bin->ne_header->SegCount) {\n \t\t\t\t\tentry->paddr = (ut64)bin->segment_entries[bundle_type - 1].offset\n-\t\t\t\t\t\t* bin->alignment + *(ut16 *)(bin->entry_table + off);\n+\t\t\t\t\t\t* bin->alignment + delta;\n \t\t\t\t}\n \t\t\t}\n \t\t\toff += 2;",
     "original_vulnerable_label": 1,
     "project": "radare2"
   },
@@ -242,7 +242,7 @@
       "CWE-125"
     ],
     "cve_description": "swtpm is a libtpms-based TPM emulator with socket, character device, and Linux CUSE interface. Versions prior to 0.5.3, 0.6.2, and 0.7.1 are vulnerable to out-of-bounds read. A specially crafted header of swtpm's state, where the blobheader's hdrsize indicator has an invalid value, may cause an out-of-bounds access when the byte array representing the state of the TPM is accessed. This will likely crash swtpm or prevent it from starting since the state cannot be understood. Users should upgrade to swtpm v0.5.3, v0.6.2, or v0.7.1 to receive a patch. There are currently no known workarounds.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -3,6 +3,7 @@\n                         uint8_t *hdrversion, bool quiet)\n {\n     blobheader *bh = (blobheader *)data;\n+    uint16_t hdrsize;\n \n     if (length < sizeof(bh)) {\n         if (!quiet)\n@@ -28,8 +29,16 @@\n         return TPM_BAD_VERSION;\n     }\n \n+    hdrsize = ntohs(bh->hdrsize);\n+    if (hdrsize != sizeof(blobheader)) {\n+        logprintf(STDERR_FILENO,\n+                  \"bad header size: %u != %zu\\n\",\n+                  hdrsize, sizeof(blobheader));\n+        return TPM_BAD_DATASIZE;\n+    }\n+\n     *hdrversion = bh->version;\n-    *dataoffset = ntohs(bh->hdrsize);\n+    *dataoffset = hdrsize;\n     *hdrflags = ntohs(bh->flags);\n \n     return TPM_SUCCESS;",
     "original_vulnerable_label": 1,
     "project": "swtpm"
   },
@@ -255,7 +255,7 @@
       "CWE-125"
     ],
     "cve_description": "PJSIP is a free and open source multimedia communication library written in C language implementing standard based protocols such as SIP, SDP, RTP, STUN, TURN, and ICE. In versions 2.11.1 and prior, parsing an incoming SIP message that contains a malformed multipart can potentially cause out-of-bound read access. This issue affects all PJSIP users that accept SIP multipart. The patch is available as commit in the `master` branch. There are no known workarounds.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,15 +1,20 @@\n PJ_DEF(int) pj_scan_get_char( pj_scanner *scanner )\n {\n-    int chr = *scanner->curptr;\n+    register char *s = scanner->curptr;\n+    int chr;\n \n-    if (!chr) {\n+    if (s >= scanner->end || !*s) {\n \tpj_scan_syntax_err(scanner);\n \treturn 0;\n     }\n \n-    ++scanner->curptr;\n+    chr = *s;\n \n-    if (PJ_SCAN_IS_PROBABLY_SPACE(*scanner->curptr) && scanner->skip_ws) {\n+    ++s;\n+    scanner->curptr = s;\n+    if (PJ_SCAN_CHECK_EOF(s) && PJ_SCAN_IS_PROBABLY_SPACE(*s) &&\n+    \tscanner->skip_ws)\n+    {\n \tpj_scan_skip_whitespace(scanner);\n     }\n     return chr;",
     "original_vulnerable_label": 1,
     "project": "pjproject"
   },
@@ -268,7 +268,7 @@
       "CWE-125"
     ],
     "cve_description": "Out-of-bounds Read in r_bin_java_bootstrap_methods_attr_new function in GitHub repository radareorg/radare2 prior to 5.7.0. The bug causes the program reads data past the end 2f the intented buffer. Typically, this can allow attackers to read sensitive information from other memory locations or cause a crash. More details see [CWE-125: Out-of-bounds read](https://cwe.mitre.org/data/definitions/125.html).",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -6,6 +6,10 @@\n \toffset += 6;\n \tif (attr) {\n \t\tattr->type = R_BIN_JAVA_ATTR_TYPE_BOOTSTRAP_METHODS_ATTR;\n+\t\tif (offset + 8 > sz)  {\n+\t\t\tfree (attr);\n+\t\t\treturn NULL;\n+\t\t}\n \t\tattr->info.bootstrap_methods_attr.num_bootstrap_methods = R_BIN_JAVA_USHORT (buffer, offset);\n \t\toffset += 2;\n \t\tattr->info.bootstrap_methods_attr.bootstrap_methods = r_list_newf (r_bin_java_bootstrap_method_free);",
     "original_vulnerable_label": 1,
     "project": "radare2"
   },
@@ -281,7 +281,7 @@
       "CWE-125"
     ],
     "cve_description": "The ip6gre_err function in net/ipv6/ip6_gre.c in the Linux kernel allows remote attackers to have unspecified impact via vectors involving GRE flags in an IPv6 packet, which trigger an out-of-bounds access.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,33 +1,35 @@\n static void ip6gre_err(struct sk_buff *skb, struct inet6_skb_parm *opt,\n-\t\tu8 type, u8 code, int offset, __be32 info)\n+\t\t       u8 type, u8 code, int offset, __be32 info)\n {\n-\tconst struct ipv6hdr *ipv6h = (const struct ipv6hdr *)skb->data;\n-\t__be16 *p = (__be16 *)(skb->data + offset);\n-\tint grehlen = offset + 4;\n+\tconst struct gre_base_hdr *greh;\n+\tconst struct ipv6hdr *ipv6h;\n+\tint grehlen = sizeof(*greh);\n \tstruct ip6_tnl *t;\n+\tint key_off = 0;\n \t__be16 flags;\n+\t__be32 key;\n \n-\tflags = p[0];\n-\tif (flags&(GRE_CSUM|GRE_KEY|GRE_SEQ|GRE_ROUTING|GRE_VERSION)) {\n-\t\tif (flags&(GRE_VERSION|GRE_ROUTING))\n-\t\t\treturn;\n-\t\tif (flags&GRE_KEY) {\n-\t\t\tgrehlen += 4;\n-\t\t\tif (flags&GRE_CSUM)\n-\t\t\t\tgrehlen += 4;\n-\t\t}\n+\tif (!pskb_may_pull(skb, offset + grehlen))\n+\t\treturn;\n+\tgreh = (const struct gre_base_hdr *)(skb->data + offset);\n+\tflags = greh->flags;\n+\tif (flags & (GRE_VERSION | GRE_ROUTING))\n+\t\treturn;\n+\tif (flags & GRE_CSUM)\n+\t\tgrehlen += 4;\n+\tif (flags & GRE_KEY) {\n+\t\tkey_off = grehlen + offset;\n+\t\tgrehlen += 4;\n \t}\n \n-\t/* If only 8 bytes returned, keyed message will be dropped here */\n-\tif (!pskb_may_pull(skb, grehlen))\n+\tif (!pskb_may_pull(skb, offset + grehlen))\n \t\treturn;\n \tipv6h = (const struct ipv6hdr *)skb->data;\n-\tp = (__be16 *)(skb->data + offset);\n+\tgreh = (const struct gre_base_hdr *)(skb->data + offset);\n+\tkey = key_off ? *(__be32 *)(skb->data + key_off) : 0;\n \n \tt = ip6gre_tunnel_lookup(skb->dev, &ipv6h->daddr, &ipv6h->saddr,\n-\t\t\t\tflags & GRE_KEY ?\n-\t\t\t\t*(((__be32 *)p) + (grehlen / 4) - 1) : 0,\n-\t\t\t\tp[1]);\n+\t\t\t\t key, greh->protocol);\n \tif (!t)\n \t\treturn;\n ",
     "original_vulnerable_label": 1,
     "project": "net"
   },
@@ -294,7 +294,7 @@
       "CWE-125"
     ],
     "cve_description": "PJSIP is a free and open source multimedia communication library written in C language implementing standard based protocols such as SIP, SDP, RTP, STUN, TURN, and ICE. In affected versions if the incoming RTCP BYE message contains a reason's length, this declared length is not checked against the actual received packet size, potentially resulting in an out-of-bound read access. This issue affects all users that use PJMEDIA and RTCP. A malicious actor can send a RTCP BYE message with an invalid reason length. Users are advised to upgrade as soon as possible. There are no known workarounds.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -6,8 +6,15 @@\n \n     /* Check and get BYE reason */\n     if (size > 8) {\n+    \t/* Make sure the BYE reason does not exceed:\n+    \t * - the size of the available buffer\n+    \t * - the declared reason's length\n+    \t * - the actual packet size\n+    \t */\n \treason.slen = PJ_MIN(sizeof(sess->stat.peer_sdes_buf_),\n                              *((pj_uint8_t*)pkt+8));\n+        reason.slen = PJ_MIN(reason.slen, size-9);\n+\n \tpj_memcpy(sess->stat.peer_sdes_buf_, ((pj_uint8_t*)pkt+9),\n \t\t  reason.slen);\n \treason.ptr = sess->stat.peer_sdes_buf_;",
     "original_vulnerable_label": 1,
     "project": "pjproject"
   },
@@ -307,7 +307,7 @@
       "CWE-125"
     ],
     "cve_description": "sqclass.cpp in Squirrel through 2.2.5 and 3.x through 3.1 allows an out-of-bounds read (in the core interpreter) that can lead to Code Execution. If a victim executes an attacker-controlled squirrel script, it is possible for the attacker to break out of the squirrel script sandbox even if all dangerous functionality such as File System functions has been disabled. An attacker might abuse this bug to target (for example) Cloud services that allow customization via SquirrelScripts, or distribute malware through video games that embed a Squirrel Engine.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -9,6 +9,9 @@\n         _defaultvalues[_member_idx(temp)].val = val;\n         return true;\n     }\n+\tif (_members->CountUsed() >= MEMBER_MAX_COUNT) {\n+\t\treturn false;\n+\t}\n     if(belongs_to_static_table) {\n         SQInteger mmidx;\n         if((sq_type(val) == OT_CLOSURE || sq_type(val) == OT_NATIVECLOSURE) &&",
     "original_vulnerable_label": 1,
     "project": "squirrel"
   },
@@ -320,7 +320,7 @@
       "CWE-125"
     ],
     "cve_description": "An out-of-bounds read in the BGP daemon of FRRouting FRR before 8.4 may lead to a segmentation fault and denial of service. This occurs in bgp_capability_msg_parse in bgpd/bgp_packet.c.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,7 +1,8 @@\n bgp_capability_msg_parse (struct peer *peer, u_char *pnt, bgp_size_t length)\n {\n   u_char *end;\n-  struct capability cap;\n+  struct capability_mp_data mpc;\n+  struct capability_header *hdr;\n   u_char action;\n   struct bgp *bgp;\n   afi_t afi;\n@@ -11,7 +12,7 @@\n   end = pnt + length;\n \n   while (pnt < end)\n-    {\n+    {      \n       /* We need at least action, capability code and capability length. */\n       if (pnt + 3 > end)\n         {\n@@ -19,12 +20,9 @@\n           bgp_notify_send (peer, BGP_NOTIFY_CEASE, 0);\n           return -1;\n         }\n-\n       action = *pnt;\n-\n-      /* Fetch structure to the byte stream. */\n-      memcpy (&cap, pnt + 1, sizeof (struct capability));\n-\n+      hdr = (struct capability_header *)(pnt + 1);\n+      \n       /* Action value check.  */\n       if (action != CAPABILITY_ACTION_SET\n \t  && action != CAPABILITY_ACTION_UNSET)\n@@ -37,71 +35,71 @@\n \n       if (BGP_DEBUG (normal, NORMAL))\n \tzlog_debug (\"%s CAPABILITY has action: %d, code: %u, length %u\",\n-\t\t   peer->host, action, cap.code, cap.length);\n+\t\t   peer->host, action, hdr->code, hdr->length);\n \n       /* Capability length check. */\n-      if (pnt + (cap.length + 3) > end)\n+      if ((pnt + hdr->length + 3) > end)\n         {\n           zlog_info (\"%s Capability length error\", peer->host);\n           bgp_notify_send (peer, BGP_NOTIFY_CEASE, 0);\n           return -1;\n         }\n \n+      /* Fetch structure to the byte stream. */\n+      memcpy (&mpc, pnt + 3, sizeof (struct capability_mp_data));\n+\n       /* We know MP Capability Code. */\n-      if (cap.code == CAPABILITY_CODE_MP)\n+      if (hdr->code == CAPABILITY_CODE_MP)\n         {\n-\t  afi = ntohs (cap.mpc.afi);\n-\t  safi = cap.mpc.safi;\n+\t  afi = ntohs (mpc.afi);\n+\t  safi = mpc.safi;\n \n           /* Ignore capability when override-capability is set. */\n           if (CHECK_FLAG (peer->flags, PEER_FLAG_OVERRIDE_CAPABILITY))\n \t    continue;\n+          \n+          if (!bgp_afi_safi_valid_indices (afi, &safi))\n+            {\n+              if (BGP_DEBUG (normal, NORMAL))\n+                zlog_debug (\"%s Dynamic Capability MP_EXT afi/safi invalid\",\n+                            peer->host, afi, safi);\n+              continue;\n+            }\n+          \n+\t  /* Address family check.  */\n+          if (BGP_DEBUG (normal, NORMAL))\n+            zlog_debug (\"%s CAPABILITY has %s MP_EXT CAP for afi/safi: %u/%u\",\n+                       peer->host,\n+                       action == CAPABILITY_ACTION_SET \n+                       ? \"Advertising\" : \"Removing\",\n+                       ntohs(mpc.afi) , mpc.safi);\n+              \n+          if (action == CAPABILITY_ACTION_SET)\n+            {\n+              peer->afc_recv[afi][safi] = 1;\n+              if (peer->afc[afi][safi])\n+                {\n+                  peer->afc_nego[afi][safi] = 1;\n+                  bgp_announce_route (peer, afi, safi);\n+                }\n+            }\n+          else\n+            {\n+              peer->afc_recv[afi][safi] = 0;\n+              peer->afc_nego[afi][safi] = 0;\n \n-\t  /* Address family check.  */\n-\t  if ((afi == AFI_IP \n-\t       || afi == AFI_IP6)\n-\t      && (safi == SAFI_UNICAST \n-\t\t  || safi == SAFI_MULTICAST \n-\t\t  || safi == BGP_SAFI_VPNV4))\n-\t    {\n-\t      if (BGP_DEBUG (normal, NORMAL))\n-\t\tzlog_debug (\"%s CAPABILITY has %s MP_EXT CAP for afi/safi: %u/%u\",\n-\t\t\t   peer->host,\n-\t\t\t   action == CAPABILITY_ACTION_SET \n-\t\t\t   ? \"Advertising\" : \"Removing\",\n-\t\t\t   ntohs(cap.mpc.afi) , cap.mpc.safi);\n-\t\t  \n-\t      /* Adjust safi code. */\n-\t      if (safi == BGP_SAFI_VPNV4)\n-\t\tsafi = SAFI_MPLS_VPN;\n-\t      \n-\t      if (action == CAPABILITY_ACTION_SET)\n-\t\t{\n-\t\t  peer->afc_recv[afi][safi] = 1;\n-\t\t  if (peer->afc[afi][safi])\n-\t\t    {\n-\t\t      peer->afc_nego[afi][safi] = 1;\n-\t\t      bgp_announce_route (peer, afi, safi);\n-\t\t    }\n-\t\t}\n-\t      else\n-\t\t{\n-\t\t  peer->afc_recv[afi][safi] = 0;\n-\t\t  peer->afc_nego[afi][safi] = 0;\n-\n-\t\t  if (peer_active_nego (peer))\n-\t\t    bgp_clear_route (peer, afi, safi);\n-\t\t  else\n-\t\t    BGP_EVENT_ADD (peer, BGP_Stop);\n-\t\t} \n-\t    }\n+              if (peer_active_nego (peer))\n+                bgp_clear_route (peer, afi, safi);\n+              else\n+                BGP_EVENT_ADD (peer, BGP_Stop);\n+            }\n         }\n       else\n         {\n           zlog_warn (\"%s unrecognized capability code: %d - ignored\",\n-                     peer->host, cap.code);\n+                     peer->host, hdr->code);\n         }\n-      pnt += cap.length + 3;\n+      pnt += hdr->length + 3;\n     }\n   return 0;\n }",
     "original_vulnerable_label": 1,
     "project": "frr"
   },
@@ -333,7 +333,7 @@
       "CWE-125"
     ],
     "cve_description": "ADMesh through 0.98.4 has a heap-based buffer over-read in stl_update_connects_remove_1 (called from stl_remove_degenerate) in connect.c in libadmesh.a.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -45,13 +45,12 @@\n   neighbor1 = stl->neighbors_start[facet].neighbor[edge1];\n   neighbor2 = stl->neighbors_start[facet].neighbor[edge2];\n \n-  if(neighbor1 == -1) {\n+  if(neighbor1 == -1 && neighbor2 != -1) {\n     stl_update_connects_remove_1(stl, neighbor2);\n   }\n-  if(neighbor2 == -1) {\n+  else if (neighbor2 == -1 && neighbor1 != -1) {\n     stl_update_connects_remove_1(stl, neighbor1);\n   }\n-\n \n   neighbor3 = stl->neighbors_start[facet].neighbor[edge3];\n   vnot1 = stl->neighbors_start[facet].which_vertex_not[edge1];",
     "original_vulnerable_label": 1,
     "project": "admesh"
   },
@@ -346,7 +346,7 @@
       "CWE-125"
     ],
     "cve_description": "ADMesh through 0.98.4 has a heap-based buffer over-read in stl_update_connects_remove_1 (called from stl_remove_degenerate) in connect.c in libadmesh.a.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,7 +1,11 @@\n stl_update_connects_remove_1(stl_file *stl, int facet_num) {\n   int j;\n \n-  if (stl->error) return;\n+  if (\n+    stl->error ||\n+    facet_num < 0\n+  ) return;\n+\n   /* Update list of connected edges */\n   j = ((stl->neighbors_start[facet_num].neighbor[0] == -1) +\n        (stl->neighbors_start[facet_num].neighbor[1] == -1) +",
     "original_vulnerable_label": 1,
     "project": "admesh"
   },
@@ -359,7 +359,7 @@
       "CWE-125"
     ],
     "cve_description": "In GIMP 2.8.22, there is a heap-based buffer over-read in load_image in plug-ins/common/file-gbr.c in the gbr import parser, related to mishandling of UTF-8 data.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -96,7 +96,8 @@\n     {\n       gchar *temp = g_new (gchar, bn_size);\n \n-      if ((read (fd, temp, bn_size)) < bn_size)\n+      if ((read (fd, temp, bn_size)) < bn_size ||\n+          temp[bn_size - 1] != '\\0')\n         {\n           g_set_error (error, G_FILE_ERROR, G_FILE_ERROR_FAILED,\n                        _(\"Error in GIMP brush file '%s'\"),",
     "original_vulnerable_label": 1,
     "project": "gimp"
   },
@@ -372,7 +372,7 @@
       "CWE-125"
     ],
     "cve_description": "In ImageMagick 7.0.8-40 Q16, there is a heap-based buffer over-read in the function WritePNMImage of coders/pnm.c, which allows an attacker to cause a denial of service or possibly information disclosure via a crafted image file. This is related to SetGrayscaleImage in MagickCore/quantize.c.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -23,11 +23,11 @@\n   if (image->type != GrayscaleType)\n     (void) TransformImageColorspace(image,GRAYColorspace,exception);\n   if (image->storage_class == PseudoClass)\n-    colormap_index=(ssize_t *) AcquireQuantumMemory(image->colors+1,\n-      sizeof(*colormap_index));\n+    colormap_index=(ssize_t *) AcquireQuantumMemory(MagickMax(image->colors+1,\n+      MaxMap),sizeof(*colormap_index));\n   else\n-    colormap_index=(ssize_t *) AcquireQuantumMemory(MaxColormapSize+1,\n-      sizeof(*colormap_index));\n+    colormap_index=(ssize_t *) AcquireQuantumMemory(MagickMax(MaxColormapSize+1,\n+      MaxMap),sizeof(*colormap_index));\n   if (colormap_index == (ssize_t *) NULL)\n     ThrowBinaryException(ResourceLimitError,\"MemoryAllocationFailed\",\n       image->filename);",
     "original_vulnerable_label": 1,
     "project": "ImageMagick"
   },
@@ -385,7 +385,7 @@
       "CWE-125"
     ],
     "cve_description": "An out-of-bounds access issue was found in the Linux kernel sound subsystem. It could occur when the 'id->name' provided by the user did not end with '\\0'. A privileged local user could pass a specially crafted name through ioctl() interface and crash the system or potentially escalate their privileges on the system.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -6,7 +6,7 @@\n \th = id->iface;\n \th = MULTIPLIER * h + id->device;\n \th = MULTIPLIER * h + id->subdevice;\n-\tfor (i = 0; id->name[i] && i < SNDRV_CTL_ELEM_ID_NAME_MAXLEN; i++)\n+\tfor (i = 0; i < SNDRV_CTL_ELEM_ID_NAME_MAXLEN && id->name[i]; i++)\n \t\th = MULTIPLIER * h + id->name[i];\n \th = MULTIPLIER * h + id->index;\n \th &= LONG_MAX;",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -398,7 +398,7 @@
       "CWE-125"
     ],
     "cve_description": "Heap-based Buffer Overflow in GitHub repository vim/vim prior to 9.0.0102.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -16,7 +16,19 @@\n \t    // to 9 characters (6 for the char and 3 for a modifier):\n \t    // reserve space for 5 extra.\n \t    if (*p == '<')\n+\t    {\n+\t\tint\t\tmodifiers = 0;\n+\t\tint\t\tflags = FSK_KEYCODE | FSK_IN_STRING;\n+\n \t\textra += 5;\n+\n+\t\t// Skip to the '>' to avoid using '{' inside for string\n+\t\t// interpolation.\n+\t\tif (p[1] != '*')\n+\t\t    flags |= FSK_SIMPLIFY;\n+\t\tif (find_special_key(&p, &modifiers, flags, NULL) != 0)\n+\t\t    --p;  // leave \"p\" on the \">\"\n+\t    }\n \t}\n \telse if (interpolate && (*p == '{' || *p == '}'))\n \t{",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -411,7 +411,7 @@
       "CWE-125"
     ],
     "cve_description": "singlevar in lparser.c in Lua from (including) 5.4.0 up to (excluding) 5.4.4 lacks a certain luaK_exp2anyregup call, leading to a heap-based buffer over-read that might affect a system that compiles untrusted Lua code.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -6,6 +6,7 @@\n     expdesc key;\n     singlevaraux(fs, ls->envn, var, 1);  /* get environment variable */\n     lua_assert(var->k != VVOID);  /* this one must exist */\n+    luaK_exp2anyregup(fs, var);  /* but could be a constant */\n     codestring(&key, varname);  /* key is variable name */\n     luaK_indexed(fs, var, &key);  /* env[varname] */\n   }",
     "original_vulnerable_label": 1,
     "project": "lua"
   },
@@ -424,7 +424,7 @@
       "CWE-125"
     ],
     "cve_description": "QEMU, through version 2.10 and through version 3.1.0, is vulnerable to an out-of-bounds read of up to 128 bytes in the hw/i2c/i2c-ddc.c:i2c_ddc() function. A local attacker with permission to execute i2c commands could exploit this to read stack memory of the qemu process on the host.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -3,7 +3,7 @@\n     I2CDDCState *s = I2CDDC(i2c);\n \n     int value;\n-    value = s->edid_blob[s->reg];\n+    value = s->edid_blob[s->reg % sizeof(s->edid_blob)];\n     s->reg++;\n     return value;\n }",
     "original_vulnerable_label": 1,
     "project": "qemu"
   },
@@ -437,7 +437,7 @@
       "CWE-125"
     ],
     "cve_description": "An out-of-bounds read flaw was found in the Linux kernel’s io_uring module in the way a user triggers the io_read() function with some special parameters. This flaw allows a local user to read some memory out of bounds.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -47,6 +47,7 @@\n \t\tif (req->flags & REQ_F_NOWAIT)\n \t\t\tgoto done;\n \t\t/* some cases will consume bytes even on error returns */\n+\t\tiov_iter_reexpand(iter, iter->count + iter->truncated);\n \t\tiov_iter_revert(iter, io_size - iov_iter_count(iter));\n \t\tret = 0;\n \t} else if (ret == -EIOCBQUEUED) {",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -450,7 +450,7 @@
       "CWE-125"
     ],
     "cve_description": "Out-of-bounds Read in GitHub repository vim/vim prior to 8.2.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -111,8 +111,11 @@\n \t\t    amount += 2;\n \t\telse\n \t\t{\n-\t\t    that++;\n-\t\t    amount++;\n+\t\t    if (*that != NUL)\n+\t\t    {\n+\t\t\tthat++;\n+\t\t\tamount++;\n+\t\t    }\n \t\t    firsttry = amount;\n \n \t\t    while (VIM_ISWHITE(*that))",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -463,7 +463,7 @@
       "CWE-125"
     ],
     "cve_description": "Oniguruma through 6.9.3, as used in PHP 7.3.x and other products, has a heap-based buffer over-read in str_lower_case_match in regexec.c.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -3,9 +3,12 @@\n #define THRESHOLD_CASE_FOLD_ALT_FOR_EXPANSION  8\n \n   int r, n, len, alt_num;\n+  int is_ambig, fold_len;\n   UChar *start, *end, *p;\n+  UChar* foldp;\n   Node *top_root, *root, *snode, *prev_node;\n   OnigCaseFoldCodeItem items[ONIGENC_GET_CASE_FOLD_CODES_MAX_NUM];\n+  UChar buf[ONIGENC_MBC_CASE_FOLD_MAXLEN];\n   StrNode* sn = STR_(node);\n \n   if (NODE_STRING_IS_AMBIG(node)) return 0;\n@@ -19,8 +22,8 @@\n   alt_num = 1;\n   p = start;\n   while (p < end) {\n-    n = ONIGENC_GET_CASE_FOLD_CODES_BY_STR(reg->enc, reg->case_fold_flag, p, end,\n-                                           items);\n+    n = ONIGENC_GET_CASE_FOLD_CODES_BY_STR(reg->enc, reg->case_fold_flag,\n+                                           p, end, items);\n     if (n < 0) {\n       r = n;\n       goto err;\n@@ -28,7 +31,8 @@\n \n     len = enclen(reg->enc, p);\n \n-    if (n == 0) {\n+    if (n == 0 || IS_NOT_NULL(snode) ||\n+        is_good_case_fold_items_for_search(reg->enc, len, n, items)) {\n       if (IS_NULL(snode)) {\n         if (IS_NULL(root) && IS_NOT_NULL(prev_node)) {\n           top_root = root = onig_node_list_add(NULL_NODE, prev_node);\n@@ -46,10 +50,45 @@\n             goto mem_err;\n           }\n         }\n+\n+        is_ambig = -1; /* -1: new */\n+      }\n+      else {\n+        is_ambig = NODE_STRING_IS_AMBIG(snode);\n       }\n \n-      r = onig_node_str_cat(snode, p, p + len);\n-      if (r != 0) goto err;\n+      if (n != 0) {\n+        foldp = p;\n+        fold_len = ONIGENC_MBC_CASE_FOLD(reg->enc, reg->case_fold_flag,\n+                                         &foldp, end, buf);\n+        foldp = buf;\n+      }\n+      else {\n+        foldp = p; fold_len = len;\n+      }\n+\n+      if ((n != 0 && is_ambig == 0) || (n == 0 && is_ambig > 0)) {\n+        if (IS_NULL(root) /* && IS_NOT_NULL(prev_node) */) {\n+          top_root = root = onig_node_list_add(NULL_NODE, prev_node);\n+          if (IS_NULL(root)) {\n+            onig_node_free(prev_node);\n+            goto mem_err;\n+          }\n+        }\n+\n+        prev_node = snode = onig_node_new_str(foldp, foldp + fold_len);\n+        if (IS_NULL(snode)) goto mem_err;\n+        if (IS_NULL(onig_node_list_add(root, snode))) {\n+          onig_node_free(snode);\n+          goto mem_err;\n+        }\n+      }\n+      else {\n+        r = onig_node_str_cat(snode, foldp, foldp + fold_len);\n+        if (r != 0) goto err;\n+      }\n+\n+      if (n != 0) NODE_STRING_SET_AMBIG(snode);\n     }\n     else {\n       alt_num *= (n + 1);",
     "original_vulnerable_label": 1,
     "project": "oniguruma"
   },
@@ -476,7 +476,7 @@
       "CWE-125"
     ],
     "cve_description": "Curl versions 7.14.1 through 7.61.1 are vulnerable to a heap-based buffer over-read in the tool_msgs.c:voutf() function that may result in information exposure and denial of service.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -21,6 +21,10 @@\n         while(!ISSPACE(ptr[cut]) && cut) {\n           cut--;\n         }\n+        if(0 == cut)\n+          /* not a single cutting position was found, just cut it at the\n+             max text width then! */\n+          cut = WARN_TEXTWIDTH-1;\n \n         fwrite(ptr, cut + 1, 1, config->errors);\n         fputs(\"\\n\", config->errors);",
     "original_vulnerable_label": 1,
     "project": "curl"
   },
@@ -489,7 +489,7 @@
       "CWE-125"
     ],
     "cve_description": "Buffer Over-read in GitHub repository bfabiszewski/libmobi prior to 0.11.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -23,12 +23,16 @@\n         debug_print(\"Label length too long: %zu\\n\", label_length);\n         return MOBI_DATA_CORRUPT;\n     }\n-    char text[INDX_LABEL_SIZEMAX];\n+    char text[INDX_LABEL_SIZEMAX + 1];\n     /* FIXME: what is ORDT1 for? */\n     if (ordt->ordt2) {\n         label_length = mobi_getstring_ordt(ordt, buf, (unsigned char*) text, label_length);\n     } else {\n         label_length = mobi_indx_get_label((unsigned char*) text, buf, label_length, indx->ligt_entries_count);\n+        if (buf->error != MOBI_SUCCESS) {\n+            debug_print(\"Buffer error reading label: %d\\n\", buf->error);\n+            return MOBI_DATA_CORRUPT;\n+        }\n     }\n     indx->entries[entry_number].label = malloc(label_length + 1);\n     if (indx->entries[entry_number].label == NULL) {",
     "original_vulnerable_label": 1,
     "project": "libmobi"
   },
@@ -502,7 +502,7 @@
       "CWE-125"
     ],
     "cve_description": "In Exiv2 0.26, there is a heap-based buffer over-read in the Exiv2::Image::byteSwap4 function in image.cpp. Remote attackers can exploit this vulnerability to disclose memory data or cause a denial of service via a crafted TIFF file.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -63,7 +63,13 @@\n                                 ;\n \n                 // if ( offset > io.size() ) offset = 0; // Denial of service?\n-                DataBuf  buf(size*count + pad+20);  // allocate a buffer\n+\n+                // #55 memory allocation crash test/data/POC8\n+                long long allocate = (long long) (size*count + pad+20);\n+                if ( allocate > (long long) io.size() ) {\n+                    throw Error(57);\n+                }\n+                DataBuf  buf(allocate);  // allocate a buffer\n                 std::memcpy(buf.pData_,dir.pData_+8,4);  // copy dir[8:11] into buffer (short strings)\n                 const bool bOffsetIsPointer = count*size > 4;\n ",
     "original_vulnerable_label": 1,
     "project": "exiv2"
   },
@@ -515,7 +515,7 @@
       "CWE-125"
     ],
     "cve_description": "An out-of-bounds read in the BGP daemon of FRRouting FRR before 8.4 may lead to a segmentation fault and denial of service. This occurs in bgp_capability_msg_parse in bgpd/bgp_packet.c.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -38,6 +38,14 @@\n \t\t\tzlog_debug(\n \t\t\t\t\"%s CAPABILITY has action: %d, code: %u, length %u\",\n \t\t\t\tpeer->host, action, hdr->code, hdr->length);\n+\n+\t\tif (hdr->length < sizeof(struct capability_mp_data)) {\n+\t\t\tzlog_info(\n+\t\t\t\t\"%pBP Capability structure is not properly filled out, expected at least %zu bytes but header length specified is %d\",\n+\t\t\t\tpeer, sizeof(struct capability_mp_data),\n+\t\t\t\thdr->length);\n+\t\t\treturn BGP_Stop;\n+\t\t}\n \n \t\t/* Capability length check. */\n \t\tif ((pnt + hdr->length + 3) > end) {",
     "original_vulnerable_label": 1,
     "project": "frr"
   },
@@ -528,7 +528,7 @@
       "CWE-125"
     ],
     "cve_description": "JasPer 2.0.12 allows remote attackers to cause a denial of service (heap-based buffer over-read and application crash) via a crafted image, related to the jp2_decode function in libjasper/jp2/jp2_dec.c.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -304,7 +304,7 @@\n \n \t/* Determine the type of each component. */\n \tif (dec->cdef) {\n-\t\tfor (i = 0; i < dec->numchans; ++i) {\n+\t\tfor (i = 0; i < dec->cdef->data.cdef.numchans; ++i) {\n \t\t\t/* Is the channel number reasonable? */\n \t\t\tif (dec->cdef->data.cdef.ents[i].channo >= dec->numchans) {\n \t\t\t\tjas_eprintf(\"error: invalid channel number in CDEF box\\n\");",
     "original_vulnerable_label": 1,
     "project": "jasper"
   },
@@ -541,7 +541,7 @@
       "CWE-125"
     ],
     "cve_description": "When using certain mbstring functions to convert multibyte encodings, in PHP versions 7.2.x below 7.2.27, 7.3.x below 7.3.14 and 7.4.x below 7.4.2 it is possible to supply data that will cause function mbfl_filt_conv_big5_wchar to read past the allocated buffer. This may lead to information disclosure or crash.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -42,11 +42,7 @@\n \n \t\t\tif (filter->from->no_encoding == mbfl_no_encoding_cp950) {\n \t\t\t\t/* PUA for CP950 */\n-\t\t\t\tif (w <= 0 &&\n-\t\t\t\t\t(((c1 >= 0xfa && c1 <= 0xfe) || (c1 >= 0x8e && c1 <= 0xa0) ||\n-\t\t\t\t\t  (c1 >= 0x81 && c1 <= 0x8d) ||(c1 >= 0xc7 && c1 <= 0xc8))\n-\t\t\t\t\t && ((c > 0x39 && c < 0x7f) || (c > 0xa0 && c < 0xff))) ||\n-\t\t\t\t\t((c1 == 0xc6) && (c > 0xa0 && c < 0xff))) {\n+\t\t\t\tif (w <= 0 && is_in_cp950_pua(c1, c)) {\n \t\t\t\t\tc2 = c1 << 8 | c;\n \t\t\t\t\tfor (k = 0; k < sizeof(cp950_pua_tbl)/(sizeof(unsigned short)*4); k++) {\n \t\t\t\t\t\tif (c2 >= cp950_pua_tbl[k][2] && c2 <= cp950_pua_tbl[k][3]) {",
     "original_vulnerable_label": 1,
     "project": "php-src"
   },
@@ -554,7 +554,7 @@
       "CWE-125"
     ],
     "cve_description": "Heap-based Buffer Overflow in GitHub repository hpjansson/chafa prior to 1.12.0.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -27,6 +27,10 @@\n \n \t} else if (code_new > current_entry) {\n \t\t/* Code is invalid */\n+\t\treturn LZW_BAD_CODE;\n+\n+\t} else if (code_new >= 1 << LZW_CODE_MAX) {\n+\t\t/* Don't access out of bound */\n \t\treturn LZW_BAD_CODE;\n \n \t} else if (code_new < current_entry) {",
     "original_vulnerable_label": 1,
     "project": "chafa"
   },
@@ -567,7 +567,7 @@
       "CWE-125"
     ],
     "cve_description": "The gst_decode_chain_free_internal function in the flxdex decoder in gst-plugins-good in GStreamer before 1.10.2 allows remote attackers to cause a denial of service (invalid memory read and crash) via an invalid file, which triggers an incorrect unref call.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -168,7 +168,6 @@\n   {\n     GST_ELEMENT_ERROR (flxdec, STREAM, WRONG_TYPE, (NULL),\n         (\"not a flx file (type %x)\", flxh->type));\n-    gst_object_unref (flxdec);\n     return GST_FLOW_ERROR;\n   }\n }",
     "original_vulnerable_label": 1,
     "project": "gst-plugins-good"
   },
@@ -580,7 +580,7 @@
       "CWE-125"
     ],
     "cve_description": "In Dovecot before 2.3.11.3, sending a specially formatted RPA request will crash the auth service because a length of zero is mishandled.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -8,7 +8,7 @@\n \t\treturn 0;\n \n \tlen = *p++;\n-\tif (p + len > end)\n+\tif (p + len > end || len == 0)\n \t\treturn 0;\n \n \t*buffer = p_malloc(pool, len);",
     "original_vulnerable_label": 1,
     "project": "core"
   },
@@ -593,7 +593,7 @@
       "CWE-125"
     ],
     "cve_description": "ASN.1 strings are represented internally within OpenSSL as an ASN1_STRING structure which contains a buffer holding the string data and a field holding the buffer length. This contrasts with normal C strings which are repesented as a buffer for the string data which is terminated with a NUL (0) byte. Although not a strict requirement, ASN.1 strings that are parsed using OpenSSL's own \"d2i\" functions (and other similar parsing functions) as well as any string whose value has been set with the ASN1_STRING_set() function will additionally NUL terminate the byte array in the ASN1_STRING structure. However, it is possible for applications to directly construct valid ASN1_STRING structures which do not NUL terminate the byte array by directly setting the \"data\" and \"length\" fields in the ASN1_STRING array. This can also happen by using the ASN1_STRING_set0() function. Numerous OpenSSL functions that print ASN.1 data have been found to assume that the ASN1_STRING byte array will be NUL terminated, even though this is not guaranteed for strings that have been directly constructed. Where an application requests an ASN.1 structure to be printed, and where that ASN.1 structure contains ASN1_STRINGs that have been directly constructed by the application without NUL terminating the \"data\" field, then a read buffer overrun can occur. The same thing can also occur during name constraints processing of certificates (for example if a certificate has been directly constructed by the application instead of loading it via the OpenSSL parsing functions, and the certificate contains non NUL terminated ASN1_STRING structures). It can also occur in the X509_get1_email(), X509_REQ_get1_email() and X509_get1_ocsp() functions. If a malicious actor can cause an application to directly construct an ASN1_STRING and then process it through one of the affected OpenSSL functions then this issue could be hit. This might result in a crash (causing a Denial of Service attack). It could also result in the disclosure of private memory contents (such as private keys, or sensitive plaintext). Fixed in OpenSSL 1.1.1l (Affected 1.1.1-1.1.1k). Fixed in OpenSSL 1.0.2za (Affected 1.0.2-1.0.2y).",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -177,7 +177,10 @@\n         ret->seed_len = params->curve->seed->length;\n     }\n \n-    if (!params->order || !params->base || !params->base->data) {\n+    if (params->order == NULL\n+            || params->base == NULL\n+            || params->base->data == NULL\n+            || params->base->length == 0) {\n         ECerr(EC_F_EC_GROUP_NEW_FROM_ECPARAMETERS, EC_R_ASN1_ERROR);\n         goto err;\n     }",
     "original_vulnerable_label": 1,
     "project": "openssl"
   },
@@ -606,7 +606,7 @@
       "CWE-125"
     ],
     "cve_description": "elfspirit is an ELF static analysis and injection framework that parses, manipulates, and camouflages ELF files. When analyzing the ELF file format in versions prior to 1.1, there is an out-of-bounds read bug, which can lead to application crashes or information leakage. By constructing a special format ELF file, the information of any address can be leaked. elfspirit version 1.1 contains a patch for this issue.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -181,6 +181,10 @@\n         PRINT_SECTION_TITLE(\"Nr\", \"Name\", \"Type\", \"Addr\", \"Off\", \"Size\", \"Es\", \"Flg\", \"Lk\", \"Inf\", \"Al\");\n         for (int i = 0; i < ehdr->e_shnum; i++) {\n             name = elf_map + shstrtab.sh_offset + shdr[i].sh_name;\n+            if (validated_offset(name, elf_map, elf_map + st.st_size)) {\n+                ERROR(\"Corrupt file format\\n\");\n+                return -1;\n+            }\n \n             switch (shdr[i].sh_type) {\n                 case SHT_NULL:\n@@ -827,6 +831,10 @@\n         PRINT_SECTION_TITLE(\"Nr\", \"Name\", \"Type\", \"Addr\", \"Off\", \"Size\", \"Es\", \"Flg\", \"Lk\", \"Inf\", \"Al\");\n         for (int i = 0; i < ehdr->e_shnum; i++) {\n             name = elf_map + shstrtab.sh_offset + shdr[i].sh_name;\n+            if (validated_offset(name, elf_map, elf_map + st.st_size)) {\n+                ERROR(\"Corrupt file format\\n\");\n+                return -1;\n+            }\n \n             switch (shdr[i].sh_type) {\n                 case SHT_NULL:",
     "original_vulnerable_label": 1,
     "project": "elfspirit"
   }

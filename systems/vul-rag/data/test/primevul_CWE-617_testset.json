@@ -8,7 +8,7 @@
       "CWE-617"
     ],
     "cve_description": "Tensorflow is an Open Source Machine Learning Framework. The Grappler optimizer in TensorFlow can be used to cause a denial of service by altering a `SavedModel` such that `IsSimplifiableReshape` would trigger `CHECK` failures. The fix will be included in TensorFlow 2.8.0. We will also cherrypick this commit on TensorFlow 2.7.1, TensorFlow 2.6.3, and TensorFlow 2.5.3, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -55,14 +55,16 @@\n       int32_t dim = outputs[0]->flat<int32>()(i);\n       shp.push_back(dim);\n     }\n-    TF_CHECK_OK(TensorShapeUtils::MakeShape(shp, &new_dims));\n+    s = TensorShapeUtils::MakeShape(shp, &new_dims);\n+    if (!s.ok()) return s;\n   } else {\n     std::vector<int64_t> shp;\n     for (int i = 0; i < outputs[0]->NumElements(); ++i) {\n       int64_t dim = outputs[0]->flat<int64_t>()(i);\n       shp.push_back(dim);\n     }\n-    TF_CHECK_OK(TensorShapeUtils::MakeShape(shp, &new_dims));\n+    s = TensorShapeUtils::MakeShape(shp, &new_dims);\n+    if (!s.ok()) return s;\n   }\n \n   if (!shape.IsCompatibleWith(new_dims)) {",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -21,7 +21,7 @@
       "CWE-617"
     ],
     "cve_description": "Tensorflow is an Open Source Machine Learning Framework. A malicious user can cause a denial of service by altering a `SavedModel` such that Grappler optimizer would attempt to build a tensor using a reference `dtype`. This would result in a crash due to a `CHECK`-fail in the `Tensor` constructor as reference types are not allowed. The fix will be included in TensorFlow 2.8.0. We will also cherrypick this commit on TensorFlow 2.7.1, TensorFlow 2.6.3, and TensorFlow 2.5.3, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -36,6 +36,11 @@\n                           input_tensor.ToString(),\n                           \" has a dtype of DT_INVALID.\"));\n     }\n+    if (IsRefType(raw_val.dtype())) {\n+      return errors::InvalidArgument(\n+          \"Not allowed to construct a tensor with reference dtype, got \",\n+          DataTypeString(raw_val.dtype()));\n+    }\n     Tensor* value = new Tensor(raw_val.dtype(), raw_val.tensor_shape());\n     if (!value->FromProto(raw_val)) {\n       delete (value);",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -34,7 +34,7 @@
       "CWE-617"
     ],
     "cve_description": "Tensorflow is an Open Source Machine Learning Framework. The Grappler optimizer in TensorFlow can be used to cause a denial of service by altering a `SavedModel` such that `SafeToRemoveIdentity` would trigger `CHECK` failures. The fix will be included in TensorFlow 2.8.0. We will also cherrypick this commit on TensorFlow 2.7.1, TensorFlow 2.6.3, and TensorFlow 2.5.3, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -17,8 +17,10 @@\n   }\n \n   const NodeDef* input = node_map_->GetNode(NodeName(node.input(0)));\n-  CHECK(input != nullptr) << \"node = \" << node.name()\n-                          << \" input = \" << node.input(0);\n+  if (input == nullptr) {\n+    VLOG(1) << \"node = \" << node.name() << \" input = \" << node.input(0);\n+    return false;\n+  }\n   // Don't remove Identity nodes corresponding to Variable reads or following\n   // Recv.\n   if (IsVariable(*input) || IsRecv(*input)) {",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -47,7 +47,7 @@
       "CWE-617"
     ],
     "cve_description": "Tensorflow is an Open Source Machine Learning Framework. When decoding a tensor from protobuf, a TensorFlow process can encounter cases where a `CHECK` assertion is invalidated based on user controlled arguments, if the tensors have an invalid `dtype` and 0 elements or an invalid shape. This allows attackers to cause denial of services in TensorFlow processes. The fix will be included in TensorFlow 2.8.0. We will also cherrypick this commit on TensorFlow 2.7.1, TensorFlow 2.6.3, and TensorFlow 2.5.3, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -16,6 +16,15 @@\n                          dtype_error = true, dtype_error = true);\n     }\n     if (dtype_error || p == nullptr) return false;\n+  } else {\n+    // Handle the case of empty tensors (N = 0) or tensors with incomplete shape\n+    // (N = -1). All other values of `shape.num_elements()` should be invalid by\n+    // construction.\n+    // Here, we just need to validate that the `proto.dtype()` value is valid.\n+    bool dtype_error = false;\n+    CASES_WITH_DEFAULT(proto.dtype(), break, dtype_error = true,\n+                       dtype_error = true);\n+    if (dtype_error) return false;\n   }\n   shape_ = shape;\n   set_dtype(proto.dtype());",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -60,7 +60,7 @@
       "CWE-617"
     ],
     "cve_description": "Tensorflow is an Open Source Machine Learning Framework. A malicious user can cause a denial of service by altering a `SavedModel` such that assertions in `function.cc` would be falsified and crash the Python interpreter. The fix will be included in TensorFlow 2.8.0. We will also cherrypick this commit on TensorFlow 2.7.1, TensorFlow 2.6.3, and TensorFlow 2.5.3, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -16,7 +16,11 @@\n     for (size_t i = 0; i < dtypes.size(); ++i) {\n       TF_RETURN_IF_ERROR(AddItem(strings::StrCat(arg_def.name(), \":\", i),\n                                  {true, arg_index, 0, false, {dtypes[i]}}));\n-      DCHECK_EQ(arg_index, result_.nodes.size());\n+      if (arg_index != result_.nodes.size()) {\n+        return errors::Internal(\n+            \"Expected arg_index to be equal to the number of nodes in result.\",\n+            \" Got \", arg_index, \" and \", result_.nodes.size());\n+      }\n       string name = arg_def.name();\n       if (dtypes.size() > 1) {\n         strings::StrAppend(&name, \"_\", i);",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -73,7 +73,7 @@
       "CWE-617"
     ],
     "cve_description": "Tensorflow is an Open Source Machine Learning Framework. An attacker can trigger denial of service via assertion failure by altering a `SavedModel` on disk such that `AttrDef`s of some operation are duplicated. The fix will be included in TensorFlow 2.8.0. We will also cherrypick this commit on TensorFlow 2.7.1, TensorFlow 2.6.3, and TensorFlow 2.5.3, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -3,9 +3,10 @@\n     const protobuf::RepeatedPtrField<OpDef::AttrDef>& a2) {\n   std::unordered_map<string, const OpDef::AttrDef*> a1_set;\n   for (const OpDef::AttrDef& def : a1) {\n-    DCHECK(a1_set.find(def.name()) == a1_set.end())\n-        << \"AttrDef names must be unique, but '\" << def.name()\n-        << \"' appears more than once\";\n+    if (a1_set.find(def.name()) != a1_set.end()) {\n+      LOG(ERROR) << \"AttrDef names must be unique, but '\" << def.name()\n+                 << \"' appears more than once\";\n+    }\n     a1_set[def.name()] = &def;\n   }\n   for (const OpDef::AttrDef& def : a2) {",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -86,7 +86,7 @@
       "CWE-617"
     ],
     "cve_description": "In OpenLDAP through 2.4.57 and 2.5.x through 2.5.1alpha, an assertion failure in slapd can occur in the issuerAndThisUpdateCheck function via a crafted packet, resulting in a denial of service (daemon exit) via a short timestamp. This is related to schema_init.c and checkTime.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -109,6 +109,8 @@\n \t\t\t\t\tbreak;\n \t\t\t\t}\n \t\t\t}\n+\t\t\tif ( tu->bv_len < STRLENOF(\"YYYYmmddHHmmssZ\") ) return LDAP_INVALID_SYNTAX;\n+\n \t\t\tx.bv_val += tu->bv_len + 1;\n \t\t\tx.bv_len -= tu->bv_len + 1;\n ",
     "original_vulnerable_label": 1,
     "project": "openldap"
   },
@@ -99,7 +99,7 @@
       "CWE-617"
     ],
     "cve_description": "In ImageMagick, a crafted file could trigger an assertion failure when a call to WriteImages was made in MagickWand/operation.c, due to a NULL image list. This could potentially cause a denial of service. This was fixed in upstream ImageMagick version 7.1.0-30.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -140,7 +140,8 @@\n       (void) DeleteImageRegistry(key);\n       write_images=CloneImageList(_images,_exception);\n       write_info=CloneImageInfo(_image_info);\n-      (void) WriteImages(write_info,write_images,arg1,_exception);\n+      if (write_images != (Image *) NULL)\n+        (void) WriteImages(write_info,write_images,arg1,_exception);\n       write_info=DestroyImageInfo(write_info);\n       write_images=DestroyImageList(write_images);\n       break;",
     "original_vulnerable_label": 1,
     "project": "ImageMagick"
   },
@@ -112,7 +112,7 @@
       "CWE-617"
     ],
     "cve_description": "An authorized user may trigger an invariant which may result in denial of service or server exit if a relevant aggregation request is sent to a shard. Usually, the requests are sent via mongos and special privileges are required in order to know the address of the shards and to log in to the shards of an auth enabled environment.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -43,13 +43,6 @@\n         std::make_unique<MultiIteratorStage>(expCtx.get(), ws.get(), coll);\n     static_cast<MultiIteratorStage*>(root.get())->addIterator(std::move(rsRandCursor));\n \n-    // If the incoming operation is sharded, use the CSS to infer the filtering metadata for the\n-    // collection, otherwise treat it as unsharded\n-    auto collectionFilter =\n-        CollectionShardingState::get(opCtx, coll->ns())\n-            ->getOwnershipFilter(\n-                opCtx, CollectionShardingState::OrphanCleanupPolicy::kDisallowOrphanCleanup);\n-\n     TrialStage* trialStage = nullptr;\n \n     // Because 'numRecords' includes orphan documents, our initial decision to optimize the $sample\n@@ -57,7 +50,9 @@\n     // to a collection scan if the ratio of orphaned to owned documents encountered over the first\n     // 100 works() is such that we would have chosen not to optimize.\n     static const size_t kMaxPresampleSize = 100;\n-    if (collectionFilter.isSharded() && !expCtx->ns.isTimeseriesBucketsCollection()) {\n+    if (auto css = CollectionShardingState::get(opCtx, coll->ns());\n+        css->getCollectionDescription(opCtx).isSharded() &&\n+        !expCtx->ns.isTimeseriesBucketsCollection()) {\n         // The ratio of owned to orphaned documents must be at least equal to the ratio between the\n         // requested sampleSize and the maximum permitted sampleSize for the original constraints to\n         // be satisfied. For instance, if there are 200 documents and the sampleSize is 5, then at\n@@ -65,6 +60,11 @@\n         // of the documents in the collection are owned, we default to the backup plan.\n         const auto minAdvancedToWorkRatio = std::max(\n             sampleSize / (numRecords * kMaxSampleRatioForRandCursor), kMaxSampleRatioForRandCursor);\n+        // Since the incoming operation is sharded, use the CSS to infer the filtering metadata for\n+        // the collection. We get the shard ownership filter after checking to see if the collection\n+        // is sharded to avoid an invariant from being fired in this call.\n+        auto collectionFilter = css->getOwnershipFilter(\n+            opCtx, CollectionShardingState::OrphanCleanupPolicy::kDisallowOrphanCleanup);\n         // The trial plan is SHARDING_FILTER-MULTI_ITERATOR.\n         auto randomCursorPlan = std::make_unique<ShardFilterStage>(\n             expCtx.get(), collectionFilter, ws.get(), std::move(root));",
     "original_vulnerable_label": 1,
     "project": "mongo"
   },
@@ -125,7 +125,7 @@
       "CWE-617"
     ],
     "cve_description": "An authorized user may trigger an invariant which may result in denial of service or server exit if a relevant aggregation request is sent to a shard. Usually, the requests are sent via mongos and special privileges are required in order to know the address of the shards and to log in to the shards of an auth enabled environment.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -43,13 +43,6 @@\n         std::make_unique<MultiIteratorStage>(expCtx.get(), ws.get(), coll);\n     static_cast<MultiIteratorStage*>(root.get())->addIterator(std::move(rsRandCursor));\n \n-    // If the incoming operation is sharded, use the CSS to infer the filtering metadata for the\n-    // collection, otherwise treat it as unsharded\n-    auto collectionFilter =\n-        CollectionShardingState::get(opCtx, coll->ns())\n-            ->getOwnershipFilter(\n-                opCtx, CollectionShardingState::OrphanCleanupPolicy::kDisallowOrphanCleanup);\n-\n     TrialStage* trialStage = nullptr;\n \n     // Because 'numRecords' includes orphan documents, our initial decision to optimize the $sample\n@@ -57,7 +50,9 @@\n     // to a collection scan if the ratio of orphaned to owned documents encountered over the first\n     // 100 works() is such that we would have chosen not to optimize.\n     static const size_t kMaxPresampleSize = 100;\n-    if (collectionFilter.isSharded() && !expCtx->ns.isTimeseriesBucketsCollection()) {\n+    if (auto css = CollectionShardingState::get(opCtx, coll->ns());\n+        css->getCollectionDescription(opCtx).isSharded() &&\n+        !expCtx->ns.isTimeseriesBucketsCollection()) {\n         // The ratio of owned to orphaned documents must be at least equal to the ratio between the\n         // requested sampleSize and the maximum permitted sampleSize for the original constraints to\n         // be satisfied. For instance, if there are 200 documents and the sampleSize is 5, then at\n@@ -65,6 +60,11 @@\n         // of the documents in the collection are owned, we default to the backup plan.\n         const auto minAdvancedToWorkRatio = std::max(\n             sampleSize / (numRecords * kMaxSampleRatioForRandCursor), kMaxSampleRatioForRandCursor);\n+        // Since the incoming operation is sharded, use the CSS to infer the filtering metadata for\n+        // the collection. We get the shard ownership filter after checking to see if the collection\n+        // is sharded to avoid an invariant from being fired in this call.\n+        auto collectionFilter = css->getOwnershipFilter(\n+            opCtx, CollectionShardingState::OrphanCleanupPolicy::kDisallowOrphanCleanup);\n         // The trial plan is SHARDING_FILTER-MULTI_ITERATOR.\n         auto randomCursorPlan = std::make_unique<ShardFilterStage>(\n             expCtx.get(), collectionFilter, ws.get(), std::move(root));",
     "original_vulnerable_label": 1,
     "project": "mongo"
   },
@@ -138,7 +138,7 @@
       "CWE-617"
     ],
     "cve_description": "MariaDB Server v10.7 and below was discovered to contain a segmentation fault via the component Item_field::used_tables/update_depend_map_for_order.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -34,7 +34,17 @@\n     if (!eq ||  equalities->push_back(eq, thd->mem_root))\n       return true;\n     if (!clone_const)\n-      right_item->set_extraction_flag(IMMUTABLE_FL);\n+    {\n+      /*\n+        Also set IMMUTABLE_FL for any sub-items of the right_item.\n+        This is needed to prevent Item::cleanup_excluding_immutables_processor\n+        from peforming cleanup of the sub-items and so creating an item tree\n+        where a fixed item has non-fixed items inside it.\n+      */\n+      int new_flag= IMMUTABLE_FL;\n+      right_item->walk(&Item::set_extraction_flag_processor, false,\n+                       (void*)&new_flag);\n+    }\n   }\n \n   while ((item=it++))",
     "original_vulnerable_label": 1,
     "project": "server"
   },
@@ -151,7 +151,7 @@
       "CWE-617"
     ],
     "cve_description": "There is an Assertion failure in MariaDB Server v10.9 and below via 'node->pcur->rel_pos == BTR_PCUR_ON' at /row/row0mysql.cc.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -6,6 +6,11 @@\n   if (unlikely((thd->variables.option_bits & OPTION_SAFE_UPDATES) &&\n                error_if_full_join(join)))\n     DBUG_RETURN(1);\n+  if (join->implicit_grouping)\n+  {\n+    my_error(ER_INVALID_GROUP_FUNC_USE, MYF(0));\n+    DBUG_RETURN(1);\n+  }\n   main_table=join->join_tab->table;\n   table_to_update= 0;\n ",
     "original_vulnerable_label": 1,
     "project": "server"
   }

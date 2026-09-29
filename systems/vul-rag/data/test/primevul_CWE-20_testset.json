@@ -8,7 +8,7 @@
       "CWE-20"
     ],
     "cve_description": "Flatpak is a system for building, distributing, and running sandboxed desktop applications on Linux. In versions prior to 1.10.4 and 1.12.0, Flatpak apps with direct access to AF_UNIX sockets such as those used by Wayland, Pipewire or pipewire-pulse can trick portals and other host-OS services into treating the Flatpak app as though it was an ordinary, non-sandboxed host-OS process. They can do this by manipulating the VFS using recent mount-related syscalls that are not blocked by Flatpak's denylist seccomp filter, in order to substitute a crafted `/.flatpak-info` or make that file disappear entirely. Flatpak apps that act as clients for AF_UNIX sockets such as those used by Wayland, Pipewire or pipewire-pulse can escalate the privileges that the corresponding services will believe the Flatpak app has. Note that protocols that operate entirely over the D-Bus session bus (user bus), system bus or accessibility bus are not affected by this. This is due to the use of a proxy process `xdg-dbus-proxy`, whose VFS cannot be manipulated by the Flatpak app, when interacting with these buses. Patches exist for versions 1.10.4 and 1.12.0, and as of time of publication, a patch for version 1.8.2 is being planned. There are no workarounds aside from upgrading to a patched version.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -79,6 +79,7 @@\n     {SCMP_SYS (umount), EPERM},\n     {SCMP_SYS (umount2), EPERM},\n     {SCMP_SYS (pivot_root), EPERM},\n+    {SCMP_SYS (chroot), EPERM},\n #if defined(__s390__) || defined(__s390x__) || defined(__CRIS__)\n     /* Architectures with CONFIG_CLONE_BACKWARDS2: the child stack\n      * and flags arguments are reversed so the flags come second */",
     "original_vulnerable_label": 1,
     "project": "flatpak"
   },
@@ -21,7 +21,7 @@
       "CWE-20"
     ],
     "cve_description": "TensorFlow is an open source platform for machine learning. Prior to versions 2.9.0, 2.8.1, 2.7.2, and 2.6.4, the implementation of `tf.raw_ops.SparseTensorDenseAdd` does not fully validate the input arguments. In this case, a reference gets bound to a `nullptr` during kernel execution. This is undefined behavior. Versions 2.9.0, 2.8.1, 2.7.2, and 2.6.4 contain a patch for this issue.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -13,6 +13,17 @@\n         a_values->shape().DebugString(), \" and \",\n         a_shape->shape().DebugString());\n   }\n+  int64_t nnz = a_indices->dim_size(0);\n+  int64_t ndims = a_indices->dim_size(1);\n+  if (a_values->dim_size(0) != nnz) {\n+    return errors::InvalidArgument(\"Dimensions \", nnz, \" and \",\n+                                   a_values->dim_size(0),\n+                                   \" are not compatible\");\n+  }\n+  if (a_shape->dim_size(0) != ndims) {\n+    return errors::InvalidArgument(\"Dimensions \", ndims, \" and \",\n+                                   a_shape->dim_size(0), \" are not compatible\");\n+  }\n   if (a_shape->NumElements() != b->dims()) {\n     return errors::InvalidArgument(\n         \"Two operands have different ranks; received: \", a_shape->NumElements(),\n@@ -27,5 +38,23 @@\n           a_shape_flat(i), \" vs dense side \", b->dim_size(i));\n     }\n   }\n+\n+  // Check for invalid indices.\n+  const auto a_indices_mat = a_indices->flat_inner_dims<Index>();\n+\n+  for (int64_t zidx = 0; zidx < nnz; ++zidx) {\n+    for (int64_t didx = 0; didx < ndims; ++didx) {\n+      const Index idx = a_indices_mat(zidx, didx);\n+      if (idx < 0 || idx >= a_shape_flat(didx)) {\n+        return errors::InvalidArgument(\n+            \"Sparse tensor has an invalid index on dimension \", didx,\n+            \": \"\n+            \"a_indices(\",\n+            zidx, \",\", didx, \") = \", idx,\n+            \", dense tensor shape: \", a_shape_flat);\n+      }\n+    }\n+  }\n+\n   return Status::OK();\n }",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -34,7 +34,7 @@
       "CWE-20"
     ],
     "cve_description": "tinyexr 0.9.5 has a integer overflow over-write in tinyexr::DecodePixelData in tinyexr.h, related to OpenEXR code.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -199,6 +199,11 @@\n         tinyexr::swap4(reinterpret_cast<unsigned int *>(&data_len));\n \n         if (size_t(data_len) > data_size) {\n+          invalid_data = true;\n+\n+        } else if ((line_no > (2 << 20)) || (line_no < -(2 << 20))) {\n+          // Too large value. Assume this is invalid\n+          // 2**20 = 1048576 = heuristic value.\n           invalid_data = true;\n         } else if (data_len == 0) {\n           // TODO(syoyo): May be ok to raise the threshold for example `data_len",
     "original_vulnerable_label": 1,
     "project": "tinyexr"
   },
@@ -47,7 +47,7 @@
       "CWE-20"
     ],
     "cve_description": "TensorFlow is an end-to-end open source platform for machine learning. In affected versions due to incomplete validation in MKL implementation of requantization, an attacker can trigger undefined behavior via binding a reference to a null pointer or can access data outside the bounds of heap allocated arrays. The [implementation](https://github.com/tensorflow/tensorflow/blob/460e000de3a83278fb00b61a16d161b1964f15f4/tensorflow/core/kernels/mkl/mkl_requantization_range_per_channel_op.cc) does not validate the dimensions of the `input` tensor. A similar issue occurs in `MklRequantizePerChannelOp`. The [implementation](https://github.com/tensorflow/tensorflow/blob/460e000de3a83278fb00b61a16d161b1964f15f4/tensorflow/core/kernels/mkl/mkl_requantize_per_channel_op.cc) does not perform full validation for all the input arguments. We have patched the issue in GitHub commit 9e62869465573cb2d9b5053f1fa02a81fce21d69 and in the Github commit 203214568f5bc237603dbab6e1fd389f1572f5c9. The fix will be included in TensorFlow 2.6.0. We will also cherrypick this commit on TensorFlow 2.5.1, TensorFlow 2.4.3, and TensorFlow 2.3.4, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,35 +1,45 @@\n   void Compute(OpKernelContext* ctx) override {\n     try {\n       const Tensor& input = ctx->input(kInputTensorIndex);\n+      OP_REQUIRES(\n+          ctx, input.dims() == 4,\n+          errors::InvalidArgument(\"Current RequantizePerChannel operator\"\n+                                  \"supports 4D tensors only.\"));\n+\n       const Tensor& input_min_vec = ctx->input(kInputMinVecIndex);\n+      size_t depth = input_min_vec.NumElements();\n       float* input_min_vec_data = (float*)const_cast<void*>(\n           static_cast<const void*>(input_min_vec.flat<float>().data()));\n+\n       const Tensor& input_max_vec = ctx->input(kInputMaxVecIndex);\n+      OP_REQUIRES(\n+          ctx, input_max_vec.NumElements() == depth,\n+          errors::InvalidArgument(\"input_max has incorrect size, expected \",\n+                                  depth, \" was \", input_max_vec.NumElements()));\n       float* input_max_vec_data = (float*)const_cast<void*>(\n           static_cast<const void*>(input_max_vec.flat<float>().data()));\n \n       const Tensor& input_requested_min = ctx->input(this->kRequestMinIndex);\n+      OP_REQUIRES(\n+          ctx, input_requested_min.NumElements() == 1,\n+          errors::InvalidArgument(\"requested_output_min must be a scalar\"));\n       const float input_requested_min_float =\n           input_requested_min.flat<float>()(0);\n+\n       const Tensor& input_requested_max = ctx->input(this->kRequestMaxIndex);\n+      OP_REQUIRES(\n+          ctx, input_requested_min.NumElements() == 1,\n+          errors::InvalidArgument(\"requested_output_max must be a scalar\"));\n       const float input_requested_max_float =\n           input_requested_max.flat<float>()(0);\n \n-      size_t depth = input_min_vec.NumElements();\n-      OP_REQUIRES(\n-          ctx, input.dims() == 4,\n-          errors::InvalidArgument(\"Current RequantizePerChannel operator\"\n-                                  \"supports 4D tensors only.\"));\n-      OP_REQUIRES(\n-          ctx, input_min_vec.dim_size(0) == depth,\n-          errors::InvalidArgument(\"input_min has incorrect size, expected \",\n-                                  depth, \" was \", input_min_vec.dim_size(0)));\n-      OP_REQUIRES(\n-          ctx, input_max_vec.dim_size(0) == depth,\n-          errors::InvalidArgument(\"input_max has incorrect size, expected \",\n-                                  depth, \" was \", input_max_vec.dim_size(0)));\n-\n-      if (out_type_ == DT_QINT8) DCHECK(input_requested_min_float < 0.0f);\n+      if (out_type_ == DT_QINT8) {\n+        OP_REQUIRES(ctx, input_requested_min_float < 0.0f,\n+                    errors::InvalidArgument(\n+                        \"If out_type is QINT8, requested_output_max must be \"\n+                        \"non negative, got \",\n+                        input_requested_min_float));\n+      }\n \n       const float factor = (out_type_ == DT_QINT8) ? 127.0f : 255.0f;\n       const float requested_min_max =",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -60,7 +60,7 @@
       "CWE-20"
     ],
     "cve_description": "smbfs in Samba 3.5.8 and earlier attempts to use (1) mount.cifs to append to the /etc/mtab file and (2) umount.cifs to append to the /etc/mtab.tmp file without first checking whether resource limits would interfere, which allows local users to trigger corruption of the /etc/mtab file via a process with a small RLIMIT_FSIZE value, a related issue to CVE-2011-1089.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,9 +1,10 @@\n add_mtab(char *devname, char *mountpoint, unsigned long flags, const char *fstype)\n {\n-\tint rc = 0;\n+\tint rc = 0, tmprc, fd;\n \tuid_t uid;\n \tchar *mount_user = NULL;\n \tstruct mntent mountent;\n+\tstruct stat statbuf;\n \tFILE *pmntfile;\n \tsigset_t mask, oldmask;\n \n@@ -55,6 +56,23 @@\n \t\tgoto add_mtab_exit;\n \t}\n \n+\tfd = fileno(pmntfile);\n+\tif (fd < 0) {\n+\t\tfprintf(stderr, \"mntent does not appear to be valid\\n\");\n+\t\tunlock_mtab();\n+\t\trc = EX_FILEIO;\n+\t\tgoto add_mtab_exit;\n+\t}\n+\n+\trc = fstat(fd, &statbuf);\n+\tif (rc != 0) {\n+\t\tfprintf(stderr, \"unable to fstat open mtab\\n\");\n+\t\tendmntent(pmntfile);\n+\t\tunlock_mtab();\n+\t\trc = EX_FILEIO;\n+\t\tgoto add_mtab_exit;\n+\t}\n+\n \tmountent.mnt_fsname = devname;\n \tmountent.mnt_dir = mountpoint;\n \tmountent.mnt_type = (char *)(void *)fstype;\n@@ -86,9 +104,14 @@\n \trc = addmntent(pmntfile, &mountent);\n \tif (rc) {\n \t\tfprintf(stderr, \"unable to add mount entry to mtab\\n\");\n+\t\tftruncate(fd, statbuf.st_size);\n \t\trc = EX_FILEIO;\n \t}\n-\tendmntent(pmntfile);\n+\ttmprc = my_endmntent(pmntfile, statbuf.st_size);\n+\tif (tmprc) {\n+\t\tfprintf(stderr, \"error %d detected on close of mtab\\n\", tmprc);\n+\t\trc = EX_FILEIO;\n+\t}\n \tunlock_mtab();\n \tSAFE_FREE(mountent.mnt_opts);\n add_mtab_exit:",
     "original_vulnerable_label": 1,
     "project": "cifs-utils"
   },
@@ -73,7 +73,7 @@
       "CWE-20"
     ],
     "cve_description": "ntpq in NTP 4.2.x before 4.2.8p4, and 4.3.x before 4.3.77 allows remote attackers to cause a denial of service (crash) via crafted mode 6 response packets.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -115,12 +115,17 @@\n \t\t}\n \n \t\tif (output_raw != 0) {\n+\t\t\t/* TALOS-CAN-0063: avoid buffer overrun */\n \t\t\tatoascii(name, MAXVARLEN, bn, sizeof(bn));\n-\t\t\tatoascii(value, MAXVALLEN, bv, sizeof(bv));\n \t\t\tif (output_raw != '*') {\n+\t\t\t\tatoascii(value, MAXVALLEN,\n+\t\t\t\t\t bv, sizeof(bv) - 1);\n \t\t\t\tlen = strlen(bv);\n \t\t\t\tbv[len] = output_raw;\n \t\t\t\tbv[len+1] = '\\0';\n+\t\t\t} else {\n+\t\t\t\tatoascii(value, MAXVALLEN,\n+\t\t\t\t\t bv, sizeof(bv));\n \t\t\t}\n \t\t\toutput(fp, bn, bv);\n \t\t}",
     "original_vulnerable_label": 1,
     "project": "ntp"
   },
@@ -86,7 +86,7 @@
       "CWE-20"
     ],
     "cve_description": "There's a flaw in jasper's jpc encoder in versions prior to 2.0.23. Crafted input provided to jasper by an attacker could cause an arbitrary out-of-bounds write. This could potentially affect data confidentiality, integrity, or application availability.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -164,6 +164,10 @@\n \t\t\tbreak;\n \t\tcase OPT_MAXRLVLS:\n \t\t\ttccp->maxrlvls = atoi(jas_tvparser_getval(tvp));\n+\t\t\tif(tccp->maxrlvls > JPC_MAXRLVLS) {\n+\t\t\t\tjas_eprintf(\"invalid number of resolution levels upper than %d\\n\",JPC_MAXRLVLS);\n+\t\t\t\tgoto error;\n+\t\t\t}\n \t\t\tbreak;\n \t\tcase OPT_SOP:\n \t\t\tcp->tcp.csty |= JPC_COD_SOP;",
     "original_vulnerable_label": 1,
     "project": "jasper"
   },
@@ -99,7 +99,7 @@
       "CWE-20"
     ],
     "cve_description": "An issue was discovered in net/tipc/crypto.c in the Linux kernel before 5.14.16. The Transparent Inter-Process Communication (TIPC) functionality allows remote attackers to exploit insufficient validation of user-supplied sizes for the MSG_CRYPTO message type.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -5,33 +5,42 @@\n \tu16 key_gen = msg_key_gen(hdr);\n \tu16 size = msg_data_sz(hdr);\n \tu8 *data = msg_data(hdr);\n+\tunsigned int keylen;\n+\n+\t/* Verify whether the size can exist in the packet */\n+\tif (unlikely(size < sizeof(struct tipc_aead_key) + TIPC_AEAD_KEYLEN_MIN)) {\n+\t\tpr_debug(\"%s: message data size is too small\\n\", rx->name);\n+\t\tgoto exit;\n+\t}\n+\n+\tkeylen = ntohl(*((__be32 *)(data + TIPC_AEAD_ALG_NAME)));\n+\n+\t/* Verify the supplied size values */\n+\tif (unlikely(size != keylen + sizeof(struct tipc_aead_key) ||\n+\t\t     keylen > TIPC_AEAD_KEY_SIZE_MAX)) {\n+\t\tpr_debug(\"%s: invalid MSG_CRYPTO key size\\n\", rx->name);\n+\t\tgoto exit;\n+\t}\n \n \tspin_lock(&rx->lock);\n \tif (unlikely(rx->skey || (key_gen == rx->key_gen && rx->key.keys))) {\n \t\tpr_err(\"%s: key existed <%p>, gen %d vs %d\\n\", rx->name,\n \t\t       rx->skey, key_gen, rx->key_gen);\n-\t\tgoto exit;\n+\t\tgoto exit_unlock;\n \t}\n \n \t/* Allocate memory for the key */\n \tskey = kmalloc(size, GFP_ATOMIC);\n \tif (unlikely(!skey)) {\n \t\tpr_err(\"%s: unable to allocate memory for skey\\n\", rx->name);\n-\t\tgoto exit;\n+\t\tgoto exit_unlock;\n \t}\n \n \t/* Copy key from msg data */\n-\tskey->keylen = ntohl(*((__be32 *)(data + TIPC_AEAD_ALG_NAME)));\n+\tskey->keylen = keylen;\n \tmemcpy(skey->alg_name, data, TIPC_AEAD_ALG_NAME);\n \tmemcpy(skey->key, data + TIPC_AEAD_ALG_NAME + sizeof(__be32),\n \t       skey->keylen);\n-\n-\t/* Sanity check */\n-\tif (unlikely(size != tipc_aead_key_size(skey))) {\n-\t\tkfree(skey);\n-\t\tskey = NULL;\n-\t\tgoto exit;\n-\t}\n \n \trx->key_gen = key_gen;\n \trx->skey_mode = msg_key_mode(hdr);\n@@ -39,9 +48,10 @@\n \trx->nokey = 0;\n \tmb(); /* for nokey flag */\n \n-exit:\n+exit_unlock:\n \tspin_unlock(&rx->lock);\n \n+exit:\n \t/* Schedule the key attaching on this crypto */\n \tif (likely(skey && queue_delayed_work(tx->wq, &rx->work, 0)))\n \t\treturn true;",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -112,7 +112,7 @@
       "CWE-20"
     ],
     "cve_description": "The qtm_decompress function in libclamav/mspack.c in ClamAV before 0.96 allows remote attackers to cause a denial of service (memory corruption and application crash) via a crafted CAB archive that uses the Quantum (aka .Q) compression format.  NOTE: some of these details are obtained from third party information.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -89,6 +89,11 @@\n \t  return qtm->error = CL_EFORMAT;\n \t}\n \n+\tif (window_posn + match_length > qtm->window_size) {\n+\t  cli_dbgmsg(\"qtm_decompress: match ran over window wrap\\n\");\n+\t  return qtm->error = CL_EFORMAT;\n+\t}\n+\n \trundest = &window[window_posn];\n \ti = match_length;\n \t/* does match offset wrap the window? */",
     "original_vulnerable_label": 1,
     "project": "clamav-devel"
   },
@@ -125,7 +125,7 @@
       "CWE-20"
     ],
     "cve_description": "Linux kernel 2.6.17, and other versions before 2.6.22, does not check when a user attempts to set RLIMIT_CPU to 0 until after the change is made, which allows local users to bypass intended resource limits.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -21,6 +21,16 @@\n \tif (retval)\n \t\treturn retval;\n \n+\tif (resource == RLIMIT_CPU && new_rlim.rlim_cur == 0) {\n+\t\t/*\n+\t\t * The caller is asking for an immediate RLIMIT_CPU\n+\t\t * expiry.  But we use the zero value to mean \"it was\n+\t\t * never set\".  So let's cheat and make it one second\n+\t\t * instead\n+\t\t */\n+\t\tnew_rlim.rlim_cur = 1;\n+\t}\n+\n \ttask_lock(current->group_leader);\n \t*old_rlim = new_rlim;\n \ttask_unlock(current->group_leader);\n@@ -42,15 +52,6 @@\n \t\tunsigned long rlim_cur = new_rlim.rlim_cur;\n \t\tcputime_t cputime;\n \n-\t\tif (rlim_cur == 0) {\n-\t\t\t/*\n-\t\t\t * The caller is asking for an immediate RLIMIT_CPU\n-\t\t\t * expiry.  But we use the zero value to mean \"it was\n-\t\t\t * never set\".  So let's cheat and make it one second\n-\t\t\t * instead\n-\t\t\t */\n-\t\t\trlim_cur = 1;\n-\t\t}\n \t\tcputime = secs_to_cputime(rlim_cur);\n \t\tread_lock(&tasklist_lock);\n \t\tspin_lock_irq(&current->sighand->siglock);",
     "original_vulnerable_label": 1,
     "project": "linux-2.6"
   },
@@ -138,7 +138,7 @@
       "CWE-20"
     ],
     "cve_description": "The Stream Control Transmission Protocol (sctp) implementation in the Linux kernel before 2.6.27 does not properly handle a protocol violation in which a parameter has an invalid length, which allows attackers to cause a denial of service (panic) via unspecified vectors, related to sctp_sf_violation_paramlen, sctp_sf_abort_violation, sctp_make_abort_violation, and incorrect data types in function calls.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,10 +1,11 @@\n-static sctp_disposition_t sctp_sf_violation_paramlen(\n+static sctp_disposition_t sctp_sf_violation_chunklen(\n \t\t\t\t     const struct sctp_endpoint *ep,\n \t\t\t\t     const struct sctp_association *asoc,\n \t\t\t\t     const sctp_subtype_t type,\n \t\t\t\t     void *arg,\n-\t\t\t\t     sctp_cmd_seq_t *commands) {\n-\tstatic const char err_str[] = \"The following parameter had invalid length:\";\n+\t\t\t\t     sctp_cmd_seq_t *commands)\n+{\n+\tstatic const char err_str[]=\"The following chunk had invalid length:\";\n \n \treturn sctp_sf_abort_violation(ep, asoc, arg, commands, err_str,\n \t\t\t\t\tsizeof(err_str));",
     "original_vulnerable_label": 1,
     "project": "linux-2.6"
   },
@@ -151,7 +151,7 @@
       "CWE-20"
     ],
     "cve_description": "The hfsplus_block_allocate function in fs/hfsplus/bitmap.c in the Linux kernel before 2.6.28-rc1 does not check a certain return value from the read_mapping_page function before calling kmap, which allows attackers to cause a denial of service (system crash) via a crafted hfsplus filesystem image.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -15,6 +15,10 @@\n \tmutex_lock(&HFSPLUS_SB(sb).alloc_file->i_mutex);\n \tmapping = HFSPLUS_SB(sb).alloc_file->i_mapping;\n \tpage = read_mapping_page(mapping, offset / PAGE_CACHE_BITS, NULL);\n+\tif (IS_ERR(page)) {\n+\t\tstart = size;\n+\t\tgoto out;\n+\t}\n \tpptr = kmap(page);\n \tcurr = pptr + (offset & (PAGE_CACHE_BITS - 1)) / 32;\n \ti = offset % 32;\n@@ -56,6 +60,10 @@\n \t\t\tbreak;\n \t\tpage = read_mapping_page(mapping, offset / PAGE_CACHE_BITS,\n \t\t\t\t\t NULL);\n+\t\tif (IS_ERR(page)) {\n+\t\t\tstart = size;\n+\t\t\tgoto out;\n+\t\t}\n \t\tcurr = pptr = kmap(page);\n \t\tif ((size ^ offset) / PAGE_CACHE_BITS)\n \t\t\tend = pptr + PAGE_CACHE_BITS / 32;\n@@ -103,6 +111,10 @@\n \t\toffset += PAGE_CACHE_BITS;\n \t\tpage = read_mapping_page(mapping, offset / PAGE_CACHE_BITS,\n \t\t\t\t\t NULL);\n+\t\tif (IS_ERR(page)) {\n+\t\t\tstart = size;\n+\t\t\tgoto out;\n+\t\t}\n \t\tpptr = kmap(page);\n \t\tcurr = pptr;\n \t\tend = pptr + PAGE_CACHE_BITS / 32;",
     "original_vulnerable_label": 1,
     "project": "linux-2.6"
   },
@@ -164,7 +164,7 @@
       "CWE-20"
     ],
     "cve_description": "The kssl_keytab_is_available function in ssl/kssl.c in OpenSSL before 0.9.8n, when Kerberos is enabled but Kerberos configuration files cannot be opened, does not check a certain return value, which allows remote attackers to cause a denial of service (NULL pointer dereference and daemon crash) via SSL cipher negotiation, as demonstrated by a chroot installation of Dovecot or stunnel without Kerberos configuration files inside the chroot.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -31,6 +31,9 @@\n                                      kssl_ctx->service_name ? kssl_ctx->service_name: KRB5SVC,\n                                      KRB5_NT_SRV_HST, &princ);\n \n+    if (krb5rc)\n+\tgoto exit;\n+\n     krb5rc = krb5_kt_get_entry(krb5context, krb5keytab, \n                                 princ,\n                                 0 /* IGNORE_VNO */,",
     "original_vulnerable_label": 1,
     "project": "openssl"
   },
@@ -177,7 +177,7 @@
       "CWE-20"
     ],
     "cve_description": "The auth component in Dovecot before 2.2.27, when auth-policy is configured, allows a remote attackers to cause a denial of service (crash) by aborting authentication without setting a username.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -5,7 +5,7 @@\n \tconst unsigned int auth_count =\n \t\tN_ELEMENTS(auth_request_var_expand_static_tab);\n \tstruct var_expand_table *tab, *ret_tab;\n-\tconst char *orig_user, *auth_user;\n+\tconst char *orig_user, *auth_user, *username;\n \n \tif (escape_func == NULL)\n \t\tescape_func = escape_none;\n@@ -20,10 +20,11 @@\n \tmemcpy(tab, auth_request_var_expand_static_tab,\n \t       auth_count * sizeof(*tab));\n \n-\ttab[0].value = escape_func(auth_request->user, auth_request);\n-\ttab[1].value = escape_func(t_strcut(auth_request->user, '@'),\n+\tusername = auth_request->user != NULL ? auth_request->user : \"\";\n+\ttab[0].value = escape_func(username, auth_request);\n+\ttab[1].value = escape_func(t_strcut(username, '@'),\n \t\t\t\t   auth_request);\n-\ttab[2].value = strchr(auth_request->user, '@');\n+\ttab[2].value = strchr(username, '@');\n \tif (tab[2].value != NULL)\n \t\ttab[2].value = escape_func(tab[2].value+1, auth_request);\n \ttab[3].value = escape_func(auth_request->service, auth_request);\n@@ -71,12 +72,12 @@\n \t\ttab[20].value = net_ip2addr(&auth_request->real_remote_ip);\n \ttab[21].value = dec2str(auth_request->real_local_port);\n \ttab[22].value = dec2str(auth_request->real_remote_port);\n-\ttab[23].value = strchr(auth_request->user, '@');\n+\ttab[23].value = strchr(username, '@');\n \tif (tab[23].value != NULL) {\n \t\ttab[23].value = escape_func(t_strcut(tab[23].value+1, '@'),\n \t\t\t\t\t    auth_request);\n \t}\n-\ttab[24].value = strrchr(auth_request->user, '@');\n+\ttab[24].value = strrchr(username, '@');\n \tif (tab[24].value != NULL)\n \t\ttab[24].value = escape_func(tab[24].value+1, auth_request);\n \ttab[25].value = auth_request->master_user == NULL ? NULL :\n@@ -85,7 +86,7 @@\n \t\tdec2str(auth_request->session_pid);\n \n \torig_user = auth_request->original_username != NULL ?\n-\t\tauth_request->original_username : auth_request->user;\n+\t\tauth_request->original_username : username;\n \ttab[27].value = escape_func(orig_user, auth_request);\n \ttab[28].value = escape_func(t_strcut(orig_user, '@'), auth_request);\n \ttab[29].value = strchr(orig_user, '@');",
     "original_vulnerable_label": 1,
     "project": "core"
   }

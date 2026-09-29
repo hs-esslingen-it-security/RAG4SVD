@@ -8,7 +8,7 @@
       "CWE-754"
     ],
     "cve_description": "Tensorflow is an Open Source Machine Learning Framework. The `simplifyBroadcast` function in the MLIR-TFRT infrastructure in TensorFlow is vulnerable to a segfault (hence, denial of service), if called with scalar shapes. If all shapes are scalar, then `maxRank` is 0, so we build an empty `SmallVector`. The fix will be included in TensorFlow 2.8.0. This is the only affected version.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -9,6 +9,10 @@\n     if (!found_shape) return {};\n     shapes_found.push_back(*found_shape);\n     maxRank = std::max(maxRank, found_shape->size());\n+  }\n+  if (maxRank == 0) {\n+    return Value(builder->create<tensor::FromElementsOp>(\n+        loc, shapes[0].getType(), SmallVector<Value>()));\n   }\n \n   SmallVector<const ShapeComponentAnalysis::SymbolicExpr*> joined_dimensions(",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -21,7 +21,7 @@
       "CWE-754"
     ],
     "cve_description": "gio/gsocketclient.c in GNOME GLib 2.59.2 does not ensure that a parent GTask remains alive during the execution of a connection-attempting enumeration, which allows remote attackers to cause a denial of service (g_socket_client_connected_callback mishandling and application crash) via a crafted web site, as demonstrated by GNOME Web (aka Epiphany).",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -9,8 +9,7 @@\n   GProxy *proxy;\n   const gchar *protocol;\n \n-  /* data is NULL once the task is completed */\n-  if (data && g_task_return_error_if_cancelled (data->task))\n+  if (g_cancellable_is_cancelled (attempt->cancellable) || task_completed_or_cancelled (data->task))\n     {\n       g_object_unref (data->task);\n       connection_attempt_unref (attempt);\n@@ -30,17 +29,15 @@\n         {\n           clarify_connect_error (error, data->connectable, attempt->address);\n           set_last_error (data, error);\n+          connection_attempt_remove (attempt);\n+          enumerator_next_async (data, FALSE);\n         }\n       else\n-        g_clear_error (&error);\n-\n-      if (data)\n         {\n-          connection_attempt_remove (attempt);\n-          enumerator_next_async (data);\n+          g_clear_error (&error);\n+          g_object_unref (data->task);\n+          connection_attempt_unref (attempt);\n         }\n-      else\n-        connection_attempt_unref (attempt);\n \n       return;\n     }\n@@ -52,7 +49,6 @@\n     {\n       ConnectionAttempt *attempt_entry = l->data;\n       g_cancellable_cancel (attempt_entry->cancellable);\n-      attempt_entry->data = NULL;\n       connection_attempt_unref (attempt_entry);\n     }\n   g_slist_free (data->connection_attempts);\n@@ -85,7 +81,7 @@\n           G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,\n           _(\"Proxying over a non-TCP connection is not supported.\"));\n \n-      enumerator_next_async (data);\n+      enumerator_next_async (data, FALSE);\n     }\n   else if (g_hash_table_contains (data->client->priv->app_proxies, protocol))\n     {\n@@ -112,6 +108,6 @@\n           _(\"Proxy protocol “%s” is not supported.\"),\n           protocol);\n \n-      enumerator_next_async (data);\n+      enumerator_next_async (data, FALSE);\n     }\n }",
     "original_vulnerable_label": 1,
     "project": "glib"
   }

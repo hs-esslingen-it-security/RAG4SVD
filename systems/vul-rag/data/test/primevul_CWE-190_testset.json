@@ -8,7 +8,7 @@
       "CWE-190"
     ],
     "cve_description": "A vulnerability was found in ImageMagick, causing an outside the range of representable values of type 'unsigned char' at coders/psd.c, when crafted or untrusted input is processed. This leads to a negative impact to application availability or other problems related to undefined behavior.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -63,8 +63,9 @@\n           number_bits=8;\n         for (bit=0; bit < number_bits; bit++)\n         {\n-          SetPSDPixel(image,channels,type,packet_size,(((unsigned char) pixel)\n-            & (0x01 << (7-bit))) != 0 ? 0 : QuantumRange,q++,indexes,x++);\n+          SetPSDPixel(image,channels,type,packet_size,\n+            (((unsigned char) ((ssize_t) pixel)) & (0x01 << (7-bit))) != 0 ? 0 :\n+            QuantumRange,q++,indexes,x++);\n         }\n         if (x != (ssize_t) image->columns)\n           x--;",
     "original_vulnerable_label": 1,
     "project": "ImageMagick6"
   },
@@ -21,7 +21,7 @@
       "CWE-190"
     ],
     "cve_description": "Tensorflow is an Open Source Machine Learning Framework. The implementation of `AddManySparseToTensorsMap` is vulnerable to an integer overflow which results in a `CHECK`-fail when building new `TensorShape` objects (so, an assert failure based denial of service). We are missing some validation on the shapes of the input tensors as well as directly constructing a large `TensorShape` with user-provided dimensions. The fix will be included in TensorFlow 2.8.0. We will also cherrypick this commit on TensorFlow 2.7.1, TensorFlow 2.6.3, and TensorFlow 2.5.3, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -45,22 +45,10 @@\n             \"Rank of input SparseTensor should be > 1, but saw rank: \", rank));\n \n     auto input_shape_vec = input_shape->vec<int64_t>();\n-    int new_num_elements = 1;\n-    bool overflow_ocurred = false;\n-    for (int i = 0; i < input_shape_vec.size(); i++) {\n-      new_num_elements =\n-          MultiplyWithoutOverflow(new_num_elements, input_shape_vec(i));\n-      if (new_num_elements < 0) {\n-        overflow_ocurred = true;\n-        break;\n-      }\n-    }\n \n-    OP_REQUIRES(\n-        context, !overflow_ocurred,\n-        errors::Internal(\"Encountered overflow from large input shape.\"));\n-\n-    TensorShape tensor_input_shape(input_shape_vec);\n+    TensorShape tensor_input_shape;\n+    OP_REQUIRES_OK(context, TensorShape::BuildTensorShape(input_shape_vec,\n+                                                          &tensor_input_shape));\n     gtl::InlinedVector<int64_t, 8> std_order(rank);\n     std::iota(std_order.begin(), std_order.end(), 0);\n     SparseTensor input_st;",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -34,7 +34,7 @@
       "CWE-190"
     ],
     "cve_description": "A vulnerability was found in ImageMagick, causing an outside the range of representable values of type 'unsigned long' at coders/pcl.c, when crafted or untrusted input is processed. This leads to a negative impact to application availability or other problems related to undefined behavior.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -150,8 +150,8 @@\n     /*\n       Set PCL render geometry.\n     */\n-    width=(size_t) floor(bounds.x2-bounds.x1+0.5);\n-    height=(size_t) floor(bounds.y2-bounds.y1+0.5);\n+    width=(size_t)CastDoubleToLong(floor(bounds.x2-bounds.x1+0.5));\n+    height=(size_t)CastDoubleToLong(floor(bounds.y2-bounds.y1+0.5));\n     if (width > page.width)\n       page.width=width;\n     if (height > page.height)",
     "original_vulnerable_label": 1,
     "project": "ImageMagick"
   },
@@ -47,7 +47,7 @@
       "CWE-190"
     ],
     "cve_description": "Tensorflow is an Open Source Machine Learning Framework. The implementations of `Sparse*Cwise*` ops are vulnerable to integer overflows. These can be used to trigger large allocations (so, OOM based denial of service) or `CHECK`-fails when building new `TensorShape` objects (so, assert failures based denial of service). We are missing some validation on the shapes of the input tensors as well as directly constructing a large `TensorShape` with user-provided dimensions. The fix will be included in TensorFlow 2.8.0. We will also cherrypick this commit on TensorFlow 2.7.1, TensorFlow 2.6.3, and TensorFlow 2.5.3, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -39,7 +39,9 @@\n \n     const auto indices_mat = indices_t->matrix<int64_t>();\n     const auto shape_vec = shape_t->vec<int64_t>();\n-    const auto lhs_dims = BCast::FromShape(TensorShape(shape_vec));\n+    TensorShape lhs_shape;\n+    OP_REQUIRES_OK(ctx, TensorShape::BuildTensorShape(shape_vec, &lhs_shape));\n+    const auto lhs_dims = BCast::FromShape(lhs_shape);\n     const auto rhs_dims = BCast::FromShape(dense_t->shape());\n     BCast b(lhs_dims, rhs_dims, false);  // false for keeping the same num dims.\n ",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -60,7 +60,7 @@
       "CWE-190"
     ],
     "cve_description": "Tensorflow is an Open Source Machine Learning Framework. The implementation of `StringNGrams` can be used to trigger a denial of service attack by causing an out of memory condition after an integer overflow. We are missing a validation on `pad_witdh` and that result in computing a negative value for `ngram_width` which is later used to allocate parts of the output. The fix will be included in TensorFlow 2.8.0. We will also cherrypick this commit on TensorFlow 2.7.1, TensorFlow 2.6.3, and TensorFlow 2.5.3, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -98,6 +98,16 @@\n         // We don't have to worry about dynamic padding sizes here: if padding\n         // was dynamic, every sequence would have had sufficient padding to\n         // generate at least one ngram.\n+\n+        // If reached here, pad_width should be > 0, pad_width_ = -1,\n+        // which indicates max(ngram_widths) - 1 cannot be used here since\n+        // ngram_width is not known.\n+        OP_REQUIRES(\n+            context, pad_width_ >= 0,\n+            errors::InvalidArgument(\"Pad width should be >= 0 when \"\n+                                    \"preserve_short_sequences is True and \"\n+                                    \"ngram_widths are not provided, got \",\n+                                    pad_width_));\n         int ngram_width = data_length + 2 * pad_width_;\n         auto output_start = &ngrams_data[output_start_idx];\n         int num_ngrams = 1;",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -73,7 +73,7 @@
       "CWE-190"
     ],
     "cve_description": "Tensorflow is an Open Source Machine Learning Framework. An attacker can craft a TFLite model that would cause an integer overflow in `TfLiteIntArrayCreate`. The `TfLiteIntArrayGetSizeInBytes` returns an `int` instead of a `size_t. An attacker can control model inputs such that `computed_size` overflows the size of `int` datatype. The fix will be included in TensorFlow 2.8.0. We will also cherrypick this commit on TensorFlow 2.7.1, TensorFlow 2.6.3, and TensorFlow 2.5.3, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,7 +1,7 @@\n-int TfLiteIntArrayGetSizeInBytes(int size) {\n+size_t TfLiteIntArrayGetSizeInBytes(int size) {\n   static TfLiteIntArray dummy;\n \n-  int computed_size = sizeof(dummy) + sizeof(dummy.data[0]) * size;\n+  size_t computed_size = sizeof(dummy) + sizeof(dummy.data[0]) * size;\n #if defined(_MSC_VER)\n   // Context for why this is needed is in http://b/189926408#comment21\n   computed_size -= sizeof(dummy.data[0]);",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -86,7 +86,7 @@
       "CWE-190"
     ],
     "cve_description": "Tensorflow is an Open Source Machine Learning Framework. An attacker can craft a TFLite model that would cause an integer overflow in `TfLiteIntArrayCreate`. The `TfLiteIntArrayGetSizeInBytes` returns an `int` instead of a `size_t. An attacker can control model inputs such that `computed_size` overflows the size of `int` datatype. The fix will be included in TensorFlow 2.8.0. We will also cherrypick this commit on TensorFlow 2.7.1, TensorFlow 2.6.3, and TensorFlow 2.5.3, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,5 +1,5 @@\n TfLiteIntArray* TfLiteIntArrayCreate(int size) {\n-  int alloc_size = TfLiteIntArrayGetSizeInBytes(size);\n+  size_t alloc_size = TfLiteIntArrayGetSizeInBytes(size);\n   if (alloc_size <= 0) return NULL;\n   TfLiteIntArray* ret = (TfLiteIntArray*)malloc(alloc_size);\n   if (!ret) return ret;",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -99,7 +99,7 @@
       "CWE-190"
     ],
     "cve_description": "A vulnerability was found in ImageMagick, causing an outside the range of representable values of type 'unsigned long' at coders/pcl.c, when crafted or untrusted input is processed. This leads to a negative impact to application availability or other problems related to undefined behavior.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -150,8 +150,8 @@\n     /*\n       Set PCL render geometry.\n     */\n-    width=(size_t) floor(bounds.x2-bounds.x1+0.5);\n-    height=(size_t) floor(bounds.y2-bounds.y1+0.5);\n+    width=(size_t) CastDoubleToLong(floor(bounds.x2-bounds.x1+0.5));\n+    height=(size_t) CastDoubleToLong(floor(bounds.y2-bounds.y1+0.5));\n     if (width > page.width)\n       page.width=width;\n     if (height > page.height)",
     "original_vulnerable_label": 1,
     "project": "ImageMagick6"
   },
@@ -112,7 +112,7 @@
       "CWE-190"
     ],
     "cve_description": "Unbound before 1.9.5 allows an integer overflow in a size calculation in dnscrypt/dnscrypt.c. NOTE: The vendor disputes that this is a vulnerability. Although the code may be vulnerable, a running Unbound installation cannot be remotely or locally exploited",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -37,6 +37,11 @@\n             );\n             continue;\n         }\n+\tif((unsigned)strlen(dnscenv->provider_name) >= (unsigned)0xffff0000) {\n+\t\t/* guard against integer overflow in rrlen calculation */\n+\t\tverbose(VERB_OPS, \"cert #%\" PRIu32 \" is too long\", serial);\n+\t\tcontinue\n+\t}\n         rrlen = strlen(dnscenv->provider_name) +\n                          strlen(ttl_class_type) +\n                          4 * sizeof(struct SignedCert) + // worst case scenario",
     "original_vulnerable_label": 1,
     "project": "unbound"
   },
@@ -125,7 +125,7 @@
       "CWE-190"
     ],
     "cve_description": "In FreeRDP less than or equal to 2.0.0, an Integer Overflow to Buffer Overflow exists. When using /video redirection, a manipulated server can instruct the client to allocate a buffer with a smaller size than requested due to an integer overflow in size calculation. With later messages, the server can manipulate the client to write data out of bound to the previously allocated buffer. This has been patched in 2.1.0.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,8 +1,14 @@\n static PresentationContext* PresentationContext_new(VideoClientContext* video, BYTE PresentationId,\n                                                     UINT32 x, UINT32 y, UINT32 width, UINT32 height)\n {\n+\tsize_t s;\n \tVideoClientContextPriv* priv = video->priv;\n-\tPresentationContext* ret = calloc(1, sizeof(*ret));\n+\tPresentationContext* ret;\n+\ts = width * height * 4ULL;\n+\tif (s > INT32_MAX)\n+\t\treturn NULL;\n+\n+\tret = calloc(1, sizeof(*ret));\n \tif (!ret)\n \t\treturn NULL;\n \n@@ -24,7 +30,7 @@\n \t\tgoto error_currentSample;\n \t}\n \n-\tret->surfaceData = BufferPool_Take(priv->surfacePool, width * height * 4);\n+\tret->surfaceData = BufferPool_Take(priv->surfacePool, s);\n \tif (!ret->surfaceData)\n \t{\n \t\tWLog_ERR(TAG, \"unable to allocate surfaceData\");",
     "original_vulnerable_label": 1,
     "project": "FreeRDP"
   },
@@ -138,7 +138,7 @@
       "CWE-190"
     ],
     "cve_description": "A denial of service vulnerability was found in rsyslog in the imptcp module. An attacker could send a specially crafted message to the imptcp socket, which would cause rsyslog to crash. Versions before 8.27.0 are vulnerable.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -30,7 +30,16 @@\n \n \tif(pThis->inputState == eInOctetCnt) {\n \t\tif(isdigit(c)) {\n-\t\t\tpThis->iOctetsRemain = pThis->iOctetsRemain * 10 + c - '0';\n+\t\t\tif(pThis->iOctetsRemain <= 200000000) {\n+\t\t\t\tpThis->iOctetsRemain = pThis->iOctetsRemain * 10 + c - '0';\n+\t\t\t} else {\n+\t\t\t\terrmsg.LogError(0, NO_ERRCODE, \"Framing Error in received TCP message: \"\n+\t\t\t\t\t\t\"frame too large (at least %d%c), change to octet stuffing\",\n+\t\t\t\t\t\tpThis->iOctetsRemain, c);\n+\t\t\t\tpThis->eFraming = TCP_FRAMING_OCTET_STUFFING;\n+\t\t\t\tpThis->inputState = eInMsg;\n+\t\t\t}\n+\t\t\t*(pThis->pMsg + pThis->iMsg++) = c;\n \t\t} else { /* done with the octet count, so this must be the SP terminator */\n \t\t\tDBGPRINTF(\"TCP Message with octet-counter, size %d.\\n\", pThis->iOctetsRemain);\n \t\t\tif(c != ' ') {\n@@ -39,9 +48,9 @@\n \t\t\t}\n \t\t\tif(pThis->iOctetsRemain < 1) {\n \t\t\t\t/* TODO: handle the case where the octet count is 0! */\n-\t\t\t\tDBGPRINTF(\"Framing Error: invalid octet count\\n\");\n \t\t\t\terrmsg.LogError(0, NO_ERRCODE, \"Framing Error in received TCP message: \"\n \t\t\t\t\t    \"invalid octet count %d.\", pThis->iOctetsRemain);\n+\t\t\t\tpThis->eFraming = TCP_FRAMING_OCTET_STUFFING;\n \t\t\t} else if(pThis->iOctetsRemain > iMaxLine) {\n \t\t\t\t/* while we can not do anything against it, we can at least log an indication\n \t\t\t\t * that something went wrong) -- rgerhards, 2008-03-14\n@@ -52,6 +61,7 @@\n \t\t\t\t\t        \"max msg size is %d, truncating...\", pThis->iOctetsRemain, iMaxLine);\n \t\t\t}\n \t\t\tpThis->inputState = eInMsg;\n+\t\t\tpThis->iMsg = 0;\n \t\t}\n \t} else {\n \t\tassert(pThis->inputState == eInMsg);",
     "original_vulnerable_label": 1,
     "project": "rsyslog"
   }

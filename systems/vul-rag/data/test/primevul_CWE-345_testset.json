@@ -8,7 +8,7 @@
       "CWE-345"
     ],
     "cve_description": "TensorFlow is an open source platform for machine learning. In affected versions an attacker can trigger undefined behavior, integer overflows, segfaults and `CHECK`-fail crashes if they can change saved checkpoints from outside of TensorFlow. This is because the checkpoints loading infrastructure is missing validation for invalid file formats. The fixes will be included in TensorFlow 2.7.0. We will also cherrypick these commits on TensorFlow 2.6.1, TensorFlow 2.5.2, and TensorFlow 2.4.4, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -37,6 +37,22 @@\n               << slice_s.DebugString() << \": computed key = \" << key;\n       return false;\n     }\n+    // Ensure the TensorSlice contains the expected amount of data.\n+    TensorShape shp_s;\n+    Status s = slice_s.SliceTensorShape(tss->shape(), &shp_s);\n+    if (!s.ok()) {\n+      VLOG(1) << \"Failed to slice tensor \" << name << \", slice \"\n+              << slice_s.DebugString() << \": \" << s;\n+      return false;\n+    }\n+    if (checkpoint::TensorProtoDataSize<T>(sts.data().data()) !=\n+        shp_s.num_elements()) {\n+      VLOG(1) << \"Tensor \" << name << \", slice \" << slice_s.DebugString()\n+              << \" had an unexpected amount of data: expected = \"\n+              << shp_s.num_elements() << \", got = \"\n+              << checkpoint::TensorProtoDataSize<T>(sts.data().data());\n+      return false;\n+    }\n     CopyDataFromTensorSliceToTensorSlice(\n         tss->shape(), slice_s, slice,\n         checkpoint::TensorProtoData<T>(sts.data().data()), data);",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   }

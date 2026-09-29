@@ -8,7 +8,7 @@
       "CWE-269"
     ],
     "cve_description": "liblsquic/lsquic_qenc_hdl.c in LiteSpeed QUIC (aka LSQUIC) before 3.1.0 mishandles MAX_TABLE_CAPACITY.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -14,6 +14,8 @@\n     enc_opts = LSQPACK_ENC_OPT_STAGE_2\n              | (server ? LSQPACK_ENC_OPT_SERVER : 0);\n     qeh->qeh_tsu_sz = sizeof(qeh->qeh_tsu_buf);\n+    if (QENC_MIN_DYN_TABLE_SIZE > dyn_table_size)\n+        dyn_table_size = 0;\n     if (0 != lsqpack_enc_init(&qeh->qeh_encoder, (void *) qeh->qeh_conn,\n                 max_table_size, dyn_table_size, max_risked_streams, enc_opts,\n                 qeh->qeh_tsu_buf, &qeh->qeh_tsu_sz))",
     "original_vulnerable_label": 1,
     "project": "lsquic"
   },
@@ -21,7 +21,7 @@
       "CWE-269"
     ],
     "cve_description": "In Singular before 4.3.1, a predictable /tmp pathname is used (e.g., by sdb.cc), which allows local users to gain the privileges of other users via a procedure in a file under /tmp. NOTE: this CVE Record is about sdb.cc and similar files in the Singular interface that have predictable /tmp pathnames; this CVE Record is not about the lack of a safe temporary-file creation capability in the Singular language.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,9 +1,8 @@\n void sdb_edit(procinfo *pi)\n {\n-  char * filename = omStrDup(\"/tmp/sd000000\");\n-  sprintf(filename+7,\"%d\",getpid());\n-  FILE *fp=fopen(filename,\"w\");\n-  if (fp==NULL)\n+  char * filename = omStrDup(\"/tmp/sdXXXXXX\");\n+  int f=mkstemp(filename);\n+  if (f==-1)\n   {\n     Print(\"cannot open %s\\n\",filename);\n     omFree(filename);\n@@ -12,8 +11,8 @@\n   if (pi->language!= LANG_SINGULAR)\n   {\n     Print(\"cannot edit type %d\\n\",pi->language);\n-    fclose(fp);\n-    fp=NULL;\n+    close(f);\n+    f=NULL;\n   }\n   else\n   {\n@@ -30,15 +29,15 @@\n       if (pi->data.s.body==NULL)\n       {\n         PrintS(\"cannot get the procedure body\\n\");\n-        fclose(fp);\n+        close(f);\n         si_unlink(filename);\n         omFree(filename);\n         return;\n       }\n     }\n \n-    fwrite(pi->data.s.body,1,strlen(pi->data.s.body),fp);\n-    fclose(fp);\n+    write(f,pi->data.s.body,strlen(pi->data.s.body));\n+    close(f);\n \n     int pid=fork();\n     if (pid!=0)\n@@ -65,7 +64,7 @@\n       PrintS(\"cannot fork\\n\");\n     }\n \n-    fp=fopen(filename,\"r\");\n+    FILE* fp=fopen(filename,\"r\");\n     if (fp==NULL)\n     {\n       Print(\"cannot read from %s\\n\",filename);",
     "original_vulnerable_label": 1,
     "project": "Singular"
   },
@@ -34,7 +34,7 @@
       "CWE-269"
     ],
     "cve_description": "net/netfilter/nf_dup_netdev.c in the Linux kernel 5.4 through 5.6.10 allows local users to gain privileges because of a heap out-of-bounds write. This is related to nf_tables_offload.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -8,7 +8,8 @@\n \n \texpr = nft_expr_first(rule);\n \twhile (nft_expr_more(rule, expr)) {\n-\t\tif (expr->ops->offload_flags & NFT_OFFLOAD_F_ACTION)\n+\t\tif (expr->ops->offload_action &&\n+\t\t    expr->ops->offload_action(expr))\n \t\t\tnum_actions++;\n \n \t\texpr = nft_expr_next(expr);",
     "original_vulnerable_label": 1,
     "project": "nf"
   },
@@ -47,7 +47,7 @@
       "CWE-269"
     ],
     "cve_description": "A vulnerability was found in the Linux kernel’s cgroup_release_agent_write in the kernel/cgroup/cgroup-v1.c function. This flaw, under certain circumstances, allows the use of the cgroups v1 release_agent feature to escalate privileges and bypass the namespace isolation unexpectedly.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -4,6 +4,14 @@\n \tstruct cgroup *cgrp;\n \n \tBUILD_BUG_ON(sizeof(cgrp->root->release_agent_path) < PATH_MAX);\n+\n+\t/*\n+\t * Release agent gets called with all capabilities,\n+\t * require capabilities to set release agent.\n+\t */\n+\tif ((of->file->f_cred->user_ns != &init_user_ns) ||\n+\t    !capable(CAP_SYS_ADMIN))\n+\t\treturn -EPERM;\n \n \tcgrp = cgroup_kn_lock_live(of->kn, false);\n \tif (!cgrp)",
     "original_vulnerable_label": 1,
     "project": "linux"
   }

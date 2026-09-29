@@ -8,7 +8,7 @@
       "CWE-399"
     ],
     "cve_description": "The InvertibleRWFunction::CalculateInverse function in rw.cpp in libcrypt++ 5.6.2 does not properly blind private key operations for the Rabin-Williams digital signature algorithm, which allows remote attackers to obtain private keys via a timing attack.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -3,10 +3,16 @@\n \tDoQuickSanityCheck();\n \tModularArithmetic modn(m_n);\n \tInteger r, rInv;\n-\tdo {\t// do this in a loop for people using small numbers for testing\n+\n+\t// do this in a loop for people using small numbers for testing\n+\tdo {\n \t\tr.Randomize(rng, Integer::One(), m_n - Integer::One());\n+\t\t// Fix for CVE-2015-2141. Thanks to Evgeny Sidorov for reporting.\n+\t\t// Squaring to satisfy Jacobi requirements suggested by JPM.\n+\t\tr = modn.Square(r);\n \t\trInv = modn.MultiplicativeInverse(r);\n \t} while (rInv.IsZero());\n+\n \tInteger re = modn.Square(r);\n \tre = modn.Multiply(re, x);\t\t\t// blind\n ",
     "original_vulnerable_label": 1,
     "project": "cryptopp"
   },
@@ -21,7 +21,7 @@
       "CWE-399"
     ],
     "cve_description": "Use-after-free vulnerability in dns.c in Tor before 0.2.2.38 might allow remote attackers to cause a denial of service (daemon crash) via vectors related to failed DNS requests.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -43,7 +43,7 @@\n     int flavor = networkstatus_parse_flavor_name(tok->args[1]);\n     if (flavor < 0) {\n       log_warn(LD_DIR, \"Can't parse document with unknown flavor %s\",\n-               escaped(tok->args[2]));\n+               escaped(tok->args[1]));\n       goto err;\n     }\n     ns->flavor = flav = flavor;",
     "original_vulnerable_label": 1,
     "project": "tor"
   },
@@ -34,7 +34,7 @@
       "CWE-399"
     ],
     "cve_description": "Multiple double free vulnerabilities in the (1) agent_sign_data function in agent.c, (2) channel_request function in channels.c, (3) ssh_userauth_pubkey function in auth.c, (4) sftp_parse_attr_3 function in sftp.c, and (5) try_publickey_from_file function in keyfiles.c in libssh before 0.5.3 allow remote attackers to cause a denial of service (crash) and possibly execute arbitrary code via unspecified vectors.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -31,6 +31,7 @@\n       sftp_packet_write(sftp, SSH_FXP_MKDIR, buffer) < 0) {\n     ssh_buffer_free(buffer);\n     ssh_string_free(path);\n+    return -1;\n   }\n   ssh_buffer_free(buffer);\n   ssh_string_free(path);",
     "original_vulnerable_label": 1,
     "project": "libssh"
   }

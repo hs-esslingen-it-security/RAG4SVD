@@ -8,7 +8,7 @@
       "CWE-772"
     ],
     "cve_description": "The ReadTGAImage function in coders\\tga.c in ImageMagick 7.0.5-6 has a memory leak vulnerability that can cause memory exhaustion via invalid colors data in the header of a TGA or VST file.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -127,6 +127,8 @@\n \n           one=1;\n           image->colors=one << tga_info.bits_per_pixel;\n+          if (image->colors > ((~0UL)/sizeof(*image->colormap)))\n+            ThrowReaderException(CorruptImageError,\"ImproperImageHeader\");\n           if (AcquireImageColormap(image,image->colors,exception) == MagickFalse)\n             ThrowReaderException(ResourceLimitError,\"MemoryAllocationFailed\");\n         }",
     "original_vulnerable_label": 1,
     "project": "ImageMagick"
   },
@@ -21,7 +21,7 @@
       "CWE-772"
     ],
     "cve_description": "drivers/bluetooth/virtio_bt.c in the Linux kernel before 5.16.3 has a memory leak (socket buffers have memory allocated but not freed).",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -13,5 +13,8 @@\n \t\thci_skb_pkt_type(skb) = pkt_type;\n \t\thci_recv_frame(vbt->hdev, skb);\n \t\tbreak;\n+\tdefault:\n+\t\tkfree_skb(skb);\n+\t\tbreak;\n \t}\n }",
     "original_vulnerable_label": 1,
     "project": "linux"
   }

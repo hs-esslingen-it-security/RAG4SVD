@@ -8,7 +8,7 @@
       "CWE-94"
     ],
     "cve_description": "A Privilege Context Switching issue was discovered in join.c in Firejail 0.9.68. By crafting a bogus Firejail container that is accepted by the Firejail setuid-root program as a join target, a local attacker can enter an environment in which the Linux user namespace is still the initial user namespace, the NO_NEW_PRIVS prctl is not activated, and the entered mount namespace is under the attacker's control. In this way, the filesystem layout can be adjusted to gain root privileges through execution of available setuid-root binaries such as su or sudo.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -20,7 +20,10 @@\n \t\t\t\t*q = '\\0';\n \t\t\t\t*r = '/';\n \t\t\t\tr = q;\n-\t\t\t\tmkdir_attr(dst, s.st_mode, 0, 0);\n+\t\t\t\tif (mkdir(dst, 0700) != 0 && errno != EEXIST)\n+\t\t\t\t\terrExit(\"mkdir\");\n+\t\t\t\tif (chmod(dst, s.st_mode) != 0)\n+\t\t\t\t\terrExit(\"chmod\");\n \t\t\t}\n \t\t\tif (!last) {\n \t\t\t\t// If we're not at the final terminating null, restore",
     "original_vulnerable_label": 1,
     "project": "firejail"
   },
@@ -21,7 +21,7 @@
       "CWE-94"
     ],
     "cve_description": "An issue was discovered in the Linux kernel through 5.17.5. io_rw_init_file in fs/io_uring.c lacks initialization of kiocb->private.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -29,6 +29,7 @@\n \t\tif (!(kiocb->ki_flags & IOCB_DIRECT) || !file->f_op->iopoll)\n \t\t\treturn -EOPNOTSUPP;\n \n+\t\tkiocb->private = NULL;\n \t\tkiocb->ki_flags |= IOCB_HIPRI | IOCB_ALLOC_CACHE;\n \t\tkiocb->ki_complete = io_complete_rw_iopoll;\n \t\treq->iopoll_completed = 0;",
     "original_vulnerable_label": 1,
     "project": "linux"
   }

@@ -8,7 +8,7 @@
       "CWE-476"
     ],
     "cve_description": "Tensorflow is an Open Source Machine Learning Framework. The implementation of `GetInitOp` is vulnerable to a crash caused by dereferencing a null pointer. The fix will be included in TensorFlow 2.8.0. We will also cherrypick this commit on TensorFlow 2.7.1, TensorFlow 2.6.3, and TensorFlow 2.5.3, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -4,9 +4,14 @@\n   const auto& init_op_sig_it =\n       meta_graph_def.signature_def().find(kSavedModelInitOpSignatureKey);\n   if (init_op_sig_it != sig_def_map.end()) {\n-    *init_op_name = init_op_sig_it->second.outputs()\n-                        .find(kSavedModelInitOpSignatureKey)\n-                        ->second.name();\n+    const auto& sig_def_outputs = init_op_sig_it->second.outputs();\n+    const auto& sig_def_outputs_it =\n+        sig_def_outputs.find(kSavedModelInitOpSignatureKey);\n+    if (sig_def_outputs_it == sig_def_outputs.end()) {\n+      return errors::FailedPrecondition(\"Could not find output \",\n+                                        kSavedModelInitOpSignatureKey);\n+    }\n+    *init_op_name = sig_def_outputs_it->second.name();\n     return Status::OK();\n   }\n ",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -21,7 +21,7 @@
       "CWE-476"
     ],
     "cve_description": "The binary MP4Box in Gpac 1.0.1 has a null pointer dereference vulnerability in the gf_isom_get_payt_count function in hint_track.c, which allows attackers to cause a denial of service.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,7 +1,7 @@\n u32 GetHintFormat(GF_TrackBox *trak)\n {\n \tGF_HintMediaHeaderBox *hmhd = (GF_HintMediaHeaderBox *)trak->Media->information->InfoHeader;\n-\tif (hmhd->type != GF_ISOM_BOX_TYPE_HMHD)\n+\tif (!hmhd || (hmhd->type != GF_ISOM_BOX_TYPE_HMHD))\n \t\treturn 0;\n \t\t\n \tif (!hmhd || !hmhd->subType) {",
     "original_vulnerable_label": 1,
     "project": "gpac"
   },
@@ -34,7 +34,7 @@
       "CWE-476"
     ],
     "cve_description": "mruby is vulnerable to NULL Pointer Dereference",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,13 +1,15 @@\n mrb_ary_shift_m(mrb_state *mrb, mrb_value self)\n {\n-  struct RArray *a = mrb_ary_ptr(self);\n-  mrb_int len = ARY_LEN(a);\n   mrb_int n;\n-  mrb_value val;\n \n   if (mrb_get_args(mrb, \"|i\", &n) == 0) {\n     return mrb_ary_shift(mrb, self);\n-  };\n+  }\n+\n+  struct RArray *a = mrb_ary_ptr(self);\n+  mrb_int len = ARY_LEN(a);\n+  mrb_value val;\n+\n   ary_modify_check(mrb, a);\n   if (len == 0 || n == 0) return mrb_ary_new(mrb);\n   if (n < 0) mrb_raise(mrb, E_ARGUMENT_ERROR, \"negative array shift\");",
     "original_vulnerable_label": 1,
     "project": "mruby"
   },
@@ -47,7 +47,7 @@
       "CWE-476"
     ],
     "cve_description": "Tensorflow is an Open Source Machine Learning Framework. When building an XLA compilation cache, if default settings are used, TensorFlow triggers a null pointer dereference. In the default scenario, all devices are allowed, so `flr->config_proto` is `nullptr`. The fix will be included in TensorFlow 2.8.0. We will also cherrypick this commit on TensorFlow 2.7.1, TensorFlow 2.6.3, and TensorFlow 2.5.3, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -40,11 +40,13 @@\n   client_options.set_intra_op_parallelism_threads(\n       device->tensorflow_cpu_worker_threads()->num_threads);\n \n-  string allowed_gpus =\n-      flr->config_proto()->gpu_options().visible_device_list();\n-  TF_ASSIGN_OR_RETURN(absl::optional<std::set<int>> gpu_ids,\n-                      ParseVisibleDeviceList(allowed_gpus));\n-  client_options.set_allowed_devices(gpu_ids);\n+  if (flr->config_proto()) {\n+    string allowed_gpus =\n+        flr->config_proto()->gpu_options().visible_device_list();\n+    TF_ASSIGN_OR_RETURN(absl::optional<std::set<int>> gpu_ids,\n+                        ParseVisibleDeviceList(allowed_gpus));\n+    client_options.set_allowed_devices(gpu_ids);\n+  }\n \n   auto client = xla::ClientLibrary::GetOrCreateLocalClient(client_options);\n   if (!client.ok()) {",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -60,7 +60,7 @@
       "CWE-476"
     ],
     "cve_description": "The binary MP4Box in Gpac 1.0.1 has a null pointer dereference vulnerability in the mpgviddmx_process function in reframe_mpgvid.c, which allows attackers to cause a denial of service. This vulnerability is possibly due to an incomplete fix for CVE-2021-40566.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -270,8 +270,14 @@\n \t\t\tmpgviddmx_enqueue_or_dispatch(ctx, dst_pck, GF_FALSE, GF_FALSE);\n \t\t}\n \n+\t\t//not enough bytes to parse start code\n+\t\tif (remain<5) {\n+\t\t\tmemcpy(ctx->hdr_store, start, remain);\n+\t\t\tctx->bytes_in_header = remain;\n+\t\t\tbreak;\n+\t\t}\n+\n \t\t//parse headers\n-\n \t\t//we have a start code loaded, eg the data packet does not have a full start code at the beginning\n \t\tif (sc_type_forced) {\n \t\t\tgf_bs_reassign_buffer(ctx->bs, start + hdr_offset, remain - hdr_offset);",
     "original_vulnerable_label": 1,
     "project": "gpac"
   },
@@ -73,7 +73,7 @@
       "CWE-476"
     ],
     "cve_description": "A Segmentation fault caused by a null pointer dereference vulnerability exists in Gpac through 1.0.1 via the gf_avc_parse_nalu function in av_parsers.c when using mp4box, which causes a denial of service.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -74,7 +74,8 @@\n \t\t\tret = 1;\n \t\t\tbreak;\n \t\t}\n-\t\tassert(avc->s_info.sps);\n+\t\tif (!avc->s_info.sps)\n+\t\t\treturn -1;\n \n \t\tif (avc->s_info.sps->poc_type == n_state.sps->poc_type) {\n \t\t\tif (!avc->s_info.sps->poc_type) {",
     "original_vulnerable_label": 1,
     "project": "gpac"
   },
@@ -86,7 +86,7 @@
       "CWE-476"
     ],
     "cve_description": "Tensorflow is an Open Source Machine Learning Framework. Under certain scenarios, Grappler component of TensorFlow can trigger a null pointer dereference. There are 2 places where this can occur, for the same malicious alteration of a `SavedModel` file (fixing the first one would trigger the same dereference in the second place). First, during constant folding, the `GraphDef` might not have the required nodes for the binary operation. If a node is missing, the correposning `mul_*child` would be null, and the dereference in the subsequent line would be incorrect. We have a similar issue during `IsIdentityConsumingSwitch`. The fix will be included in TensorFlow 2.8.0. We will also cherrypick this commit on TensorFlow 2.7.1, TensorFlow 2.6.3, and TensorFlow 2.5.3, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -15,6 +15,9 @@\n \n   NodeDef* mul_left_child = node_map_->GetNode(node->input(0));\n   NodeDef* mul_right_child = node_map_->GetNode(node->input(1));\n+  if (mul_left_child == nullptr || mul_right_child == nullptr) {\n+    return false;\n+  }\n   // One child must be constant, and the second must be Conv op.\n   const bool left_child_is_constant = IsReallyConstant(*mul_left_child);\n   const bool right_child_is_constant = IsReallyConstant(*mul_right_child);",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -99,7 +99,7 @@
       "CWE-476"
     ],
     "cve_description": "NULL Pointer Dereference in Homebrew mruby prior to 3.2.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -7,7 +7,7 @@\n \n   while (tree) {\n     if (nint(tree->car->car->car) == NODE_KW_REST_ARGS) {\n-      if (len > 0) {\n+      if (val && len > 0) {\n         pop_n(len*2);\n         if (!update) {\n           genop_2(s, OP_HASH, cursp(), len);\n@@ -19,7 +19,7 @@\n         push();\n       }\n       codegen(s, tree->car->cdr, val);\n-      if (len > 0 || update) {\n+      if (val && (len > 0 || update)) {\n         pop(); pop();\n         genop_1(s, OP_HASHCAT, cursp());\n         push();",
     "original_vulnerable_label": 1,
     "project": "mruby"
   },
@@ -112,7 +112,7 @@
       "CWE-476"
     ],
     "cve_description": "Tensorflow is an Open Source Machine Learning Framework. Under certain scenarios, Grappler component of TensorFlow can trigger a null pointer dereference. There are 2 places where this can occur, for the same malicious alteration of a `SavedModel` file (fixing the first one would trigger the same dereference in the second place). First, during constant folding, the `GraphDef` might not have the required nodes for the binary operation. If a node is missing, the correposning `mul_*child` would be null, and the dereference in the subsequent line would be incorrect. We have a similar issue during `IsIdentityConsumingSwitch`. The fix will be included in TensorFlow 2.8.0. We will also cherrypick this commit on TensorFlow 2.7.1, TensorFlow 2.6.3, and TensorFlow 2.5.3, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -8,6 +8,9 @@\n     }\n \n     NodeDef* input_node = graph.GetNode(tensor_id.node());\n+    if (input_node == nullptr) {\n+      return false;\n+    }\n     return IsSwitch(*input_node);\n   }\n   return false;",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -125,7 +125,7 @@
       "CWE-476"
     ],
     "cve_description": "NULL Pointer Dereference in GitHub repository gpac/gpac prior to 1.1.0.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -4,8 +4,10 @@\n \tu32 i;\n \tGroupIdToNameBox *ptr = (GroupIdToNameBox *)s;\n \tif (ptr == NULL) return;\n-\tfor (i=0; i<ptr->nb_entries; i++) {\n-\t\tif (ptr->entries[i].name) gf_free(ptr->entries[i].name);\n+\tif (ptr->entries) {\n+\t\tfor (i=0; i<ptr->nb_entries; i++) {\n+\t\t\tif (ptr->entries[i].name) gf_free(ptr->entries[i].name);\n+\t\t}\n+\t\tgf_free(ptr->entries);\n \t}\n-\tif (ptr->entries) gf_free(ptr->entries);\n \tgf_free(ptr);",
     "original_vulnerable_label": 1,
     "project": "gpac"
   },
@@ -138,7 +138,7 @@
       "CWE-476"
     ],
     "cve_description": "Tensorflow is an Open Source Machine Learning Framework. The implementation of `SparseTensorSliceDataset` has an undefined behavior: under certain condition it can be made to dereference a `nullptr` value. The 3 input arguments to `SparseTensorSliceDataset` represent a sparse tensor. However, there are some preconditions that these arguments must satisfy but these are not validated in the implementation. The fix will be included in TensorFlow 2.8.0. We will also cherrypick this commit on TensorFlow 2.7.1, TensorFlow 2.6.3, and TensorFlow 2.5.3, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -9,28 +9,29 @@\n     OP_REQUIRES_OK(ctx, ctx->input(\"dense_shape\", &dense_shape));\n \n     OP_REQUIRES(ctx, TensorShapeUtils::IsMatrix(indices->shape()),\n+                errors::InvalidArgument(\"Input indices must be a matrix. Got: \",\n+                                        indices->shape().DebugString()));\n+    OP_REQUIRES(ctx, TensorShapeUtils::IsVector(values->shape()),\n+                errors::InvalidArgument(\"Input values must be a vector. Got: \",\n+                                        values->shape().DebugString()));\n+    OP_REQUIRES(ctx, TensorShapeUtils::IsVector(dense_shape->shape()),\n+                errors::InvalidArgument(\"Input shape must be a vector. Got: \",\n+                                        dense_shape->shape().DebugString()));\n+    OP_REQUIRES(\n+        ctx, values->shape().dim_size(0) == indices->shape().dim_size(0),\n+        errors::InvalidArgument(\n+            \"Number of values must match first dimension of indices. \", \"Got \",\n+            values->shape().dim_size(0),\n+            \" values, indices shape: \", indices->shape().DebugString()));\n+    OP_REQUIRES(\n+        ctx, dense_shape->shape().dim_size(0) == indices->shape().dim_size(1),\n+        errors::InvalidArgument(\n+            \"Number of dimensions must match second dimension of indices. \",\n+            \"Got \", dense_shape->shape().dim_size(0),\n+            \" dimensions, indices shape: \", indices->shape().DebugString()));\n+    OP_REQUIRES(ctx, dense_shape->NumElements() > 0,\n                 errors::InvalidArgument(\n-                    \"Input indices should be a matrix but received shape \",\n-                    indices->shape().DebugString()));\n-\n-    const auto num_indices = indices->NumElements();\n-    const auto num_values = values->NumElements();\n-    if (num_indices == 0 || num_values == 0) {\n-      OP_REQUIRES(ctx, num_indices == num_values,\n-                  errors::InvalidArgument(\n-                      \"If indices or values are empty, the other one must also \"\n-                      \"be. Got indices of shape \",\n-                      indices->shape().DebugString(), \" and values of shape \",\n-                      values->shape().DebugString()));\n-    }\n-    OP_REQUIRES(ctx, TensorShapeUtils::IsVector(values->shape()),\n-                errors::InvalidArgument(\n-                    \"Input values should be a vector but received shape \",\n-                    indices->shape().DebugString()));\n-    OP_REQUIRES(ctx, TensorShapeUtils::IsVector(dense_shape->shape()),\n-                errors::InvalidArgument(\n-                    \"Input shape should be a vector but received shape \",\n-                    dense_shape->shape().DebugString()));\n+                    \"The shape argument requires at least one element.\"));\n \n     // We currently ensure that `sparse_tensor` is ordered in the\n     // batch dimension.",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -151,7 +151,7 @@
       "CWE-476"
     ],
     "cve_description": "A Vulnerability of LG Electronic web OS TV Emulator could allow an attacker to escalate privileges and overwrite certain files. This vulnerability is due to wrong environment setting. An attacker could exploit this vulnerability through crafted configuration files and executable files.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -17,7 +17,7 @@\n \n     if (argc > 8)\n     {\n-        arg_start = (strcmp (argv[8], \"*\") == 0) ? 9 : 8;\n+        arg_start = ((argc > 9) && (strcmp (argv[8], \"*\") == 0)) ? 9 : 8;\n         if (argv[arg_start][0] == ':')\n         {\n             pos_attr = NULL;",
     "original_vulnerable_label": 1,
     "project": "weechat"
   },
@@ -164,7 +164,7 @@
       "CWE-476"
     ],
     "cve_description": "TensorFlow is an open source platform for machine learning. Prior to versions 2.9.0, 2.8.1, 2.7.2, and 2.6.4, multiple TensorFlow operations misbehave in eager mode when the resource handle provided to them is invalid. In graph mode, it would have been impossible to perform these API calls, but migration to TF 2.x eager mode opened up this vulnerability. If the resource handle is empty, then a reference is bound to a null pointer inside TensorFlow codebase (various codepaths). This is undefined behavior. Versions 2.9.0, 2.8.1, 2.7.2, and 2.6.4 contain a patch for this issue.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -12,6 +12,9 @@\n     const Tensor* tensor;\n     // TODO(fishx): Avoid blocking here.\n     TF_RETURN_IF_ERROR(tensor_handle->Tensor(&tensor));\n+    if (tensor->NumElements() == 0) {\n+      return errors::InvalidArgument(\"Empty resource handle\");\n+    }\n     const ResourceHandle& handle = tensor->flat<ResourceHandle>()(0);\n     device_name = handle.device();\n ",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -177,7 +177,7 @@
       "CWE-476"
     ],
     "cve_description": "GPAC 2.1-DEV-rev87-g053aae8-master. has a Null Pointer Dereference vulnerability in gf_isom_parse_movie_boxes_internal due to improper return value handling of GF_SKIP_BOX, which causes a Denial of Service. This vulnerability was fixed in commit 37592ad.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -30,7 +30,8 @@\n \t\te = gf_isom_parse_root_box(&a, mov->movieFileMap->bs, boxType, bytesMissing, progressive_mode);\n \n \t\tif (e >= 0) {\n-\n+\t\t\t//safety check, should never happen\n+\t\t\tif (!a) return GF_ISOM_INVALID_FILE;\n \t\t} else if (e == GF_ISOM_INCOMPLETE_FILE) {\n \t\t\t/*our mdat is uncomplete, only valid for READ ONLY files...*/\n \t\t\tif (mov->openMode != GF_ISOM_OPEN_READ) {",
     "original_vulnerable_label": 1,
     "project": "gpac"
   },
@@ -190,7 +190,7 @@
       "CWE-476"
     ],
     "cve_description": "TensorFlow is an end-to-end open source platform for machine learning. When a user does not supply arguments that determine a valid sparse tensor, `tf.raw_ops.SparseTensorSliceDataset` implementation can be made to dereference a null pointer. The [implementation](https://github.com/tensorflow/tensorflow/blob/8d72537c6abf5a44103b57b9c2e22c14f5f49698/tensorflow/core/kernels/data/sparse_tensor_slice_dataset_op.cc#L240-L251) has some argument validation but fails to consider the case when either `indices` or `values` are provided for an empty sparse tensor when the other is not. If `indices` is empty, then [code that performs validation](https://github.com/tensorflow/tensorflow/blob/8d72537c6abf5a44103b57b9c2e22c14f5f49698/tensorflow/core/kernels/data/sparse_tensor_slice_dataset_op.cc#L260-L261) (i.e., checking that the indices are monotonically increasing) results in a null pointer dereference. If `indices` as provided by the user is empty, then `indices` in the C++ code above is backed by an empty `std::vector`, hence calling `indices->dim_size(0)` results in null pointer dereferencing (same as calling `std::vector::at()` on an empty vector). We have patched the issue in GitHub commit 02cc160e29d20631de3859c6653184e3f876b9d7. The fix will be included in TensorFlow 2.6.0. We will also cherrypick this commit on TensorFlow 2.5.1, TensorFlow 2.4.3, and TensorFlow 2.3.4, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -12,6 +12,17 @@\n                 errors::InvalidArgument(\n                     \"Input indices should be a matrix but received shape \",\n                     indices->shape().DebugString()));\n+\n+    const auto num_indices = indices->NumElements();\n+    const auto num_values = values->NumElements();\n+    if (num_indices == 0 || num_values == 0) {\n+      OP_REQUIRES(ctx, num_indices == num_values,\n+                  errors::InvalidArgument(\n+                      \"If indices or values are empty, the other one must also \"\n+                      \"be. Got indices of shape \",\n+                      indices->shape().DebugString(), \" and values of shape \",\n+                      values->shape().DebugString()));\n+    }\n     OP_REQUIRES(ctx, TensorShapeUtils::IsVector(values->shape()),\n                 errors::InvalidArgument(\n                     \"Input values should be a vector but received shape \",",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -203,7 +203,7 @@
       "CWE-476"
     ],
     "cve_description": "ext/wddx/wddx.c in PHP before 5.6.25 and 7.x before 7.0.10 allows remote attackers to cause a denial of service (NULL pointer dereference and application crash) or possibly have unspecified other impact via an invalid wddxPacket XML document that is mishandled in a wddx_deserialize call, as demonstrated by a stray element inside a boolean element, leading to incorrect pop processing.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -22,10 +22,10 @@\n \t\tif (Z_TYPE(ent1->data) == IS_UNDEF) {\n \t\t\tif (stack->top > 1) {\n \t\t\t\tstack->top--;\n+\t\t\t\tefree(ent1);\n \t\t\t} else {\n \t\t\t\tstack->done = 1;\n \t\t\t}\n-\t\t\tefree(ent1);\n \t\t\treturn;\n \t\t}\n ",
     "original_vulnerable_label": 1,
     "project": "php-src"
   },
@@ -216,7 +216,7 @@
       "CWE-476"
     ],
     "cve_description": "In eager mode, TensorFlow before versions 1.15.4, 2.0.3, 2.1.2, 2.2.1 and 2.3.1 does not set the session state. Hence, calling `tf.raw_ops.GetSessionHandle` or `tf.raw_ops.GetSessionHandleV2` results in a null pointer dereference In linked snippet, in eager mode, `ctx->session_state()` returns `nullptr`. Since code immediately dereferences this, we get a segmentation fault. The issue is patched in commit 9a133d73ae4b4664d22bd1aa6d654fec13c52ee1, and is released in TensorFlow versions 1.15.4, 2.0.3, 2.1.2, 2.2.1, or 2.3.1.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,6 +1,10 @@\n   void Compute(OpKernelContext* ctx) override {\n     const Tensor& val = ctx->input(0);\n-    int64 id = ctx->session_state()->GetNewId();\n+    auto session_state = ctx->session_state();\n+    OP_REQUIRES(ctx, session_state != nullptr,\n+                errors::FailedPrecondition(\n+                    \"GetSessionHandle called on null session state\"));\n+    int64 id = session_state->GetNewId();\n     TensorStore::TensorAndKey tk{val, id, requested_device()};\n     OP_REQUIRES_OK(ctx, ctx->tensor_store()->AddTensor(name(), tk));\n ",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -229,7 +229,7 @@
       "CWE-476"
     ],
     "cve_description": "An issue was discovered in GPAC version 0.8.0 and 1.0.1. There is an invalid pointer dereference in the function SetupWriters() in isomedia/isom_store.c.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -10,7 +10,13 @@\n \n \ttrackCount = gf_list_count(movie->moov->trackList);\n \tfor (i = 0; i < trackCount; i++) {\n+\t\tGF_SampleTableBox *stbl;\n \t\ttrak = gf_isom_get_track(movie->moov, i+1);\n+\n+\t\tstbl = (trak->Media && trak->Media->information) ? trak->Media->information->sampleTable : NULL;\n+\t\tif (!stbl || !stbl->SampleSize || !stbl->ChunkOffset || !stbl->SampleToChunk) {\n+\t\t\treturn GF_ISOM_INVALID_FILE;\n+\t\t}\n \n \t\tGF_SAFEALLOC(writer, TrackWriter);\n \t\tif (!writer) goto exit;",
     "original_vulnerable_label": 1,
     "project": "gpac"
   },
@@ -242,7 +242,7 @@
       "CWE-476"
     ],
     "cve_description": "TensorFlow is an end-to-end open source platform for machine learning. In affected versions due to incomplete validation in `tf.raw_ops.QuantizeV2`, an attacker can trigger undefined behavior via binding a reference to a null pointer or can access data outside the bounds of heap allocated arrays. The [implementation](https://github.com/tensorflow/tensorflow/blob/84d053187cb80d975ef2b9684d4b61981bca0c41/tensorflow/core/kernels/quantize_op.cc#L59) has some validation but does not check that `min_range` and `max_range` both have the same non-zero number of elements. If `axis` is provided (i.e., not `-1`), then validation should check that it is a value in range for the rank of `input` tensor and then the lengths of `min_range` and `max_range` inputs match the `axis` dimension of the `input` tensor. We have patched the issue in GitHub commit 6da6620efad397c85493b8f8667b821403516708. The fix will be included in TensorFlow 2.6.0. We will also cherrypick this commit on TensorFlow 2.5.1, TensorFlow 2.4.3, and TensorFlow 2.3.4, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -5,7 +5,50 @@\n \n     int num_slices = 1;\n     if (axis_ > -1) {\n+      OP_REQUIRES(\n+          ctx, input.dims() > axis_,\n+          errors::InvalidArgument(\n+              \"Axis is on a zero-based index, so its value must always be less \"\n+              \"than number of input's dims, but given axis value was \",\n+              axis_, \" and input's dims was \", input.dims()));\n       num_slices = input.dim_size(axis_);\n+      OP_REQUIRES(ctx, input_min_range.dims() == 1,\n+                  errors::InvalidArgument(\n+                      \"If axis is specified, min_range must be a 1-D tensor \"\n+                      \"whose size matches the axis dimension of the input and \"\n+                      \"output tensors, but min_range dims are \",\n+                      input_min_range.dims()));\n+      OP_REQUIRES(ctx, input_min_range.dim_size(0) == num_slices,\n+                  errors::InvalidArgument(\n+                      \"If axis is specified, min_range must be a 1-D tensor \"\n+                      \"whose size matches the axis dimension of the input and \"\n+                      \"output tensors, but min_range is a 1-D tensor of size \",\n+                      input_min_range.dim_size(0),\n+                      \" and input's axis dimension is of size \", num_slices));\n+      OP_REQUIRES(ctx, input_max_range.dims() == 1,\n+                  errors::InvalidArgument(\n+                      \"If axis is specified, max_range must be a 1-D tensor \"\n+                      \"whose size matches the axis dimension of the input and \"\n+                      \"output tensors, but max_range dims are \",\n+                      input_max_range.dims()));\n+      OP_REQUIRES(ctx, input_max_range.dim_size(0) == num_slices,\n+                  errors::InvalidArgument(\n+                      \"If axis is specified, max_range must be a 1-D tensor \"\n+                      \"whose size matches the axis dimension of the input and \"\n+                      \"output tensors, but max_range is a 1-D tensor of size \",\n+                      input_max_range.dim_size(0),\n+                      \" and input's axis dimension is of size \", num_slices));\n+    } else {\n+      OP_REQUIRES(ctx, input_min_range.NumElements() == 1,\n+                  errors::InvalidArgument(\n+                      \"If axis is not specified, min_range must contain a \"\n+                      \"single float element, but it contains \",\n+                      input_min_range.NumElements(), \" elements\"));\n+      OP_REQUIRES(ctx, input_max_range.NumElements() == 1,\n+                  errors::InvalidArgument(\n+                      \"If axis is not specified, max_range must contain a \"\n+                      \"single float element, but it contains \",\n+                      input_max_range.NumElements(), \" elements\"));\n     }\n \n     const TensorShape& minmax_shape = ctx->input(1).shape();",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -255,7 +255,7 @@
       "CWE-476"
     ],
     "cve_description": "TensorFlow is an end-to-end open source platform for machine learning. When restoring tensors via raw APIs, if the tensor name is not provided, TensorFlow can be tricked into dereferencing a null pointer. Alternatively, attackers can read memory outside the bounds of heap allocated data by providing some tensor names but not enough for a successful restoration. The [implementation](https://github.com/tensorflow/tensorflow/blob/47a06f40411a69c99f381495f490536972152ac0/tensorflow/core/kernels/save_restore_tensor.cc#L158-L159) retrieves the tensor list corresponding to the `tensor_name` user controlled input and immediately retrieves the tensor at the restoration index (controlled via `preferred_shard` argument). This occurs without validating that the provided list has enough values. If the list is empty this results in dereferencing a null pointer (undefined behavior). If, however, the list has some elements, if the restoration index is outside the bounds this results in heap OOB read. We have patched the issue in GitHub commit 9e82dce6e6bd1f36a57e08fa85af213e2b2f2622. The fix will be included in TensorFlow 2.6.0. We will also cherrypick this commit on TensorFlow 2.5.1, TensorFlow 2.4.3, and TensorFlow 2.3.4, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -8,11 +8,18 @@\n         context, size == 1,\n         errors::InvalidArgument(\n             \"Input 0 (file_pattern) must be a string scalar; got a tensor of \",\n-            size, \"elements\"));\n+            size, \" elements\"));\n   }\n   const string& file_pattern = file_pattern_t.flat<tstring>()(0);\n \n   const Tensor& tensor_name_t = context->input(1);\n+  {\n+    const int64_t size = tensor_name_t.NumElements();\n+    OP_REQUIRES(context, size > restore_index,\n+                errors::InvalidArgument(\n+                    \"Input 1 (file_pattern) must be a have at least \",\n+                    restore_index + 1, \" elements\"));\n+  }\n   const string& tensor_name = tensor_name_t.flat<tstring>()(restore_index);\n \n   // If we cannot find a cached reader we will allocate our own.",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -268,7 +268,7 @@
       "CWE-476"
     ],
     "cve_description": "TensorFlow is an end-to-end open source platform for machine learning. In affected versions the implementation for `tf.raw_ops.FractionalAvgPoolGrad` can be tricked into accessing data outside of bounds of heap allocated buffers. The [implementation](https://github.com/tensorflow/tensorflow/blob/f24faa153ad31a4b51578f8181d3aaab77a1ddeb/tensorflow/core/kernels/fractional_avg_pool_op.cc#L205) does not validate that the input tensor is non-empty. Thus, code constructs an empty `EigenDoubleMatrixMap` and then accesses this buffer with indices that are outside of the empty area. We have patched the issue in GitHub commit 0f931751fb20f565c4e94aa6df58d54a003cdb30. The fix will be included in TensorFlow 2.6.0. We will also cherrypick this commit on TensorFlow 2.5.1, TensorFlow 2.4.3, and TensorFlow 2.3.4, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -56,6 +56,18 @@\n     const int64_t in_rows = orig_input_tensor_shape_flat(1);\n     const int64_t in_cols = orig_input_tensor_shape_flat(2);\n     const int64_t in_depth = orig_input_tensor_shape_flat(3);\n+    OP_REQUIRES(\n+        context, in_batch != 0,\n+        errors::InvalidArgument(\"Batch dimension of input must not be 0\"));\n+    OP_REQUIRES(\n+        context, in_rows != 0,\n+        errors::InvalidArgument(\"Rows dimension of input must not be 0\"));\n+    OP_REQUIRES(\n+        context, in_cols != 0,\n+        errors::InvalidArgument(\"Columns dimension of input must not be 0\"));\n+    OP_REQUIRES(\n+        context, in_depth != 0,\n+        errors::InvalidArgument(\"Depth dimension of input must not be 0\"));\n \n     constexpr int tensor_in_and_out_dims = 4;\n     // Transform orig_input_tensor_shape into TensorShape",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -281,7 +281,7 @@
       "CWE-476"
     ],
     "cve_description": "chafa: NULL Pointer Dereference in function gif_internal_decode_frame at libnsgif.c:599 allows attackers to cause a denial of service (crash) via a crafted input file. in GitHub repository hpjansson/chafa prior to 1.10.2. chafa: NULL Pointer Dereference in function gif_internal_decode_frame at libnsgif.c:599 allows attackers to cause a denial of service (crash) via a crafted input file.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -14,6 +14,12 @@\n         unsigned int return_value = 0;\n         unsigned int x, y, decode_y, burst_bytes;\n         register unsigned char colour;\n+\n+        /* If the GIF has no frame data, frame holders will not be allocated in\n+         * gif_initialise() */\n+        if (gif->frames == NULL) {\n+                return GIF_INSUFFICIENT_DATA;\n+        }\n \n         /* Ensure this frame is supposed to be decoded */\n         if (gif->frames[frame].display == false) {",
     "original_vulnerable_label": 1,
     "project": "chafa"
   },
@@ -294,7 +294,7 @@
       "CWE-476"
     ],
     "cve_description": "NULL Pointer Dereference in GitHub repository radareorg/radare2 prior to 5.6.0.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -64,7 +64,9 @@\n \n beach:\n \tr_buf_free (fbuf);\n-\tobj->cache_buf = NULL;\n+\tif (obj) {\n+\t\tobj->cache_buf = NULL;\n+\t}\n \tMACH0_(mach0_free) (main_mach0);\n \treturn false;\n }",
     "original_vulnerable_label": 1,
     "project": "radare2"
   },
@@ -307,7 +307,7 @@
       "CWE-476"
     ],
     "cve_description": "NULL Pointer Dereference in GitHub repository radareorg/radare2 prior to 5.6.8. This vulnerability is capable of making the radare2 crash, thus affecting the availability of the system.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,6 +1,6 @@\n RList *r_bin_ne_get_segments(r_bin_ne_obj_t *bin) {\n \tint i;\n-\tif (!bin) {\n+\tif (!bin || !bin->segment_entries) {\n \t\treturn NULL;\n \t}\n \tRList *segments = r_list_newf (free);",
     "original_vulnerable_label": 1,
     "project": "radare2"
   },
@@ -320,7 +320,7 @@
       "CWE-476"
     ],
     "cve_description": "An issue was discovered in the Linux kernel through 5.16-rc6. There is a lack of check after calling vzalloc() and lack of free after allocation in drivers/media/test-drivers/vidtv/vidtv_s302m.c.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -14,6 +14,9 @@\n \t\te->name = kstrdup(args.name, GFP_KERNEL);\n \n \te->encoder_buf = vzalloc(VIDTV_S302M_BUF_SZ);\n+\tif (!e->encoder_buf)\n+\t\tgoto out_kfree_e;\n+\n \te->encoder_buf_sz = VIDTV_S302M_BUF_SZ;\n \te->encoder_buf_offset = 0;\n \n@@ -26,10 +29,8 @@\n \te->is_video_encoder = false;\n \n \tctx = kzalloc(priv_sz, GFP_KERNEL);\n-\tif (!ctx) {\n-\t\tkfree(e);\n-\t\treturn NULL;\n-\t}\n+\tif (!ctx)\n+\t\tgoto out_kfree_buf;\n \n \te->ctx = ctx;\n \tctx->last_duration = 0;\n@@ -57,4 +58,12 @@\n \te->next = NULL;\n \n \treturn e;\n+\n+out_kfree_buf:\n+\tkfree(e->encoder_buf);\n+\n+out_kfree_e:\n+\tkfree(e->name);\n+\tkfree(e);\n+\treturn NULL;\n }",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -333,7 +333,7 @@
       "CWE-476"
     ],
     "cve_description": "NULL Pointer Dereference in function vim_regexec_string at regexp.c:2729 in GitHub repository vim/vim prior to 8.2.4901. NULL Pointer Dereference in function vim_regexec_string at regexp.c:2729 allows attackers to cause a denial of service (application crash) via a crafted input.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -12,7 +12,7 @@\n \trmp->rm_ic = p_fic || ignore_case;\n \tif (vim_regexec(rmp, name, (colnr_T)0))\n \t    match = name;\n-\telse\n+\telse if (rmp->regprog != NULL)\n \t{\n \t    // Replace $(HOME) with '~' and try matching again.\n \t    p = home_replace_save(NULL, name);",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -346,7 +346,7 @@
       "CWE-476"
     ],
     "cve_description": "A flaw null pointer dereference in the Linux kernel UDF file system functionality was found in the way user triggers udf_file_write_iter function for the malicious UDF image. A local user could use this flaw to crash the system. Actual from Linux kernel 4.2-rc1 till 5.17-rc2.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -61,6 +61,7 @@\n \t\tunlock_page(page);\n \t\tiinfo->i_alloc_type = ICBTAG_FLAG_AD_IN_ICB;\n \t\tinode->i_data.a_ops = &udf_adinicb_aops;\n+\t\tiinfo->i_lenAlloc = inode->i_size;\n \t\tup_write(&iinfo->i_data_sem);\n \t}\n \tput_page(page);",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -359,7 +359,7 @@
       "CWE-476"
     ],
     "cve_description": "A null pointer de-reference was found in the way samba kerberos server handled missing sname in TGS-REQ (Ticket Granting Server - Request). An authenticated user could use this flaw to crash the samba server.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -135,6 +135,10 @@\n \n \ts = &adtkt.cname;\n \tr = adtkt.crealm;\n+    } else if (s == NULL) {\n+\tret = KRB5KDC_ERR_S_PRINCIPAL_UNKNOWN;\n+\t_kdc_set_e_text(r, \"No server in request\");\n+\tgoto out;\n     }\n \n     _krb5_principalname2krb5_principal(context, &sp, *s, r);",
     "original_vulnerable_label": 1,
     "project": "heimdal"
   },
@@ -372,7 +372,7 @@
       "CWE-476"
     ],
     "cve_description": "In Artifex MuJS through 1.2.0, jsP_dumpsyntax in jsdump.c has a NULL pointer dereference, as demonstrated by mujs-pp.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,11 +1,13 @@\n void jsP_dumpsyntax(js_State *J, js_Ast *prog, int dominify)\n {\n \tminify = dominify;\n-\tif (prog->type == AST_LIST)\n-\t\tpstmlist(-1, prog);\n-\telse {\n-\t\tpstm(0, prog);\n-\t\tnl();\n+\tif (prog) {\n+\t\tif (prog->type == AST_LIST)\n+\t\t\tpstmlist(-1, prog);\n+\t\telse {\n+\t\t\tpstm(0, prog);\n+\t\t\tnl();\n+\t\t}\n \t}\n \tif (minify > 1)\n \t\tputchar('\\n');",
     "original_vulnerable_label": 1,
     "project": "mujs"
   },
@@ -385,7 +385,7 @@
       "CWE-476"
     ],
     "cve_description": "drivers/net/wireless/intel/iwlwifi/pcie/trans.c in the Linux kernel 5.2.14 does not check the alloc_workqueue return value, leading to a NULL pointer dereference.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -28,6 +28,15 @@\n \tspin_lock_init(&trans_pcie->reg_lock);\n \tmutex_init(&trans_pcie->mutex);\n \tinit_waitqueue_head(&trans_pcie->ucode_write_waitq);\n+\n+\ttrans_pcie->rba.alloc_wq = alloc_workqueue(\"rb_allocator\",\n+\t\t\t\t\t\t   WQ_HIGHPRI | WQ_UNBOUND, 1);\n+\tif (!trans_pcie->rba.alloc_wq) {\n+\t\tret = -ENOMEM;\n+\t\tgoto out_free_trans;\n+\t}\n+\tINIT_WORK(&trans_pcie->rba.rx_alloc, iwl_pcie_rx_allocator_work);\n+\n \ttrans_pcie->tso_hdr_page = alloc_percpu(struct iwl_tso_hdr_page);\n \tif (!trans_pcie->tso_hdr_page) {\n \t\tret = -ENOMEM;\n@@ -162,10 +171,6 @@\n \t\ttrans_pcie->inta_mask = CSR_INI_SET_MASK;\n \t }\n \n-\ttrans_pcie->rba.alloc_wq = alloc_workqueue(\"rb_allocator\",\n-\t\t\t\t\t\t   WQ_HIGHPRI | WQ_UNBOUND, 1);\n-\tINIT_WORK(&trans_pcie->rba.rx_alloc, iwl_pcie_rx_allocator_work);\n-\n #ifdef CONFIG_IWLWIFI_DEBUGFS\n \ttrans_pcie->fw_mon_data.state = IWL_FW_MON_DBGFS_STATE_CLOSED;\n \tmutex_init(&trans_pcie->fw_mon_data.mutex);\n@@ -177,6 +182,8 @@\n \tiwl_pcie_free_ict(trans);\n out_no_pci:\n \tfree_percpu(trans_pcie->tso_hdr_page);\n+\tdestroy_workqueue(trans_pcie->rba.alloc_wq);\n+out_free_trans:\n \tiwl_trans_free(trans);\n \treturn ERR_PTR(ret);\n }",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -398,7 +398,7 @@
       "CWE-476"
     ],
     "cve_description": "Unicorn Engine v2.0.0-rc7 and below was discovered to contain a NULL pointer dereference via qemu_ram_free.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -8,7 +8,7 @@\n     //    ram_block_notify_remove(block->host, block->max_length);\n     //}\n \n-    QLIST_REMOVE(block, next);\n+    QLIST_REMOVE_RCU(block, next);\n     uc->ram_list.mru_block = NULL;\n     /* Write list before version */\n     //smp_wmb();",
     "original_vulnerable_label": 1,
     "project": "unicorn"
   },
@@ -411,7 +411,7 @@
       "CWE-476"
     ],
     "cve_description": "A NULL pointer dereference flaw in diFree in fs/jfs/inode.c in Journaled File System (JFS)in the Linux kernel. This could allow a local attacker to crash the system or leak kernel internal information.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -8,12 +8,13 @@\n \t\tdquot_initialize(inode);\n \n \t\tif (JFS_IP(inode)->fileset == FILESYSTEM_I) {\n+\t\t\tstruct inode *ipimap = JFS_SBI(inode->i_sb)->ipimap;\n \t\t\ttruncate_inode_pages_final(&inode->i_data);\n \n \t\t\tif (test_cflag(COMMIT_Freewmap, inode))\n \t\t\t\tjfs_free_zero_link(inode);\n \n-\t\t\tif (JFS_SBI(inode->i_sb)->ipimap)\n+\t\t\tif (ipimap && JFS_IP(ipimap)->i_imap)\n \t\t\t\tdiFree(inode);\n \n \t\t\t/*",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -424,7 +424,7 @@
       "CWE-476"
     ],
     "cve_description": "The php_wddx_pop_element function in ext/wddx/wddx.c in PHP before 5.6.25 and 7.x before 7.0.10 allows remote attackers to cause a denial of service (NULL pointer dereference and application crash) or possibly have unspecified other impact via an invalid base64 binary value, as demonstrated by a wddx_deserialize call that mishandles a binary element in a wddxPacket XML document.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -37,8 +37,12 @@\n \n \t\t\tnew_str = php_base64_decode(Z_STRVAL_P(ent1->data), Z_STRLEN_P(ent1->data), &new_len);\n \t\t\tSTR_FREE(Z_STRVAL_P(ent1->data));\n-\t\t\tZ_STRVAL_P(ent1->data) = new_str;\n-\t\t\tZ_STRLEN_P(ent1->data) = new_len;\n+\t\t\tif (new_str) {\n+\t\t\t\tZ_STRVAL_P(ent1->data) = new_str;\n+\t\t\t\tZ_STRLEN_P(ent1->data) = new_len;\n+\t\t\t} else {\n+\t\t\t\tZVAL_EMPTY_STRING(ent1->data);\n+\t\t\t}\n \t\t}\n \n \t\t/* Call __wakeup() method on the object. */",
     "original_vulnerable_label": 1,
     "project": "php-src"
   },
@@ -437,7 +437,7 @@
       "CWE-476"
     ],
     "cve_description": "A NULL pointer dereference flaw was found in the Linux kernel’s Amateur Radio AX.25 protocol functionality in the way a user connects with the protocol. This flaw allows a local user to crash the system.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -74,6 +74,11 @@\n \t\tax25_destroy_socket(ax25);\n \t}\n \tif (ax25_dev) {\n+\t\tdel_timer_sync(&ax25->timer);\n+\t\tdel_timer_sync(&ax25->t1timer);\n+\t\tdel_timer_sync(&ax25->t2timer);\n+\t\tdel_timer_sync(&ax25->t3timer);\n+\t\tdel_timer_sync(&ax25->idletimer);\n \t\tdev_put_track(ax25_dev->dev, &ax25_dev->dev_tracker);\n \t\tax25_dev_put(ax25_dev);\n \t}",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -450,7 +450,7 @@
       "CWE-476"
     ],
     "cve_description": "An issue was discovered in drivers/usb/gadget/composite.c in the Linux kernel before 5.16.10. The USB Gadget subsystem lacks certain validation of interface OS descriptor requests (ones with a large array index and ones associated with NULL function pointer retrieval). Memory corruption might occur.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -307,6 +307,9 @@\n \t\t\t\tif (w_index != 0x5 || (w_value >> 8))\n \t\t\t\t\tbreak;\n \t\t\t\tinterface = w_value & 0xFF;\n+\t\t\t\tif (interface >= MAX_CONFIG_INTERFACES ||\n+\t\t\t\t    !os_desc_cfg->interface[interface])\n+\t\t\t\t\tbreak;\n \t\t\t\tbuf[6] = w_index;\n \t\t\t\tcount = count_ext_prop(os_desc_cfg,\n \t\t\t\t\tinterface);",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -463,7 +463,7 @@
       "CWE-476"
     ],
     "cve_description": "qh_help in Nagios Core version 4.4.1 and earlier is prone to a NULL pointer dereference vulnerability, which allows attacker to cause a local denial-of-service condition by sending a crafted payload to the listening UNIX socket.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -2,7 +2,7 @@\n {\n \tstruct query_handler *qh = NULL;\n \n-\tif (!*buf || !strcmp(buf, \"help\")) {\n+\tif (buf == NULL || !strcmp(buf, \"help\")) {\n \t\tnsock_printf_nul(sd,\n \t\t\t\"  help <name>   show help for handler <name>\\n\"\n \t\t\t\"  help list     list registered handlers\\n\");",
     "original_vulnerable_label": 1,
     "project": "nagioscore"
   },
@@ -476,7 +476,7 @@
       "CWE-476"
     ],
     "cve_description": "pax_decode_header in sparse.c in GNU Tar before 1.32 had a NULL pointer dereference when parsing certain archives that have malformed extended headers.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -25,6 +25,8 @@\n \t {                                                         \\\n \t   set_next_block_after (b);                               \\\n            b = find_next_block ();                                 \\\n+           if (!b)                                                 \\\n+             FATAL_ERROR ((0, 0, _(\"Unexpected EOF in archive\"))); \\\n            src = b->buffer;                                        \\\n \t   endp = b->buffer + BLOCKSIZE;                           \\\n \t }                                                         \\\n@@ -37,6 +39,8 @@\n       start = current_block_ordinal ();\n       set_next_block_after (current_header);\n       blk = find_next_block ();\n+      if (!blk)\n+        FATAL_ERROR ((0, 0, _(\"Unexpected EOF in archive\")));\n       p = blk->buffer;\n       COPY_BUF (blk,nbuf,p);\n       if (!decode_num (&u, nbuf, TYPE_MAXIMUM (size_t)))",
     "original_vulnerable_label": 1,
     "project": "tar"
   },
@@ -489,7 +489,7 @@
       "CWE-476"
     ],
     "cve_description": "The X.509 GeneralName type is a generic type for representing different types of names. One of those name types is known as EDIPartyName. OpenSSL provides a function GENERAL_NAME_cmp which compares different instances of a GENERAL_NAME to see if they are equal or not. This function behaves incorrectly when both GENERAL_NAMEs contain an EDIPARTYNAME. A NULL pointer dereference and a crash may occur leading to a possible denial of service attack. OpenSSL itself uses the GENERAL_NAME_cmp function for two purposes: 1) Comparing CRL distribution point names between an available CRL and a CRL distribution point embedded in an X509 certificate 2) When verifying that a timestamp response token signer matches the timestamp authority name (exposed via the API functions TS_RESP_verify_response and TS_RESP_verify_token) If an attacker can control both items being compared then that attacker could trigger a crash. For example if the attacker can trick a client or server into checking a malicious certificate against a malicious CRL then this may occur. Note that some applications automatically download CRLs based on a URL embedded in a certificate. This checking happens prior to the signatures on the certificate and CRL being verified. OpenSSL's s_server, s_client and verify tools have support for the \"-crl_download\" option which implements automatic CRL downloading and this attack has been demonstrated to work against those tools. Note that an unrelated bug means that affected versions of OpenSSL cannot parse or construct correct encodings of EDIPARTYNAME. However it is possible to construct a malformed EDIPARTYNAME that OpenSSL's parser will accept and hence trigger this attack. All OpenSSL 1.1.1 and 1.0.2 versions are affected by this issue. Other OpenSSL releases are out of support and have not been checked. Fixed in OpenSSL 1.1.1i (Affected 1.1.1-1.1.1h). Fixed in OpenSSL 1.0.2x (Affected 1.0.2-1.0.2w).",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,5 +1,6 @@\n int setup_tests(void)\n {\n     ADD_ALL_TESTS(call_run_cert, OSSL_NELEM(name_fns));\n+    ADD_TEST(test_GENERAL_NAME_cmp);\n     return 1;\n }",
     "original_vulnerable_label": 1,
     "project": "openssl"
   },
@@ -502,7 +502,7 @@
       "CWE-476"
     ],
     "cve_description": "MariaDB through 10.5.9 allows an application crash in sub_select_postjoin_aggr for a NULL value of aggr.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -106,7 +106,21 @@\n       }\n       if (empty_union_result)\n         subquery_predicate->no_rows_in_result();\n-      if (!is_correlated_unit)\n+\n+      if (is_correlated_unit)\n+      {\n+        /*\n+          Some parts of UNION are not correlated. This means we will need to\n+          re-execute the whole UNION every time. Mark all parts of the UNION\n+          as correlated so that they are prepared to be executed multiple\n+          times (if we don't do that, some part of the UNION may free its\n+          execution data at the end of first execution and crash on the second\n+          execution)\n+        */\n+        for (SELECT_LEX *sl= un->first_select(); sl; sl= sl->next_select())\n+          sl->uncacheable |= UNCACHEABLE_DEPENDENT;\n+      }\n+      else\n         un->uncacheable&= ~UNCACHEABLE_DEPENDENT;\n       subquery_predicate->is_correlated= is_correlated_unit;\n     }",
     "original_vulnerable_label": 1,
     "project": "server"
   }

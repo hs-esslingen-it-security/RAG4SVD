@@ -8,7 +8,7 @@
       "CWE-122"
     ],
     "cve_description": "vim is vulnerable to Heap-based Buffer Overflow",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -18,7 +18,8 @@\n \t\tmatch = FALSE;\n \t\tbreak;\n \t    }\n-\t    len2 += MB_CHAR2LEN(c2);\n+\t    len2 += enc_utf8 ? utf_ptr2len(rex.line + col + len2)\n+\t\t\t\t\t\t\t     : MB_CHAR2LEN(c2);\n \t}\n \tif (match\n \t\t// check that no composing char follows",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -21,7 +21,7 @@
       "CWE-122"
     ],
     "cve_description": "vim is vulnerable to Heap-based Buffer Overflow",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -22,7 +22,6 @@\n \tcheck_cursor_lnum();\n \tcurwin->w_topline = curwin->w_cursor.lnum;\n \tcurwin->w_botline = curwin->w_topline;\n-\tcurwin->w_valid |= VALID_BOTLINE|VALID_BOTLINE_AP;\n \tcurwin->w_scbind_pos = 1;\n \treturn;\n     }",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -34,7 +34,7 @@
       "CWE-122"
     ],
     "cve_description": "vim is vulnerable to Heap-based Buffer Overflow",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -8,7 +8,6 @@\n     VIsual_mode = c;\n     VIsual_active = TRUE;\n     VIsual_reselect = TRUE;\n-    trigger_modechanged();\n \n     // Corner case: the 0 position in a tab may change when going into\n     // virtualedit.  Recalculate curwin->w_cursor to avoid bad highlighting.\n@@ -23,6 +22,7 @@\n     foldAdjustVisual();\n #endif\n \n+    trigger_modechanged();\n     setmouse();\n #ifdef FEAT_CONCEAL\n     // Check if redraw is needed after changing the state.",
     "original_vulnerable_label": 1,
     "project": "vim"
   }

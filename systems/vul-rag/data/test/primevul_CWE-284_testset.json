@@ -8,7 +8,7 @@
       "CWE-284"
     ],
     "cve_description": "The authfile directive in the booth config file is ignored, preventing use of authentication in communications from node to node. As a result, nodes that do not have the correct authentication key are not prevented from communicating with other nodes in the cluster.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -6,7 +6,7 @@\n \tif (rv < 0)\n \t\tgoto out;\n \n-\tif (is_auth_req()) {\n+\tif (booth_conf->authfile[0] != '\\0') {\n \t\trv = read_authkey();\n \t\tif (rv < 0)\n \t\t\tgoto out;",
     "original_vulnerable_label": 1,
     "project": "booth"
   },
@@ -21,7 +21,7 @@
       "CWE-284"
     ],
     "cve_description": "There is a flaw in RPM's signature functionality. OpenPGP subkeys are associated with a primary key via a \"binding signature.\" RPM does not check the binding signature of subkeys prior to importing them. If an attacker is able to add or socially engineer another party to add a malicious subkey to a legitimate public key, RPM could wrongly trust a malicious signature. The greatest impact of this flaw is to data integrity. To exploit this flaw, an attacker must either compromise an RPM repository or convince an administrator to install an untrusted RPM or public key. It is strongly recommended to only use RPMs and public keys from trusted sources.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -4,31 +4,69 @@\n     const uint8_t *p = pkts;\n     const uint8_t *pend = pkts + pktlen;\n     pgpDigParams digp = NULL;\n-    struct pgpPkt pkt;\n+    pgpDigParams selfsig = NULL;\n+    int i = 0;\n+    int alloced = 16; /* plenty for normal cases */\n+    struct pgpPkt *all = xmalloc(alloced * sizeof(*all));\n     int rc = -1; /* assume failure */\n+    int expect = 0;\n+    int prevtag = 0;\n \n     while (p < pend) {\n-\tif (decodePkt(p, (pend - p), &pkt))\n+\tstruct pgpPkt *pkt = &all[i];\n+\tif (decodePkt(p, (pend - p), pkt))\n \t    break;\n \n \tif (digp == NULL) {\n-\t    if (pkttype && pkt.tag != pkttype) {\n+\t    if (pkttype && pkt->tag != pkttype) {\n \t\tbreak;\n \t    } else {\n-\t\tdigp = pgpDigParamsNew(pkt.tag);\n+\t\tdigp = pgpDigParamsNew(pkt->tag);\n \t    }\n \t}\n \n-\tif (pgpPrtPkt(&pkt, digp))\n+\tif (expect) {\n+\t    if (pkt->tag != expect)\n+\t\tbreak;\n+\t    selfsig = pgpDigParamsNew(pkt->tag);\n+\t}\n+\n+\tif (pgpPrtPkt(pkt, selfsig ? selfsig : digp))\n \t    break;\n \n-\tp += (pkt.body - pkt.head) + pkt.blen;\n+\tif (selfsig) {\n+\t    /* subkeys must be followed by binding signature */\n+\t    if (prevtag == PGPTAG_PUBLIC_SUBKEY) {\n+\t\tif (selfsig->sigtype != PGPSIGTYPE_SUBKEY_BINDING)\n+\t\t    break;\n+\t    }\n+\n+\t    int xx = pgpVerifySelf(digp, selfsig, all, i);\n+\n+\t    selfsig = pgpDigParamsFree(selfsig);\n+\t    if (xx)\n+\t\tbreak;\n+\t    expect = 0;\n+\t}\n+\n+\tif (pkt->tag == PGPTAG_PUBLIC_SUBKEY)\n+\t    expect = PGPTAG_SIGNATURE;\n+\tprevtag = pkt->tag;\n+\n+\ti++;\n+\tp += (pkt->body - pkt->head) + pkt->blen;\n \tif (pkttype == PGPTAG_SIGNATURE)\n \t    break;\n+\n+\tif (alloced <= i) {\n+\t    alloced *= 2;\n+\t    all = xrealloc(all, alloced * sizeof(*all));\n+\t}\n     }\n \n-    rc = (digp && (p == pend)) ? 0 : -1;\n+    rc = (digp && (p == pend) && expect == 0) ? 0 : -1;\n \n+    free(all);\n     if (ret && rc == 0) {\n \t*ret = digp;\n     } else {",
     "original_vulnerable_label": 1,
     "project": "rpm"
   },
@@ -34,7 +34,7 @@
       "CWE-284"
     ],
     "cve_description": "A flaw was found in the way the \"flags\" member of the new pipe buffer structure was lacking proper initialization in copy_page_to_iter_pipe and push_pipe functions in the Linux kernel and could thus contain stale values. An unprivileged local user could use this flaw to write to pages in the page cache backed by read only files and as such escalate their privileges on the system.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -33,6 +33,7 @@\n \t\treturn 0;\n \n \tbuf->ops = &page_cache_pipe_buf_ops;\n+\tbuf->flags = 0;\n \tget_page(page);\n \tbuf->page = page;\n \tbuf->offset = offset;",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -47,7 +47,7 @@
       "CWE-284"
     ],
     "cve_description": "A flaw was found in the way the \"flags\" member of the new pipe buffer structure was lacking proper initialization in copy_page_to_iter_pipe and push_pipe functions in the Linux kernel and could thus contain stale values. An unprivileged local user could use this flaw to write to pages in the page cache backed by read only files and as such escalate their privileges on the system.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -33,6 +33,7 @@\n \t\t\tbreak;\n \n \t\tbuf->ops = &default_pipe_buf_ops;\n+\t\tbuf->flags = 0;\n \t\tbuf->page = page;\n \t\tbuf->offset = 0;\n \t\tbuf->len = min_t(ssize_t, left, PAGE_SIZE);",
     "original_vulnerable_label": 1,
     "project": "linux"
   }

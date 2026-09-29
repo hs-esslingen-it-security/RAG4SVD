@@ -8,7 +8,7 @@
       "CWE-134"
     ],
     "cve_description": "Depending on the way the format strings in the card label are crafted it's possible to leak kernel stack memory. There is also the possibility for DoS due to the v4l2loopback kernel module crashing when providing the card label on request (reproduce e.g. with many %s modifiers in a row).",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -11,7 +11,7 @@\n \t__u32 capabilities = V4L2_CAP_STREAMING | V4L2_CAP_READWRITE;\n \n \tstrlcpy(cap->driver, \"v4l2 loopback\", sizeof(cap->driver));\n-\tsnprintf(cap->card, labellen, dev->card_label);\n+\tsnprintf(cap->card, labellen, \"%s\", dev->card_label);\n \tsnprintf(cap->bus_info, sizeof(cap->bus_info),\n \t\t \"platform:v4l2loopback-%03d\", device_nr);\n ",
     "original_vulnerable_label": 1,
     "project": "v4l2loopback"
   }

@@ -8,7 +8,7 @@
       "CWE-862"
     ],
     "cve_description": "A flaw was found in the KVM's AMD code for supporting SVM nested virtualization. The flaw occurs when processing the VMCB (virtual machine control block) provided by the L1 guest to spawn/handle a nested guest (L2). Due to improper validation of the \"virt_ext\" field, this issue could allow a malicious L1 to disable both VMLOAD/VMSAVE intercepts and VLS (Virtual VMLOAD/VMSAVE) for the L2 guest. As a result, the L2 guest would be allowed to read/write physical pages of the host, resulting in a crash of the entire system, leak of sensitive data or potential guest-to-host escape.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -37,4 +37,7 @@\n \t/* If SMI is not intercepted, ignore guest SMI intercept as well  */\n \tif (!intercept_smi)\n \t\tvmcb_clr_intercept(c, INTERCEPT_SMI);\n+\n+\tvmcb_set_intercept(c, INTERCEPT_VMLOAD);\n+\tvmcb_set_intercept(c, INTERCEPT_VMSAVE);\n }",
     "original_vulnerable_label": 1,
     "project": "linux"
   }

@@ -8,7 +8,7 @@
       "CWE-295"
     ],
     "cve_description": "e2guardian v5.4.x <= v5.4.3r is affected by missing SSL certificate validation in the SSL MITM engine. In standalone mode (i.e., acting as a proxy or a transparent proxy), with SSL MITM enabled, e2guardian, if built with OpenSSL v1.1.x, did not validate hostnames in certificates of the web servers that it connected to, and thus was itself vulnerable to MITM attacks.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -92,6 +92,10 @@\n     //fcntl(this->getFD() ,F_SETFL, O_NONBLOCK); // blocking mode used currently\n     SSL_set_fd(ssl, this->getFD());\n     SSL_set_tlsext_host_name(ssl, hostname.c_str());\n+#if OPENSSL_VERSION_NUMBER < 0x10100000L\n+#else\n+  X509_VERIFY_PARAM_set1_host(SSL_get0_param(ssl),hostname.c_str(),0);\n+#endif\n \n     //make io non blocking as select wont tell us if we can do a read without blocking\n     //BIO_set_nbio(SSL_get_rbio(ssl),1l);  // blocking mode used currently",
     "original_vulnerable_label": 1,
     "project": "e2guardian"
   }

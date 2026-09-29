@@ -8,7 +8,7 @@
       "CWE-416"
     ],
     "cve_description": "Tensorflow is an Open Source Machine Learning Framework. A malicious user can cause a use after free behavior when decoding PNG images. After `png::CommonFreeDecode(&decode)` gets called, the values of `decode.width` and `decode.height` are in an unspecified state. The fix will be included in TensorFlow 2.8.0. We will also cherrypick this commit on TensorFlow 2.7.1, TensorFlow 2.6.3, and TensorFlow 2.5.3, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -18,7 +18,6 @@\n     if (width != static_cast<int64_t>(decode.width) || width <= 0 ||\n         width >= (1LL << 27) || height != static_cast<int64_t>(decode.height) ||\n         height <= 0 || height >= (1LL << 27) || total_size >= (1LL << 29)) {\n-      png::CommonFreeDecode(&decode);\n       OP_REQUIRES(context, false,\n                   errors::InvalidArgument(\"PNG size too large for int: \",\n                                           decode.width, \" by \", decode.height));",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -21,7 +21,7 @@
       "CWE-416"
     ],
     "cve_description": "Use After Free in GitHub repository vim/vim prior to 8.2.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -97,7 +97,7 @@\n \tend_lnum = curbuf->b_ml.ml_line_count;\n     if (lnum > end_lnum)\t\t// do at least one line\n \tlnum = end_lnum;\n-    line = ml_get(lnum);\n+    line = get_line_and_copy(lnum, file_line);\n \n     for (;;)\n     {\n@@ -426,7 +426,7 @@\n \t\t    {\n \t\t\tif (lnum >= end_lnum)\n \t\t\t    goto exit_matched;\n-\t\t\tline = ml_get(++lnum);\n+\t\t\tline = get_line_and_copy(++lnum, file_line);\n \t\t    }\n \t\t    else if (vim_fgets(line = file_line,\n \t\t\t\t\t\t      LSIZE, files[depth].fp))\n@@ -638,7 +638,7 @@\n \t{\n \t    if (++lnum > end_lnum)\n \t\tbreak;\n-\t    line = ml_get(lnum);\n+\t    line = get_line_and_copy(lnum, file_line);\n \t}\n \talready = NULL;\n     }",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -34,7 +34,7 @@
       "CWE-416"
     ],
     "cve_description": "Use After Free in GitHub repository gpac/gpac prior to 2.1-DEV.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -35,62 +35,69 @@\n \t\t\te = gf_bifs_dec_sf_field(codec, bs, node, &sffield, GF_FALSE);\n \t\t\tif (e) return e;\n \t\t}\n-\t} else {\n-\t\tlast = NULL;\n-\t\tfor (i=0; i<nbFields; i++) {\n-\t\t\tGF_Node *new_node = gf_bifs_dec_node(codec, bs, field->NDTtype);\n-\t\t\tif (new_node) {\n-\t\t\t\te = gf_node_register(new_node, is_mem_com ? NULL : node);\n-\t\t\t\tif (e) return e;\n+\t\treturn GF_OK;\n+\t}\n \n-\t\t\t\tif (node) {\n-\t\t\t\t\t/*special case for QP, register as the current QP*/\n-\t\t\t\t\tif (gf_node_get_tag(new_node) == TAG_MPEG4_QuantizationParameter) {\n-\t\t\t\t\t\tqp_local = ((M_QuantizationParameter *)new_node)->isLocal;\n-\t\t\t\t\t\t/*we have a QP in the same scope, remove previous\n-\t\t\t\t\t\tNB: we assume this is the right behavior, the spec doesn't say\n-\t\t\t\t\t\twhether QP is cumulative or not*/\n-\t\t\t\t\t\tif (qp_on) gf_bifs_dec_qp_remove(codec, GF_FALSE);\n+\te = GF_OK;\n+\tlast = NULL;\n+\tfor (i=0; i<nbFields; i++) {\n+\t\tGF_Node *new_node = gf_bifs_dec_node(codec, bs, field->NDTtype);\n+\t\tif (new_node) {\n+\t\t\te = gf_node_register(new_node, is_mem_com ? NULL : node);\n+\t\t\tif (e) goto exit;\n \n-\t\t\t\t\t\te = gf_bifs_dec_qp_set(codec, new_node);\n-\t\t\t\t\t\tif (e) return e;\n-\t\t\t\t\t\tqp_on = 1;\n-\t\t\t\t\t\tif (qp_local) qp_local = 2;\n-\t\t\t\t\t\tif (codec->force_keep_qp) {\n-\t\t\t\t\t\t\te = gf_node_list_add_child_last(field->far_ptr, new_node, &last);\n-\t\t\t\t\t\t\tif (e) return e;\n-\t\t\t\t\t\t} else {\n-\t\t\t\t\t\t\tgf_node_register(new_node, NULL);\n-\t\t\t\t\t\t\tgf_node_unregister(new_node, node);\n-\t\t\t\t\t\t}\n+\t\t\tif (node) {\n+\t\t\t\t/*special case for QP, register as the current QP*/\n+\t\t\t\tif (gf_node_get_tag(new_node) == TAG_MPEG4_QuantizationParameter) {\n+\t\t\t\t\tqp_local = ((M_QuantizationParameter *)new_node)->isLocal;\n+\t\t\t\t\t/*we have a QP in the same scope, remove previous\n+\t\t\t\t\tNB: we assume this is the right behavior, the spec doesn't say\n+\t\t\t\t\twhether QP is cumulative or not*/\n+\t\t\t\t\tif (qp_on) gf_bifs_dec_qp_remove(codec, GF_FALSE);\n+\n+\t\t\t\t\te = gf_bifs_dec_qp_set(codec, new_node);\n+\t\t\t\t\tif (e) goto exit;\n+\t\t\t\t\tqp_on = 1;\n+\t\t\t\t\tif (qp_local) qp_local = 2;\n+\t\t\t\t\tif (codec->force_keep_qp) {\n+\t\t\t\t\t\te = gf_node_list_add_child_last(field->far_ptr, new_node, &last);\n+\t\t\t\t\t\tif (e) goto exit;\n \t\t\t\t\t} else {\n-\t\t\t\t\t\te = gf_node_list_add_child_last(field->far_ptr, new_node, &last);\n-\t\t\t\t\t\tif (e) return e;\n+\t\t\t\t\t\tgf_node_register(new_node, NULL);\n+\t\t\t\t\t\tgf_node_unregister(new_node, node);\n \t\t\t\t\t}\n+\t\t\t\t} else {\n+\t\t\t\t\te = gf_node_list_add_child_last(field->far_ptr, new_node, &last);\n+\t\t\t\t\tif (e) goto exit;\n \t\t\t\t}\n-\t\t\t\t/*proto coding*/\n-\t\t\t\telse if (codec->pCurrentProto) {\n-\t\t\t\t\t/*TO DO: what happens if this is a QP node on the interface ?*/\n-\t\t\t\t\te = gf_node_list_add_child_last( (GF_ChildNodeItem **)field->far_ptr, new_node, &last);\n-\t\t\t\t\tif (e) return e;\n-\t\t\t\t}\n-\t\t\t} else {\n-\t\t\t\treturn codec->LastError ? codec->LastError : GF_NON_COMPLIANT_BITSTREAM;\n \t\t\t}\n-\t\t}\n-\t\t/*according to the spec, the QP applies to the current node itself, not just children.\n-\t\tIf IsLocal is TRUE remove the node*/\n-\t\tif (qp_on && qp_local) {\n-\t\t\tif (qp_local == 2) {\n-//\t\t\t\tqp_local = 1;\n-\t\t\t} else {\n-\t\t\t\t//ask to get rid of QP and reactivate if we had a QP when entering the node\n-\t\t\t\tgf_bifs_dec_qp_remove(codec, initial_qp);\n-//\t\t\t\tqp_local = 0;\n+\t\t\t/*proto coding*/\n+\t\t\telse if (codec->pCurrentProto) {\n+\t\t\t\t/*TO DO: what happens if this is a QP node on the interface ?*/\n+\t\t\t\te = gf_node_list_add_child_last( (GF_ChildNodeItem **)field->far_ptr, new_node, &last);\n+\t\t\t\tif (e)goto exit;\n \t\t\t}\n+\t\t} else {\n+\t\t\te = codec->LastError ? codec->LastError : GF_NON_COMPLIANT_BITSTREAM;\n+\t\t\tgoto exit;\n \t\t}\n \t}\n+\n+exit:\n+\n+\t/*according to the spec, the QP applies to the current node itself, not just children.\n+\tIf IsLocal is TRUE remove the node*/\n+\tif (qp_on && qp_local) {\n+\t\tif (qp_local == 2) {\n+//\t\t\t\tqp_local = 1;\n+\t\t} else {\n+\t\t\t//ask to get rid of QP and reactivate if we had a QP when entering the node\n+\t\t\tgf_bifs_dec_qp_remove(codec, initial_qp);\n+//\t\t\t\tqp_local = 0;\n+\t\t}\n+\t}\n+\n \t/*finally delete the QP if any (local or not) as we get out of this node*/\n \tif (qp_on) gf_bifs_dec_qp_remove(codec, GF_TRUE);\n-\treturn GF_OK;\n+\treturn e;\n }",
     "original_vulnerable_label": 1,
     "project": "gpac"
   },
@@ -47,7 +47,7 @@
       "CWE-416"
     ],
     "cve_description": "nginx njs 0.7.2 is affected suffers from Use-after-free in njs_function_frame_alloc() when it try to invoke from a restored frame saved with njs_function_frame_save().",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -6,9 +6,13 @@\n     njs_native_frame_t  *active, *native;\n \n     *frame = *vm->active_frame;\n+\n     frame->previous_active_frame = NULL;\n \n     native = &frame->native;\n+    native->size = 0;\n+    native->free = NULL;\n+    native->free_size = 0;\n \n     active = &vm->active_frame->native;\n     value_count = njs_function_frame_value_count(active);",
     "original_vulnerable_label": 1,
     "project": "njs"
   },
@@ -60,7 +60,7 @@
       "CWE-416"
     ],
     "cve_description": "Use After Free in GitHub repository gpac/gpac prior to v2.1.0-DEV.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -14,7 +14,12 @@\n \tcodec->scenegraph->global_qp = NULL;\n \n \tif (gf_node_get_tag(node) != TAG_MPEG4_QuantizationParameter) {\n-\t\tgf_node_unregister(node, NULL);\n+\t\t//if node was just created (num_instances == 0), unregister\n+\t\t//otherwise (USE node) don't do anything\n+\t\tif (!node->sgprivate->num_instances) {\n+\t\t\tnode->sgprivate->num_instances = 1;\n+\t\t\tgf_node_unregister(node, NULL);\n+\t\t}\n \t\treturn GF_NON_COMPLIANT_BITSTREAM;\n \t}\n \n@@ -24,7 +29,8 @@\n \tcodec->scenegraph->global_qp = node;\n \n \t/*register TWICE: once for the command, and for the scenegraph globalQP*/\n-\tnode->sgprivate->num_instances = 2;\n+\tgf_node_unregister(node, NULL);\n+\tgf_node_unregister(node, NULL);\n \n \tcom = gf_sg_command_new(codec->current_graph, GF_SG_GLOBAL_QUANTIZER);\n \tinf = gf_sg_command_field_new(com);",
     "original_vulnerable_label": 1,
     "project": "gpac"
   },
@@ -73,7 +73,7 @@
       "CWE-416"
     ],
     "cve_description": "OwnTone (aka owntone-server) through 28.1 has a use-after-free in net_bind() in misc.c.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -3,6 +3,8 @@\n   struct addrinfo hints = { 0 };\n   struct addrinfo *servinfo;\n   struct addrinfo *ptr;\n+  union net_sockaddr naddr = { 0 };\n+  socklen_t naddr_len = sizeof(naddr);\n   const char *cfgaddr;\n   char addr[INET6_ADDRSTRLEN];\n   char strport[8];\n@@ -66,16 +68,22 @@\n       goto error;\n     }\n \n-  // Get the port that was assigned\n-  ret = getsockname(fd, ptr->ai_addr, &ptr->ai_addrlen);\n+  // Get our address (as string) and the port that was assigned (necessary when\n+  // caller didn't specify a port)\n+  ret = getsockname(fd, &naddr.sa, &naddr_len);\n   if (ret < 0)\n     {\n-      DPRINTF(E_LOG, L_MISC, \"Could not find address of service '%s': %s\\n\", log_service_name, strerror(errno));\n+      DPRINTF(E_LOG, L_MISC, \"Error finding address of service '%s': %s\\n\", log_service_name, strerror(errno));\n+      goto error;\n+    }\n+  else if (naddr_len > sizeof(naddr))\n+    {\n+      DPRINTF(E_LOG, L_MISC, \"Unexpected address length of service '%s'\\n\", log_service_name);\n       goto error;\n     }\n \n-  net_port_get(port, (union net_sockaddr *)ptr->ai_addr);\n-  net_address_get(addr, sizeof(addr), (union net_sockaddr *)ptr->ai_addr);\n+  net_port_get(port, &naddr);\n+  net_address_get(addr, sizeof(addr), &naddr);\n \n   DPRINTF(E_DBG, L_MISC, \"Service '%s' bound to %s, port %hu, socket %d\\n\", log_service_name, addr, *port, fd);\n ",
     "original_vulnerable_label": 1,
     "project": "owntone-server"
   },
@@ -86,7 +86,7 @@
       "CWE-416"
     ],
     "cve_description": "njs through 0.7.0, used in NGINX, was discovered to contain a heap use-after-free in njs_await_fulfilled.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -4,7 +4,6 @@\n     njs_int_t           ret;\n     njs_value_t         **cur_local, **cur_closures, **cur_temp, *value;\n     njs_frame_t         *frame, *async_frame;\n-    njs_function_t      *function;\n     njs_async_ctx_t     *ctx;\n     njs_native_frame_t  *top, *async;\n \n@@ -18,8 +17,6 @@\n     async_frame = ctx->await;\n     async = &async_frame->native;\n     async->previous = vm->top_frame;\n-\n-    function = async->function;\n \n     cur_local = vm->levels[NJS_LEVEL_LOCAL];\n     cur_closures = vm->levels[NJS_LEVEL_CLOSURE];\n@@ -39,13 +36,7 @@\n \n     vm->top_frame->retval = &vm->retval;\n \n-    function->context = ctx->capability;\n-    function->await = ctx;\n-\n-    ret = njs_vmcode_interpreter(vm, ctx->pc);\n-\n-    function->context = NULL;\n-    function->await = NULL;\n+    ret = njs_vmcode_interpreter(vm, ctx->pc, ctx->capability, ctx);\n \n     vm->levels[NJS_LEVEL_LOCAL] = cur_local;\n     vm->levels[NJS_LEVEL_CLOSURE] = cur_closures;",
     "original_vulnerable_label": 1,
     "project": "njs"
   },
@@ -99,7 +99,7 @@
       "CWE-416"
     ],
     "cve_description": "TensorFlow is an end-to-end open source platform for machine learning. In affected versions the implementation for `tf.raw_ops.BoostedTreesCreateEnsemble` can result in a use after free error if an attacker supplies specially crafted arguments. The [implementation](https://github.com/tensorflow/tensorflow/blob/f24faa153ad31a4b51578f8181d3aaab77a1ddeb/tensorflow/core/kernels/boosted_trees/resource_ops.cc#L55) uses a reference counted resource and decrements the refcount if the initialization fails, as it should. However, when the code was written, the resource was represented as a naked pointer but later refactoring has changed it to be a smart pointer. Thus, when the pointer leaves the scope, a subsequent `free`-ing of the resource occurs, but this fails to take into account that the refcount has already reached 0, thus the resource has been already freed. During this double-free process, members of the resource object are accessed for cleanup but they are invalid as the entire resource has been freed. We have patched the issue in GitHub commit 5ecec9c6fbdbc6be03295685190a45e7eee726ab. The fix will be included in TensorFlow 2.6.0. We will also cherrypick this commit on TensorFlow 2.5.1, TensorFlow 2.4.3, and TensorFlow 2.3.4, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -13,6 +13,7 @@\n     if (!result->InitFromSerialized(\n             tree_ensemble_serialized_t->scalar<tstring>()(), stamp_token)) {\n       result->Unref();\n+      result.release();  // Needed due to the `->Unref` above, to prevent UAF\n       OP_REQUIRES(\n           context, false,\n           errors::InvalidArgument(\"Unable to parse tree ensemble proto.\"));",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -112,7 +112,7 @@
       "CWE-416"
     ],
     "cve_description": "Use After Free in GitHub repository vim/vim prior to 8.2.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -11,6 +11,7 @@\n     int\t\tsave_do_all;\t\t// remember user specified 'g' flag\n     int\t\tsave_do_ask;\t\t// remember user specified 'c' flag\n     char_u\t*pat = NULL, *sub = NULL;\t// init for GCC\n+    char_u\t*sub_copy = NULL;\n     int\t\tdelimiter;\n     int\t\tsublen;\n     int\t\tgot_quit = FALSE;\n@@ -304,11 +305,20 @@\n     sub_firstline = NULL;\n \n     /*\n-     * ~ in the substitute pattern is replaced with the old pattern.\n-     * We do it here once to avoid it to be replaced over and over again.\n-     * But don't do it when it starts with \"\\=\", then it's an expression.\n+     * If the substitute pattern starts with \"\\=\" then it's an expression.\n+     * Make a copy, a recursive function may free it.\n+     * Otherwise, '~' in the substitute pattern is replaced with the old\n+     * pattern.  We do it here once to avoid it to be replaced over and over\n+     * again.\n      */\n-    if (!(sub[0] == '\\\\' && sub[1] == '='))\n+    if (sub[0] == '\\\\' && sub[1] == '=')\n+    {\n+\tsub = vim_strsave(sub);\n+\tif (sub == NULL)\n+\t    return;\n+\tsub_copy = sub;\n+    }\n+    else\n \tsub = regtilde(sub, magic_isset());\n \n     /*\n@@ -1114,6 +1124,7 @@\n #endif\n \n     vim_regfree(regmatch.regprog);\n+    vim_free(sub_copy);\n \n     // Restore the flag values, they can be used for \":&&\".\n     subflags.do_all = save_do_all;",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -125,7 +125,7 @@
       "CWE-416"
     ],
     "cve_description": "An issue was discovered in the Linux kernel before 5.14.8. A use-after-free in selinux_ptrace_traceme (aka the SELinux handler for PTRACE_TRACEME) could be used by local attackers to cause memory corruption and escalate privileges, aka CID-a3727a8bac0a. This occurs because of an attempt to access the subjective credentials of another task.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,6 +1,6 @@\n static int selinux_ptrace_traceme(struct task_struct *parent)\n {\n \treturn avc_has_perm(&selinux_state,\n-\t\t\t    task_sid_subj(parent), task_sid_obj(current),\n+\t\t\t    task_sid_obj(parent), task_sid_obj(current),\n \t\t\t    SECCLASS_PROCESS, PROCESS__PTRACE, NULL);\n }",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -138,7 +138,7 @@
       "CWE-416"
     ],
     "cve_description": "Use after free in utf_ptr2char in GitHub repository vim/vim prior to 8.2.4646.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -144,8 +144,17 @@\n \t\tint\tmark = OPERAND(scan)[0];\n \t\tint\tcmp = OPERAND(scan)[1];\n \t\tpos_T\t*pos;\n+\t\tsize_t\tcol = REG_MULTI ? rex.input - rex.line : 0;\n \n \t\tpos = getmark_buf(rex.reg_buf, mark, FALSE);\n+\n+\t\t// Line may have been freed, get it again.\n+\t\tif (REG_MULTI)\n+\t\t{\n+\t\t    rex.line = reg_getline(rex.lnum);\n+\t\t    rex.input = rex.line + col;\n+\t\t}\n+\n \t\tif (pos == NULL\t\t     // mark doesn't exist\n \t\t\t|| pos->lnum <= 0)   // mark isn't set in reg_buf\n \t\t{",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -151,7 +151,7 @@
       "CWE-416"
     ],
     "cve_description": "A flaw use after free in the Linux kernel video4linux driver was found in the way user triggers em28xx_usb_probe() for the Empia 28xx based TV cards. A local user could use this flaw to crash the system or potentially escalate their privileges on the system.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -111,6 +111,8 @@\n \t\tgoto err_free;\n \t}\n \n+\tkref_init(&dev->ref);\n+\n \tdev->devno = nr;\n \tdev->model = id->driver_info;\n \tdev->alt   = -1;\n@@ -211,6 +213,8 @@\n \t}\n \n \tif (dev->board.has_dual_ts && em28xx_duplicate_dev(dev) == 0) {\n+\t\tkref_init(&dev->dev_next->ref);\n+\n \t\tdev->dev_next->ts = SECONDARY_TS;\n \t\tdev->dev_next->alt   = -1;\n \t\tdev->dev_next->is_audio_only = has_vendor_audio &&\n@@ -265,11 +269,7 @@\n \t\t\tem28xx_write_reg(dev, 0x0b, 0x82);\n \t\t\tmdelay(100);\n \t\t}\n-\n-\t\tkref_init(&dev->dev_next->ref);\n-\t}\n-\n-\tkref_init(&dev->ref);\n+\t}\n \n \trequest_modules(dev);\n ",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -164,7 +164,7 @@
       "CWE-416"
     ],
     "cve_description": "Use After Free in op_is_set_bp in GitHub repository radareorg/radare2 prior to 5.6.6.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -153,7 +153,7 @@\n \t\tfree (vartype);\n \t} else {\n \t\tst64 frame_off = -(ptr + fcn->bp_off);\n-\t\tif (maxstackframe != 0 && (frame_off > maxstackframe || frame_off < -maxstackframe)) {\n+\t\tif (maxstackframe > 0 && (frame_off > maxstackframe || frame_off < -maxstackframe)) {\n \t\t\tgoto beach;\n \t\t}\n \t\tRAnalVar *var = get_stack_var (fcn, frame_off);",
     "original_vulnerable_label": 1,
     "project": "radare2"
   },
@@ -177,7 +177,7 @@
       "CWE-416"
     ],
     "cve_description": "ext/snmp/snmp.c in PHP before 5.5.38, 5.6.x before 5.6.24, and 7.x before 7.0.9 improperly interacts with the unserialize implementation and garbage collection, which allows remote attackers to cause a denial of service (use-after-free and application crash) or possibly have unspecified other impact via crafted serialized data, a related issue to CVE-2016-5773.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -24,6 +24,7 @@\n \tphp_snmp_object_handlers.write_property = php_snmp_write_property;\n \tphp_snmp_object_handlers.has_property = php_snmp_has_property;\n \tphp_snmp_object_handlers.get_properties = php_snmp_get_properties;\n+\tphp_snmp_object_handlers.get_gc = php_snmp_get_gc;\n \n \t/* Register SNMP Class */\n \tINIT_CLASS_ENTRY(ce, \"SNMP\", php_snmp_class_methods);",
     "original_vulnerable_label": 1,
     "project": "php-src"
   },
@@ -190,7 +190,7 @@
       "CWE-416"
     ],
     "cve_description": "Use After Free in r_reg_get_name_idx in GitHub repository radareorg/radare2 prior to 5.6.6.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -4,7 +4,7 @@\n \tbool gp_fixed = r_config_get_i (core->config, \"anal.gpfixed\");\n \tRAnalEsil *ESIL = core->anal->esil;\n \tut64 refptr = 0LL;\n-\tconst char *pcname;\n+\tchar *pcname = NULL;\n \tRAnalOp op = R_EMPTY;\n \tut8 *buf = NULL;\n \tbool end_address_set = false;\n@@ -93,11 +93,12 @@\n \t\tr_core_cmd0 (core, \"aeim\");\n \t\tESIL = core->anal->esil;\n \t}\n-\tconst char *spname = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);\n-\tif (!spname) {\n+\tconst char *kspname = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);\n+\tif (R_STR_ISEMPTY (kspname)) {\n \t\teprintf (\"Error: No =SP defined in the reg profile.\\n\");\n \t\treturn;\n \t}\n+\tchar *spname = strdup (kspname);\n \tEsilBreakCtx ctx = {\n \t\t&op,\n \t\tfcn,\n@@ -115,11 +116,12 @@\n \t}\n \t//eprintf (\"Analyzing ESIL refs from 0x%\"PFMT64x\" - 0x%\"PFMT64x\"\\n\", addr, end);\n \t// TODO: backup/restore register state before/after analysis\n-\tpcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);\n-\tif (!pcname || !*pcname) {\n+\tconst char *kpcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);\n+\tif (!kpcname || !*kpcname) {\n \t\teprintf (\"Cannot find program counter register in the current profile.\\n\");\n \t\treturn;\n \t}\n+\tpcname = strdup (kpcname);\n \tesil_anal_stop = false;\n \tr_cons_break_push (cccb, core);\n \n@@ -204,11 +206,9 @@\n \t\tr_anal_op_fini (&op);\n \t\tr_asm_set_pc (core->rasm, cur);\n \t\ti_old = i;\n-#if 1\n \t\tif (i > iend) {\n \t\t\tgoto repeat;\n \t\t}\n-#endif\n \t\tif (!r_anal_op (core->anal, &op, cur, buf + i, iend - i, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT)) {\n \t\t\ti += minopsize - 1; //   XXX dupe in op.size below\n \t\t}\n@@ -449,6 +449,8 @@\n \t\t\tbreak;\n \t\t}\n \t} while (get_next_i (&ictx, &i));\n+\tfree (pcname);\n+\tfree (spname);\n \tr_list_free (ictx.bbl);\n \tr_list_free (ictx.path);\n \tr_list_free (ictx.switch_path);",
     "original_vulnerable_label": 1,
     "project": "radare2"
   },
@@ -203,7 +203,7 @@
       "CWE-416"
     ],
     "cve_description": "Use After Free in GitHub repository vim/vim prior to 9.0.0490.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -30,6 +30,7 @@\n #endif\n     expand_T\txpc;\n     long\t*b_im_ptr = NULL;\n+    buf_T\t*b_im_ptr_buf = NULL;\t// buffer where b_im_ptr is valid\n     cmdline_info_T save_ccline;\n     int\t\tdid_save_ccline = FALSE;\n     int\t\tcmdline_type;\n@@ -126,6 +127,7 @@\n \t    b_im_ptr = &curbuf->b_p_iminsert;\n \telse\n \t    b_im_ptr = &curbuf->b_p_imsearch;\n+\tb_im_ptr_buf = curbuf;\n \tif (*b_im_ptr == B_IMODE_LMAP)\n \t    State |= MODE_LANGMAP;\n #ifdef HAVE_INPUT_METHOD\n@@ -477,7 +479,8 @@\n \t\tgoto cmdline_not_changed;\n \n \tcase Ctrl_HAT:\n-\t\tcmdline_toggle_langmap(b_im_ptr);\n+\t\tcmdline_toggle_langmap(\n+\t\t\t\t    buf_valid(b_im_ptr_buf) ? b_im_ptr : NULL);\n \t\tgoto cmdline_not_changed;\n \n //\tcase '@':   only in very old vi\n@@ -987,7 +990,8 @@\n #endif\n \n #ifdef HAVE_INPUT_METHOD\n-    if (b_im_ptr != NULL && *b_im_ptr != B_IMODE_LMAP)\n+    if (b_im_ptr != NULL && buf_valid(b_im_ptr_buf)\n+\t\t\t\t\t\t  && *b_im_ptr != B_IMODE_LMAP)\n \tim_save_status(b_im_ptr);\n     im_set_active(FALSE);\n #endif",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -216,7 +216,7 @@
       "CWE-416"
     ],
     "cve_description": "PlayerGeneric.cpp in MilkyTracker through 1.02.00 has a use-after-free in the PlayerGeneric destructor.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,14 +1,15 @@\n PlayerGeneric::~PlayerGeneric()\n {\n-\tif (mixer)\n-\t\tdelete mixer;\n \n \tif (player)\n \t{\n-\t\tif (mixer->isActive() && !mixer->isDeviceRemoved(player))\n+\t\tif (mixer && mixer->isActive() && !mixer->isDeviceRemoved(player))\n \t\t\tmixer->removeDevice(player);\n \t\tdelete player;\n \t}\n+\t\n+\tif (mixer)\n+\t\tdelete mixer;\n \n \tdelete[] audioDriverName;\n \t",
     "original_vulnerable_label": 1,
     "project": "MilkyTracker"
   },
@@ -229,7 +229,7 @@
       "CWE-416"
     ],
     "cve_description": "vim is vulnerable to Out-of-bounds Read",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -24,6 +24,7 @@\n     tabpage_T\t*old_curtab, *last_curtab;\n     win_T\t*new_curwin = NULL;\n     tabpage_T\t*new_curtab = NULL;\n+    int\t\tprev_arglist_locked = arglist_locked;\n \n #ifdef FEAT_CMDWIN\n     if (cmdwin_type != 0)\n@@ -50,6 +51,7 @@\n     // watch out for its size to be changed.\n     alist = curwin->w_alist;\n     ++alist->al_refcount;\n+    arglist_locked = TRUE;\n \n     old_curwin = curwin;\n     old_curtab = curtab;\n@@ -269,6 +271,7 @@\n \n     // Remove the \"lock\" on the argument list.\n     alist_unlink(alist);\n+    arglist_locked = prev_arglist_locked;\n \n     --autocmd_no_enter;\n ",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -242,7 +242,7 @@
       "CWE-416"
     ],
     "cve_description": "A use-after-free vulnerability was found in the Linux kernel in drivers/net/hamradio. This flaw allows a local attacker with a user privilege to cause a denial of service (DOS) when the mkiss or sixpack device is detached and reclaim resources early.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -22,13 +22,13 @@\n \t */\n \tnetif_stop_queue(ax->dev);\n \n-\tax->tty = NULL;\n-\n \tunregister_netdev(ax->dev);\n \n \t/* Free all AX25 frame buffers after unreg. */\n \tkfree(ax->rbuff);\n \tkfree(ax->xbuff);\n \n+\tax->tty = NULL;\n+\n \tfree_netdev(ax->dev);\n }",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -255,7 +255,7 @@
       "CWE-416"
     ],
     "cve_description": "Use After Free in GitHub repository vim/vim prior to 9.0.0360.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -450,7 +450,7 @@\n \n \t\t    // Check for the next breakpoint at or after the \":while\"\n \t\t    // or \":for\".\n-\t\t    if (breakpoint != NULL)\n+\t\t    if (breakpoint != NULL && lines_ga.ga_len > current_line)\n \t\t    {\n \t\t\t*breakpoint = dbg_find_breakpoint(\n \t\t\t       getline_equal(fgetline, cookie, getsourceline),",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -268,7 +268,7 @@
       "CWE-416"
     ],
     "cve_description": "In the Linux kernel before 5.3.6, there is a use-after-free bug that can be caused by a malicious USB device in the drivers/net/ieee802154/atusb.c driver, aka CID-7fd25e6fc035.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -14,10 +14,11 @@\n \n \tieee802154_unregister_hw(atusb->hw);\n \n+\tusb_put_dev(atusb->usb_dev);\n+\n \tieee802154_free_hw(atusb->hw);\n \n \tusb_set_intfdata(interface, NULL);\n-\tusb_put_dev(atusb->usb_dev);\n \n \tpr_debug(\"%s done\\n\", __func__);\n }",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -281,7 +281,7 @@
       "CWE-416"
     ],
     "cve_description": "vim is vulnerable to Use After Free",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -48,9 +48,9 @@\n     if (lnum < top.lnum || lnum > bot.lnum)\n \treturn FALSE;\n \n+    col = (colnr_T)(rex.input - rex.line);\n     if (mode == 'v')\n     {\n-\tcol = (colnr_T)(rex.input - rex.line);\n \tif ((lnum == top.lnum && col < top.col)\n \t\t|| (lnum == bot.lnum && col >= bot.col + (*p_sel != 'e')))\n \t    return FALSE;\n@@ -65,7 +65,12 @@\n \t    end = end2;\n \tif (top.col == MAXCOL || bot.col == MAXCOL || curswant == MAXCOL)\n \t    end = MAXCOL;\n-\tcols = win_linetabsize(wp, rex.line, (colnr_T)(rex.input - rex.line));\n+\n+\t// getvvcol() flushes rex.line, need to get it again\n+\trex.line = reg_getline(rex.lnum);\n+\trex.input = rex.line + col;\n+\n+\tcols = win_linetabsize(wp, rex.line, col);\n \tif (cols < start || cols > end - (*p_sel == 'e'))\n \t    return FALSE;\n     }",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -294,7 +294,7 @@
       "CWE-416"
     ],
     "cve_description": "A use-after-free exists in the Linux Kernel in tc_new_tfilter that could allow a local attacker to gain privilege escalation. The exploit requires unprivileged user namespaces. We recommend upgrading past commit 04c2a47ffb13c29778e2a14e414ad4cb5a5db4b5",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -10,9 +10,9 @@\n \tbool prio_allocate;\n \tu32 parent;\n \tu32 chain_index;\n-\tstruct Qdisc *q = NULL;\n+\tstruct Qdisc *q;\n \tstruct tcf_chain_info chain_info;\n-\tstruct tcf_chain *chain = NULL;\n+\tstruct tcf_chain *chain;\n \tstruct tcf_block *block;\n \tstruct tcf_proto *tp;\n \tunsigned long cl;\n@@ -41,6 +41,8 @@\n \ttp = NULL;\n \tcl = 0;\n \tblock = NULL;\n+\tq = NULL;\n+\tchain = NULL;\n \tflags = 0;\n \n \tif (prio == 0) {",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -307,7 +307,7 @@
       "CWE-416"
     ],
     "cve_description": "Use After Free in GitHub repository vim/vim prior to 9.0.0389.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -439,6 +439,16 @@\n \t\tmax_num_matches = MAXCOL; // If less than max_num_matches\n \t\t\t\t\t  // found: all matches found.\n \n+\t    // A tag function may do anything, which may cause various\n+\t    // information to become invalid.  At least check for the tagstack\n+\t    // to still be the same.\n+\t    if (tagstack != curwin->w_tagstack)\n+\t    {\n+\t\temsg(_(e_window_unexpectedly_close_while_searching_for_tags));\n+\t\tFreeWild(new_num_matches, new_matches);\n+\t\tbreak;\n+\t    }\n+\n \t    // If there already were some matches for the same name, move them\n \t    // to the start.  Avoids that the order changes when using\n \t    // \":tnext\" and jumping to another file.",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -320,7 +320,7 @@
       "CWE-416"
     ],
     "cve_description": "Use After Free in GitHub repository vim/vim prior to 9.0.0322.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -20,7 +20,7 @@\n     }\n \n     // Check if there is anything to display\n-    if (qfl != NULL)\n+    if (qfl != NULL && qfl->qf_start != NULL)\n     {\n \tchar_u\t\tdirname[MAXPATHL];\n \tint\t\tinvalid_val = FALSE;",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -333,7 +333,7 @@
       "CWE-416"
     ],
     "cve_description": "A flaw in Linux Kernel found in nfcmrvl_nci_unregister_dev() in drivers/nfc/nfcmrvl/main.c can lead to use after free both read or write when non synchronized between cleanup routine and firmware download routine.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -2,6 +2,7 @@\n {\n \tstruct nci_dev *ndev = priv->ndev;\n \n+\tnci_unregister_device(ndev);\n \tif (priv->ndev->nfc_dev->fw_download_in_progress)\n \t\tnfcmrvl_fw_dnld_abort(priv);\n \n@@ -10,7 +11,6 @@\n \tif (gpio_is_valid(priv->config.reset_n_io))\n \t\tgpio_free(priv->config.reset_n_io);\n \n-\tnci_unregister_device(ndev);\n \tnci_free_device(ndev);\n \tkfree(priv);\n }",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -346,7 +346,7 @@
       "CWE-416"
     ],
     "cve_description": "A use-after-free flaw was found in cgroup1_parse_param in kernel/cgroup/cgroup-v1.c in the Linux kernel's cgroup v1 parser. A local attacker with a user privilege could cause a privilege escalation by exploiting the fsconfig syscall parameter leading to a container breakout and a denial of service on the system.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -8,6 +8,8 @@\n \topt = fs_parse(fc, cgroup1_fs_parameters, param, &result);\n \tif (opt == -ENOPARAM) {\n \t\tif (strcmp(param->key, \"source\") == 0) {\n+\t\t\tif (param->type != fs_value_is_string)\n+\t\t\t\treturn invalf(fc, \"Non-string source\");\n \t\t\tif (fc->source)\n \t\t\t\treturn invalf(fc, \"Multiple sources not supported\");\n \t\t\tfc->source = param->string;",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -359,7 +359,7 @@
       "CWE-416"
     ],
     "cve_description": "MariaDB Server v10.6.5 and below was discovered to contain an use-after-free in the component Item_args::walk_arg, which is exploited via specially crafted SQL statements.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -441,7 +441,7 @@\n   table_list->table= table;\n \n   if (!from_share && table->vcol_fix_expr(thd))\n-    goto err_lock;\n+    DBUG_RETURN(true);\n \n #ifdef WITH_PARTITION_STORAGE_ENGINE\n   if (unlikely(table->part_info))",
     "original_vulnerable_label": 1,
     "project": "server"
   },
@@ -372,7 +372,7 @@
       "CWE-416"
     ],
     "cve_description": "MariaDB Server v10.6 and below was discovered to contain an use-after-free in the component my_strcasecmp_8bit, which is exploited via specially crafted SQL statements.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,7 +1,8 @@\n static void fix_dl_name(MEM_ROOT *root, LEX_STRING *dl)\n {\n   const size_t so_ext_len= sizeof(SO_EXT) - 1;\n-  if (my_strcasecmp(&my_charset_latin1, dl->str + dl->length - so_ext_len,\n+  if (dl->length < so_ext_len ||\n+      my_strcasecmp(&my_charset_latin1, dl->str + dl->length - so_ext_len,\n                     SO_EXT))\n   {\n     char *s= (char*)alloc_root(root, dl->length + so_ext_len + 1);",
     "original_vulnerable_label": 1,
     "project": "server"
   }

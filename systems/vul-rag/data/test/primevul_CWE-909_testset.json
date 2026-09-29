@@ -8,7 +8,7 @@
       "CWE-909"
     ],
     "cve_description": "An issue was discovered in fs/nfs/dir.c in the Linux kernel before 5.16.5. If an application sets the O_DIRECTORY flag, and tries to open a regular file, nfs_atomic_open() performs a regular lookup. If a regular file is found, ENOTDIR should occur, but the server instead returns uninitialized data in the file descriptor.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -24,7 +24,7 @@\n \t\treturn err;\n \n \tif ((openflags & O_ACCMODE) == 3)\n-\t\treturn nfs_open(inode, filp);\n+\t\topenflags--;\n \n \t/* We can't create new files here */\n \topenflags &= ~(O_CREAT|O_EXCL);",
     "original_vulnerable_label": 1,
     "project": "linux"
   }

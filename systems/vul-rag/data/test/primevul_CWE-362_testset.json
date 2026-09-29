@@ -8,7 +8,7 @@
       "CWE-362"
     ],
     "cve_description": "World-writable permissions on the /tmp/tmate/sessions directory in tmate-ssh-server 2.3.0 allow a local attacker to compromise the integrity of session handling, or obtain the read-write session ID from a read-only session symlink in this directory.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -51,16 +51,21 @@\n \ttmate_catch_sigsegv();\n \ttmate_init_rand();\n \n-\tif ((mkdir(TMATE_WORKDIR, 0701)             < 0 && errno != EEXIST) ||\n-\t    (mkdir(TMATE_WORKDIR \"/sessions\", 0703) < 0 && errno != EEXIST) ||\n+\tif ((mkdir(TMATE_WORKDIR, 0700)             < 0 && errno != EEXIST) ||\n+\t    (mkdir(TMATE_WORKDIR \"/sessions\", 0700) < 0 && errno != EEXIST) ||\n \t    (mkdir(TMATE_WORKDIR \"/jail\", 0700)     < 0 && errno != EEXIST))\n \t\ttmate_fatal(\"Cannot prepare session in \" TMATE_WORKDIR);\n \n-\t/* The websocket server needs to access the /session dir to rename sockets */\n-\tif ((chmod(TMATE_WORKDIR, 0701)             < 0) ||\n-\t    (chmod(TMATE_WORKDIR \"/sessions\", 0703) < 0) ||\n+\tif ((chmod(TMATE_WORKDIR, 0700)             < 0) ||\n+\t    (chmod(TMATE_WORKDIR \"/sessions\", 0700) < 0) ||\n \t    (chmod(TMATE_WORKDIR \"/jail\", 0700)     < 0))\n \t\ttmate_fatal(\"Cannot prepare session in \" TMATE_WORKDIR);\n+\n+\tif (check_owned_directory_mode(TMATE_WORKDIR, 0700) ||\n+\t    check_owned_directory_mode(TMATE_WORKDIR \"/sessions\", 0700) ||\n+\t    check_owned_directory_mode(TMATE_WORKDIR \"/jail\", 0700))\n+\t\ttmate_fatal(TMATE_WORKDIR \" and subdirectories has incorrect ownership/mode. \"\n+\t\t\t    \"Try deleting \" TMATE_WORKDIR \" and try again\");\n \n \ttmate_ssh_server_main(tmate_session,\n \t\t\t      tmate_settings->keys_dir, tmate_settings->bind_addr, tmate_settings->ssh_port);",
     "original_vulnerable_label": 1,
     "project": "tmate-ssh-server"
   },
@@ -21,7 +21,7 @@
       "CWE-362"
     ],
     "cve_description": "Envoy is an open source edge and service proxy, designed for cloud-native applications. Envoy's tls allows re-use when some cert validation settings have changed from their default configuration. The only workaround for this issue is to ensure that default tls settings are used. Users are advised to upgrade.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -30,4 +30,33 @@\n                               sizeof(std::remove_reference<decltype(hash)>::type::value_type));\n     RELEASE_ASSERT(rc == 1, Utility::getLastCryptoError().value_or(\"\"));\n   }\n+\n+  rc = EVP_DigestUpdate(md.get(), &verify_trusted_ca_, sizeof(verify_trusted_ca_));\n+  RELEASE_ASSERT(rc == 1, Utility::getLastCryptoError().value_or(\"\"));\n+\n+  if (config_ != nullptr) {\n+    for (const auto& matcher : config_->subjectAltNameMatchers()) {\n+      size_t hash = MessageUtil::hash(matcher);\n+      rc = EVP_DigestUpdate(md.get(), &hash, sizeof(hash));\n+      RELEASE_ASSERT(rc == 1, Utility::getLastCryptoError().value_or(\"\"));\n+    }\n+\n+    const std::string& crl = config_->certificateRevocationList();\n+    if (!crl.empty()) {\n+      rc = EVP_DigestUpdate(md.get(), crl.data(), crl.length());\n+      RELEASE_ASSERT(rc == 1, Utility::getLastCryptoError().value_or(\"\"));\n+    }\n+\n+    bool allow_expired = config_->allowExpiredCertificate();\n+    rc = EVP_DigestUpdate(md.get(), &allow_expired, sizeof(allow_expired));\n+    RELEASE_ASSERT(rc == 1, Utility::getLastCryptoError().value_or(\"\"));\n+\n+    auto trust_chain_verification = config_->trustChainVerification();\n+    rc = EVP_DigestUpdate(md.get(), &trust_chain_verification, sizeof(trust_chain_verification));\n+    RELEASE_ASSERT(rc == 1, Utility::getLastCryptoError().value_or(\"\"));\n+\n+    auto only_leaf_crl = config_->onlyVerifyLeafCertificateCrl();\n+    rc = EVP_DigestUpdate(md.get(), &only_leaf_crl, sizeof(only_leaf_crl));\n+    RELEASE_ASSERT(rc == 1, Utility::getLastCryptoError().value_or(\"\"));\n+  }\n }",
     "original_vulnerable_label": 1,
     "project": "envoy"
   },
@@ -34,7 +34,7 @@
       "CWE-362"
     ],
     "cve_description": "A race condition flaw was found in the Linux kernel sound subsystem due to improper locking. It could lead to a NULL pointer dereference while handling the SNDCTL_DSP_SYNC ioctl. A privileged local user (root or member of the audio group) could use this flaw to crash the system, resulting in a denial of service condition",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -13,14 +13,14 @@\n \t\truntime = substream->runtime;\n \t\tif (atomic_read(&substream->mmap_count))\n \t\t\tgoto __direct;\n-\t\terr = snd_pcm_oss_make_ready(substream);\n-\t\tif (err < 0)\n-\t\t\treturn err;\n \t\tatomic_inc(&runtime->oss.rw_ref);\n \t\tif (mutex_lock_interruptible(&runtime->oss.params_lock)) {\n \t\t\tatomic_dec(&runtime->oss.rw_ref);\n \t\t\treturn -ERESTARTSYS;\n \t\t}\n+\t\terr = snd_pcm_oss_make_ready_locked(substream);\n+\t\tif (err < 0)\n+\t\t\tgoto unlock;\n \t\tformat = snd_pcm_oss_format_from(runtime->oss.format);\n \t\twidth = snd_pcm_format_physical_width(format);\n \t\tif (runtime->oss.buffer_used > 0) {",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -47,7 +47,7 @@
       "CWE-362"
     ],
     "cve_description": "A race condition exists in Eternal Terminal prior to version 6.2.0 that allows an authenticated attacker to hijack other users' SSH authorization socket, enabling the attacker to login to other systems as the targeted users. The bug is in UserTerminalRouter::getInfoForId().",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,4 +1,5 @@\n TerminalUserInfo UserTerminalRouter::getInfoForId(const string &id) {\n+  lock_guard<recursive_mutex> guard(routerMutex);\n   auto it = idInfoMap.find(id);\n   if (it == idInfoMap.end()) {\n     STFATAL << \" Tried to read from an id that no longer exists\";",
     "original_vulnerable_label": 1,
     "project": "EternalTerminal"
   },
@@ -60,7 +60,7 @@
       "CWE-362"
     ],
     "cve_description": "A race condition exists in Eternal Terminal prior to version 6.2.0 that allows an authenticated attacker to hijack other users' SSH authorization socket, enabling the attacker to login to other systems as the targeted users. The bug is in UserTerminalRouter::getInfoForId().",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -12,7 +12,7 @@\n   FATAL_FAIL(fd);\n   initServerSocket(fd);\n   local.sun_family = AF_UNIX; /* local is declared before socket() ^ */\n-  strcpy(local.sun_path, pipePath.c_str());\n+  strncpy(local.sun_path, pipePath.c_str(), sizeof(local.sun_path));\n   unlink(local.sun_path);\n \n   FATAL_FAIL(::bind(fd, (struct sockaddr*)&local, sizeof(sockaddr_un)));",
     "original_vulnerable_label": 1,
     "project": "EternalTerminal"
   },
@@ -73,7 +73,7 @@
       "CWE-362"
     ],
     "cve_description": "An integer coercion error was found in the openvswitch kernel module. Given a sufficiently large number of actions, while copying and reserving memory for a new action of a new flow, the reserve_sfa_size() function does not return -EMSGSIZE as expected, potentially leading to an out-of-bounds write access. This flaw allows a local user to crash or potentially escalate their privileges on the system.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -14,7 +14,7 @@\n \tnew_acts_size = max(next_offset + req_size, ksize(*sfa) * 2);\n \n \tif (new_acts_size > MAX_ACTIONS_BUFSIZE) {\n-\t\tif ((MAX_ACTIONS_BUFSIZE - next_offset) < req_size) {\n+\t\tif ((next_offset + req_size) > MAX_ACTIONS_BUFSIZE) {\n \t\t\tOVS_NLERR(log, \"Flow action size exceeds max %u\",\n \t\t\t\t  MAX_ACTIONS_BUFSIZE);\n \t\t\treturn ERR_PTR(-EMSGSIZE);",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -86,7 +86,7 @@
       "CWE-362"
     ],
     "cve_description": "A race condition was found in the Linux kernel's IP framework for transforming packets (XFRM subsystem) when multiple calls to xfrm_probe_algs occurred simultaneously. This flaw could allow a local attacker to potentially trigger an out-of-bounds write or leak kernel heap memory by performing an out-of-bounds read and copying it into a socket.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -12,9 +12,12 @@\n \t\tpfk->registered |= (1<<hdr->sadb_msg_satype);\n \t}\n \n+\tmutex_lock(&pfkey_mutex);\n \txfrm_probe_algs();\n \n \tsupp_skb = compose_sadb_supported(hdr, GFP_KERNEL | __GFP_ZERO);\n+\tmutex_unlock(&pfkey_mutex);\n+\n \tif (!supp_skb) {\n \t\tif (hdr->sadb_msg_satype != SADB_SATYPE_UNSPEC)\n \t\t\tpfk->registered &= ~(1<<hdr->sadb_msg_satype);",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -99,7 +99,7 @@
       "CWE-362"
     ],
     "cve_description": "Race condition in the ssl3_get_new_session_ticket function in ssl/s3_clnt.c in OpenSSL before 0.9.8zg, 1.0.0 before 1.0.0s, 1.0.1 before 1.0.1n, and 1.0.2 before 1.0.2b, when used for a multi-threaded client, allows remote attackers to cause a denial of service (double free and application crash) or possibly have unspecified other impact by providing a NewSessionTicket during an attempt to reuse a ticket that had been obtained earlier.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -21,6 +21,38 @@\n     }\n \n     p = d = (unsigned char *)s->init_msg;\n+\n+    if (s->session->session_id_length > 0) {\n+        int i = s->session_ctx->session_cache_mode;\n+        SSL_SESSION *new_sess;\n+        /*\n+         * We reused an existing session, so we need to replace it with a new\n+         * one\n+         */\n+        if (i & SSL_SESS_CACHE_CLIENT) {\n+            /*\n+             * Remove the old session from the cache\n+             */\n+            if (i & SSL_SESS_CACHE_NO_INTERNAL_STORE) {\n+                if (s->session_ctx->remove_session_cb != NULL)\n+                    s->session_ctx->remove_session_cb(s->session_ctx,\n+                                                      s->session);\n+            } else {\n+                /* We carry on if this fails */\n+                SSL_CTX_remove_session(s->session_ctx, s->session);\n+            }\n+        }\n+\n+        if ((new_sess = ssl_session_dup(s->session, 0)) == 0) {\n+            al = SSL_AD_INTERNAL_ERROR;\n+            SSLerr(SSL_F_SSL3_GET_NEW_SESSION_TICKET, ERR_R_MALLOC_FAILURE);\n+            goto f_err;\n+        }\n+\n+        SSL_SESSION_free(s->session);\n+        s->session = new_sess;\n+    }\n+\n     n2l(p, s->session->tlsext_tick_lifetime_hint);\n     n2s(p, ticklen);\n     /* ticket_lifetime_hint + ticket_length + ticket */",
     "original_vulnerable_label": 1,
     "project": "openssl"
   }

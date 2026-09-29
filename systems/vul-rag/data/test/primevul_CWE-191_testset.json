@@ -8,7 +8,7 @@
       "CWE-191"
     ],
     "cve_description": "A code execution vulnerability exists in the DL_Dxf::handleLWPolylineData functionality of Ribbonsoft dxflib 3.17.0. A specially-crafted .dxf file can lead to a heap buffer overflow. An attacker can provide a malicious file to trigger this vulnerability.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -27,10 +27,10 @@\n         }\n \n         if (groupCode<=30) {\n-            if (vertexIndex>=0 && vertexIndex<maxVertices) {\n+            if (vertexIndex>=0 && vertexIndex<maxVertices && vertexIndex>=0) {\n                 vertices[4*vertexIndex + (groupCode/10-1)] = toReal(groupValue);\n             }\n-        } else if (groupCode==42 && vertexIndex<maxVertices) {\n+        } else if (groupCode==42 && vertexIndex<maxVertices && vertexIndex>=0) {\n             vertices[4*vertexIndex + 3] = toReal(groupValue);\n         }\n         return true;",
     "original_vulnerable_label": 1,
     "project": "qcad"
   },
@@ -21,7 +21,7 @@
       "CWE-191"
     ],
     "cve_description": "A flaw was found in X.Org Server before xorg-x11-server 1.20.9. An Integer underflow leading to heap-buffer overflow may lead to a privilege escalation vulnerability. The highest threat from this vulnerability is to data confidentiality and integrity as well as system availability.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -20,7 +20,7 @@\n         register unsigned bit, ndx, maskLeft, dataLeft, size;\n \n         from.c8 = (CARD8 *) &stuff[1];\n-        dataLeft = (stuff->length * 4) - SIZEOF(xkbSelectEventsReq);\n+        dataLeft = (client->req_len * 4) - SIZEOF(xkbSelectEventsReq);\n         maskLeft = (stuff->affectWhich & (~XkbMapNotifyMask));\n         for (ndx = 0, bit = 1; (maskLeft != 0); ndx++, bit <<= 1) {\n             if (((bit & maskLeft) == 0) || (ndx == XkbMapNotify))",
     "original_vulnerable_label": 1,
     "project": "xserver"
   },
@@ -34,7 +34,7 @@
       "CWE-191"
     ],
     "cve_description": "PJSIP is a free and open source multimedia communication library written in C language implementing standard based protocols such as SIP, SDP, RTP, STUN, TURN, and ICE. In affected versions if the incoming STUN message contains an ERROR-CODE attribute, the header length is not checked before performing a subtraction operation, potentially resulting in an integer underflow scenario. This issue affects all users that use STUN. A malicious actor located within the victim’s network may forge and send a specially crafted UDP (STUN) message that could remotely execute arbitrary code on the victim’s machine. Users are advised to upgrade as soon as possible. There are no known workarounds.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -17,6 +17,9 @@\n     /* Get pointer to the string in the message */\n     value.ptr = ((char*)buf + ATTR_HDR_LEN + 4);\n     value.slen = attr->hdr.length - 4;\n+    /* Make sure the length is never negative */\n+    if (value.slen < 0)\n+    \tvalue.slen = 0;\n \n     /* Copy the string to the attribute */\n     pj_strdup(pool, &attr->reason, &value);",
     "original_vulnerable_label": 1,
     "project": "pjproject"
   }

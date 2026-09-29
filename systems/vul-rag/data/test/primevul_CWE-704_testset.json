@@ -8,7 +8,7 @@
       "CWE-704"
     ],
     "cve_description": "In ImageMagick, there is load of misaligned address for type 'double', which requires 8 byte alignment and for type 'float', which requires 4 byte alignment at MagickCore/property.c. Whenever crafted or untrusted input is processed by ImageMagick, this causes a negative impact to application availability or other problems related to undefined behavior.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -717,12 +717,14 @@\n             }\n             case EXIF_FMT_SINGLE:\n             {\n-              EXIFMultipleValues(4,\"%f\",(double) *(float *) p1);\n+              EXIFMultipleValues(4,\"%.20g\",(double)\n+                ReadPropertySignedLong(endian,p1));\n               break;\n             }\n             case EXIF_FMT_DOUBLE:\n             {\n-              EXIFMultipleValues(8,\"%f\",*(double *) p1);\n+              EXIFMultipleValues(8,\"%.20g\",(double)\n+                ReadPropertySignedLong(endian,p1));\n               break;\n             }\n             case EXIF_FMT_STRING:",
     "original_vulnerable_label": 1,
     "project": "ImageMagick6"
   },
@@ -21,7 +21,7 @@
       "CWE-704"
     ],
     "cve_description": "A flaw was found in the sctp_make_strreset_req function in net/sctp/sm_make_chunk.c in the SCTP network protocol in the Linux kernel with a local user privilege access. In this flaw, an attempt to use more buffer than is allocated triggers a BUG_ON issue, leading to a denial of service (DOS).",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -12,7 +12,7 @@\n \toutlen = (sizeof(outreq) + stream_len) * out;\n \tinlen = (sizeof(inreq) + stream_len) * in;\n \n-\tretval = sctp_make_reconf(asoc, outlen + inlen);\n+\tretval = sctp_make_reconf(asoc, SCTP_PAD4(outlen) + SCTP_PAD4(inlen));\n \tif (!retval)\n \t\treturn NULL;\n ",
     "original_vulnerable_label": 1,
     "project": "linux"
   }

@@ -8,7 +8,7 @@
       "CWE-834"
     ],
     "cve_description": "An issue was discovered in fs/fuse/fuse_i.h in the Linux kernel before 5.11.8. A \"stall on CPU\" can occur because a retry loop continually finds the same bad inode, aka CID-775c5033a0d1.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,4 +1,5 @@\n static inline void fuse_make_bad(struct inode *inode)\n {\n+\tremove_inode_hash(inode);\n \tset_bit(FUSE_I_BAD, &get_fuse_inode(inode)->state);\n }",
     "original_vulnerable_label": 1,
     "project": "linux"
   }

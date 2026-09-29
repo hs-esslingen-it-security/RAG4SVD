@@ -8,7 +8,7 @@
       "CWE-310"
     ],
     "cve_description": "The SSL protocol 3.0, as used in OpenSSL through 1.0.1i and other products, uses nondeterministic CBC padding, which makes it easier for man-in-the-middle attackers to obtain cleartext data via a padding-oracle attack, aka the \"POODLE\" issue.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -28,13 +28,13 @@\n \t\t/* TLS_FALLBACK_SCSV */\n \t\tif (data[i] == GNUTLS_FALLBACK_SCSV_MAJOR &&\n \t\t    data[i + 1] == GNUTLS_FALLBACK_SCSV_MINOR) {\n+\t\t\tunsigned max = _gnutls_version_max(session);\n \t\t\t_gnutls_handshake_log\n \t\t\t    (\"HSK[%p]: Received fallback CS\\n\",\n \t\t\t     session);\n \n-\t\t\tif (gnutls_protocol_get_version(session) !=\n-\t\t\t    GNUTLS_TLS_VERSION_MAX)\n-\t\t\t\treturn GNUTLS_E_INAPPROPRIATE_FALLBACK;\n+\t\t\tif (gnutls_protocol_get_version(session) != max)\n+\t\t\t\treturn gnutls_assert_val(GNUTLS_E_INAPPROPRIATE_FALLBACK);\n \t\t}\n \t}\n ",
     "original_vulnerable_label": 1,
     "project": "gnutls"
   },
@@ -21,7 +21,7 @@
       "CWE-310"
     ],
     "cve_description": "The ecc_256_modp function in ecc-256.c in Nettle before 3.2 does not properly handle carry propagation and produces incorrect output in its implementation of the P-256 NIST elliptic curve, which allows attackers to have unspecified impact via unknown vectors, a different vulnerability than CVE-2015-8805.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -41,8 +41,19 @@\n \n       assert (q2 < 2);\n \n-      /* We multiply by two low limbs of p, 2^96 - 1, so we could use\n-\t shifts rather than mul. */\n+      /*\n+\t n-1 n-2 n-3 n-4\n+        +---+---+---+---+\n+        | u1| u0| u low |\n+        +---+---+---+---+\n+          - | q1(2^96-1)|\n+            +-------+---+\n+            |q2(2^.)|\n+            +-------+\n+\n+\t We multiply by two low limbs of p, 2^96 - 1, so we could use\n+\t shifts rather than mul.\n+      */\n       t = mpn_submul_1 (rp + n - 4, p->m, 2, q1);\n       t += cnd_sub_n (q2, rp + n - 3, p->m, 1);\n       t += (-q2) & 0xffffffff;\n@@ -52,7 +63,10 @@\n       u0 -= t;\n       t = (u1 < cy);\n       u1 -= cy;\n-      u1 += cnd_add_n (t, rp + n - 4, p->m, 3);\n+\n+      cy = cnd_add_n (t, rp + n - 4, p->m, 2);\n+      u0 += cy;\n+      u1 += (u0 < cy);\n       u1 -= (-t) & 0xffffffff;\n     }\n   rp[2] = u0;",
     "original_vulnerable_label": 1,
     "project": "nettle"
   }

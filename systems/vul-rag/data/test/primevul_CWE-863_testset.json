@@ -8,7 +8,7 @@
       "CWE-863"
     ],
     "cve_description": "A flaw was found in xorg-x11-server before 1.20.3. An incorrect permission check for -modulepath and -logfile options when starting Xorg. X server allows unprivileged users with the ability to log in to the system via physical console to escalate their privileges and run arbitrary code under root privileges.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -2,6 +2,8 @@\n {\n     char *logFileName = NULL;\n \n+    /* the format string below is controlled by the user,\n+       this code should never be called with elevated privileges */\n     if (asprintf(&logFileName, fname, idstring) == -1)\n         FatalError(\"Cannot allocate space for the log file name\\n\");\n ",
     "original_vulnerable_label": 1,
     "project": "xserver"
   }

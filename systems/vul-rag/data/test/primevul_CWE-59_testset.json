@@ -8,7 +8,7 @@
       "CWE-59"
     ],
     "cve_description": "An improper link resolution flaw can occur while extracting an archive leading to changing modes, times, access control lists, and flags of a file outside of the archive. An attacker may provide a malicious archive to a victim user, who would trigger this flaw when trying to extract the archive. A local attacker may use this flaw to gain more privileges in a system.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -35,7 +35,8 @@\n \n \t/* If we weren't given an fd, open it ourselves. */\n \tif (myfd < 0) {\n-\t\tmyfd = open(name, O_RDONLY | O_NONBLOCK | O_BINARY | O_CLOEXEC);\n+\t\tmyfd = open(name, O_RDONLY | O_NONBLOCK | O_BINARY |\n+\t\t    O_CLOEXEC | O_NOFOLLOW);\n \t\t__archive_ensure_cloexec_flag(myfd);\n \t}\n \tif (myfd < 0)",
     "original_vulnerable_label": 1,
     "project": "libarchive"
   },
@@ -21,7 +21,7 @@
       "CWE-59"
     ],
     "cve_description": "This affects the package juce-framework/JUCE before 6.1.5. This vulnerability is triggered when a malicious archive is crafted with an entry containing a symbolic link. When extracted, the symbolic link is followed outside of the target dir allowing writing arbitrary files on the target host. In some cases, this can allow an attacker to execute arbitrary code. The vulnerable code is in the ZipFile::uncompressEntry function in juce_ZipFile.cpp and is executed when the archive is extracted upon calling uncompressTo() on a ZipFile object.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,4 +1,4 @@\n-Result ZipFile::uncompressEntry (int index, const File& targetDirectory, bool shouldOverwriteFiles)\r\n+Result ZipFile::uncompressEntry (int index, const File& targetDirectory, OverwriteFiles overwriteFiles, FollowSymlinks followSymlinks)\r\n {\r\n     auto* zei = entries.getUnchecked (index);\r\n \r\n@@ -13,6 +13,9 @@\n \r\n     auto targetFile = targetDirectory.getChildFile (entryPath);\r\n \r\n+    if (! targetFile.isAChildOf (targetDirectory))\r\n+        return Result::fail (\"Entry \" + entryPath + \" is outside the target directory\");\r\n+\r\n     if (entryPath.endsWithChar ('/') || entryPath.endsWithChar ('\\\\'))\r\n         return targetFile.createDirectory(); // (entry is a directory, not a file)\r\n \r\n@@ -23,12 +26,15 @@\n \r\n     if (targetFile.exists())\r\n     {\r\n-        if (! shouldOverwriteFiles)\r\n+        if (overwriteFiles == OverwriteFiles::no)\r\n             return Result::ok();\r\n \r\n         if (! targetFile.deleteFile())\r\n             return Result::fail (\"Failed to write to target file: \" + targetFile.getFullPathName());\r\n     }\r\n+\r\n+    if (followSymlinks == FollowSymlinks::no && hasSymbolicPart (targetDirectory, targetFile.getParentDirectory()))\r\n+        return Result::fail (\"Parent directory leads through symlink for target file: \" + targetFile.getFullPathName());\r\n \r\n     if (! targetFile.getParentDirectory().createDirectory())\r\n         return Result::fail (\"Failed to create target folder: \" + targetFile.getParentDirectory().getFullPathName());\r",
     "original_vulnerable_label": 1,
     "project": "JUCE"
   }

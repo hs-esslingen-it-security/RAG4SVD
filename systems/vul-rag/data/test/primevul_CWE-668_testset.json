@@ -8,7 +8,7 @@
       "CWE-668"
     ],
     "cve_description": "xmlparse.c in Expat (aka libexpat) before 2.4.5 allows attackers to insert namespace-separator characters into namespace URIs.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -49,6 +49,17 @@\n     if (! mustBeXML && isXMLNS\n         && (len > xmlnsLen || uri[len] != xmlnsNamespace[len]))\n       isXMLNS = XML_FALSE;\n+\n+    // NOTE: While Expat does not validate namespace URIs against RFC 3986,\n+    //       we have to at least make sure that the XML processor on top of\n+    //       Expat (that is splitting tag names by namespace separator into\n+    //       2- or 3-tuples (uri-local or uri-local-prefix)) cannot be confused\n+    //       by an attacker putting additional namespace separator characters\n+    //       into namespace declarations.  That would be ambiguous and not to\n+    //       be expected.\n+    if (parser->m_ns && (uri[len] == parser->m_namespaceSeparator)) {\n+      return XML_ERROR_SYNTAX;\n+    }\n   }\n   isXML = isXML && len == xmlLen;\n   isXMLNS = isXMLNS && len == xmlnsLen;",
     "original_vulnerable_label": 1,
     "project": "libexpat"
   }

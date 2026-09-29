@@ -8,7 +8,7 @@
       "CWE-732"
     ],
     "cve_description": "Cyrus IMAP before 3.2.7, and 3.3.x and 3.4.x before 3.4.1, allows remote authenticated users to bypass intended access restrictions on server annotations and consequently cause replication to stall.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -25,24 +25,24 @@\n \n     keylen = make_key(mboxname, uid, entry, userid, key, sizeof(key));\n \n+    struct annotate_metadata oldmdata;\n+    r = read_old_value(d, key, keylen, &oldval, &oldmdata);\n+    if (r) goto out;\n+\n+    /* if the value is identical, don't touch the mailbox */\n+    if (oldval.len == value->len && (!value->len || !memcmp(oldval.s, value->s, value->len)))\n+        goto out;\n+\n+    if (!maywrite) {\n+        r = IMAP_PERMISSION_DENIED;\n+        if (r) goto out;\n+    }\n+\n     if (mailbox) {\n-        struct annotate_metadata oldmdata;\n-        r = read_old_value(d, key, keylen, &oldval, &oldmdata);\n-        if (r) goto out;\n-\n-        /* if the value is identical, don't touch the mailbox */\n-        if (oldval.len == value->len && (!value->len || !memcmp(oldval.s, value->s, value->len)))\n-            goto out;\n-\n         if (!ignorequota) {\n             quota_t qdiffs[QUOTA_NUMRESOURCES] = QUOTA_DIFFS_DONTCARE_INITIALIZER;\n             qdiffs[QUOTA_ANNOTSTORAGE] = value->len - (quota_t)oldval.len;\n             r = mailbox_quota_check(mailbox, qdiffs);\n-            if (r) goto out;\n-        }\n-\n-        if (!maywrite) {\n-            r = IMAP_PERMISSION_DENIED;\n             if (r) goto out;\n         }\n ",
     "original_vulnerable_label": 1,
     "project": "cyrus-imapd"
   }

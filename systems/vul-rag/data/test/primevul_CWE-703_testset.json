@@ -8,7 +8,7 @@
       "CWE-703"
     ],
     "cve_description": "Nginx NJS v0.7.2 was discovered to contain a segmentation violation in the function njs_value_own_enumerate at src/njs_value.c.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -77,6 +77,11 @@\n                 if (njs_slow_path(ret == NJS_ERROR)) {\n                     return ret;\n                 }\n+\n+            } else {\n+                if (deleted->object.fast_array) {\n+                    njs_set_invalid(&deleted->start[i]);\n+                }\n             }\n         }\n ",
     "original_vulnerable_label": 1,
     "project": "njs"
   },
@@ -21,7 +21,7 @@
       "CWE-703"
     ],
     "cve_description": "PJSIP is a free and open source multimedia communication library written in the C language. Versions 2.12 and prior contain a denial-of-service vulnerability that affects PJSIP users that consume PJSIP's XML parsing in their apps. Users are advised to update. There are no known workarounds.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -97,6 +97,8 @@\n \tpj_scan_get_until_ch(scanner, ']', &node->content);\n \twhile (pj_scan_strcmp(scanner, \"]]>\", 3)) {\n \t    pj_str_t dummy;\n+\n+\t    pj_scan_advance_n(scanner, 1, PJ_FALSE);\n \t    pj_scan_get_until_ch(scanner, ']', &dummy);\n \t}\n \tnode->content.slen = scanner->curptr - node->content.ptr;",
     "original_vulnerable_label": 1,
     "project": "pjproject"
   },
@@ -34,7 +34,7 @@
       "CWE-703"
     ],
     "cve_description": "Out-of-bounds Read in mrb_obj_is_kind_of in in GitHub repository mruby/mruby prior to 3.2. # Impact: Possible arbitrary code execution if being exploited.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -551,10 +551,7 @@\n         mrb_exc_set(mrb, exc);\n         goto L_RAISE;\n       }\n-      if (target_class->flags & MRB_FL_CLASS_IS_PREPENDED) {\n-        target_class = mrb_vm_ci_target_class(ci);\n-      }\n-      else if (target_class->tt == MRB_TT_MODULE) {\n+      if ((target_class->flags & MRB_FL_CLASS_IS_PREPENDED) || target_class->tt == MRB_TT_MODULE) {\n         target_class = mrb_vm_ci_target_class(ci);\n         if (!target_class || target_class->tt != MRB_TT_ICLASS) {\n           goto super_typeerror;",
     "original_vulnerable_label": 1,
     "project": "mruby"
   },
@@ -47,7 +47,7 @@
       "CWE-703"
     ],
     "cve_description": "A packet of death scenario is possible in mvfst via a specially crafted message during a QUIC session, which causes a crash via a failed assertion. Per QUIC specification, this particular message should be treated as a connection error. This issue affects mvfst versions prior to commit a67083ff4b8dcbb7ee2839da6338032030d712b0 and proxygen versions prior to v2021.03.15.00.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -37,7 +37,10 @@\n       conn.qLogger->addTransportStateUpdate(kDerivedOneRttWriteCipher);\n     }\n     QUIC_TRACE(fst_trace, conn, \"derived 1-rtt write cipher\");\n-    CHECK(!conn.oneRttWriteCipher.get());\n+    if (conn.oneRttWriteCipher) {\n+      throw QuicTransportException(\n+          \"Duplicate 1-rtt write cipher\", TransportErrorCode::CRYPTO_ERROR);\n+    }\n     conn.oneRttWriteCipher = std::move(oneRttWriteCipher);\n \n     updatePacingOnKeyEstablished(conn);",
     "original_vulnerable_label": 1,
     "project": "mvfst"
   },
@@ -60,7 +60,7 @@
       "CWE-703"
     ],
     "cve_description": "There is an assertion failure in SingleComponentLSScan::ParseMCU in singlecomponentlsscan.cpp in libjpeg before 1.64 via an empty JPEG-LS scan.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -17,9 +17,12 @@\n   if (lines > 8) {\n     lines = 8;\n   }\n+\n+  if (lines == 0)\n+    return false;\n+  \n   if (m_pFrame->HeightOf() > 0)\n     m_ulRemaining[0] -= lines;\n-  assert(lines > 0);\n   assert(m_ucCount < 4);\n \n   //",
     "original_vulnerable_label": 1,
     "project": "libjpeg"
   },
@@ -73,7 +73,7 @@
       "CWE-703"
     ],
     "cve_description": "There is an assertion failure in SingleComponentLSScan::ParseMCU in singlecomponentlsscan.cpp in libjpeg before 1.64 via an empty JPEG-LS scan.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -21,8 +21,9 @@\n   }\n   if (m_pFrame->HeightOf() > 0)\n     m_ulRemaining[0] -= lines;\n-  \n-  assert(lines > 0);\n+\n+  if (lines == 0)\n+    return false;\n \n   // Loop over lines and columns\n   do {",
     "original_vulnerable_label": 1,
     "project": "libjpeg"
   },
@@ -86,7 +86,7 @@
       "CWE-703"
     ],
     "cve_description": "TensorFlow is an end-to-end open source platform for machine learning. In affected versions an attacker can cause a denial of service in `boosted_trees_create_quantile_stream_resource` by using negative arguments. The [implementation](https://github.com/tensorflow/tensorflow/blob/84d053187cb80d975ef2b9684d4b61981bca0c41/tensorflow/core/kernels/boosted_trees/quantile_ops.cc#L96) does not validate that `num_streams` only contains non-negative numbers. In turn, [this results in using this value to allocate memory](https://github.com/tensorflow/tensorflow/blob/84d053187cb80d975ef2b9684d4b61981bca0c41/tensorflow/core/kernels/boosted_trees/quantiles/quantile_stream_resource.h#L31-L40). However, `reserve` receives an unsigned integer so there is an implicit conversion from a negative value to a large positive unsigned. This results in a crash from the standard library. We have patched the issue in GitHub commit 8a84f7a2b5a2b27ecf88d25bad9ac777cd2f7992. The fix will be included in TensorFlow 2.6.0. We will also cherrypick this commit on TensorFlow 2.5.1, TensorFlow 2.4.3, and TensorFlow 2.3.4, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -13,6 +13,9 @@\n     const Tensor* num_streams_t;\n     OP_REQUIRES_OK(context, context->input(kNumStreamsName, &num_streams_t));\n     int64_t num_streams = num_streams_t->scalar<int64>()();\n+    OP_REQUIRES(context, num_streams >= 0,\n+                errors::InvalidArgument(\n+                    \"Num_streams input cannot be a negative integer\"));\n \n     auto result =\n         new QuantileStreamResource(epsilon, max_elements_, num_streams);",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -99,7 +99,7 @@
       "CWE-703"
     ],
     "cve_description": "A NULL pointer dereference flaw was found in the btrfs_rm_device function in fs/btrfs/volumes.c in the Linux Kernel, where triggering the bug requires ‘CAP_SYS_ADMIN’. This flaw allows a local attacker to crash the system or leak kernel internal information. The highest threat from this vulnerability is to system availability.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -19,7 +19,7 @@\n \n \tif (IS_ERR(device)) {\n \t\tif (PTR_ERR(device) == -ENOENT &&\n-\t\t    strcmp(device_path, \"missing\") == 0)\n+\t\t    device_path && strcmp(device_path, \"missing\") == 0)\n \t\t\tret = BTRFS_ERROR_DEV_MISSING_NOT_FOUND;\n \t\telse\n \t\t\tret = PTR_ERR(device);",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -112,7 +112,7 @@
       "CWE-703"
     ],
     "cve_description": "MP4Box is a component of GPAC-2.0.0, which is a widely-used third-party package on RPM Fusion. When MP4Box tries to parse a MP4 file, it calls the function `diST_box_read()` to read from video. In this function, it allocates a buffer `str` with fixed length. However, content read from `bs` is controllable by user, so is the length, which causes a buffer overflow.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,18 +1,10 @@\n GF_Err diST_box_read(GF_Box *s, GF_BitStream *bs)\n {\n-\tu32 i;\n-\tchar str[1024];\n \tGF_DIMSScriptTypesBox *p = (GF_DIMSScriptTypesBox *)s;\n \n-\ti=0;\n-\tstr[0]=0;\n-\twhile (1) {\n-\t\tstr[i] = gf_bs_read_u8(bs);\n-\t\tif (!str[i]) break;\n-\t\ti++;\n-\t}\n-\tISOM_DECREASE_SIZE(p, i);\n-\n-\tp->content_script_types = gf_strdup(str);\n+\tp->content_script_types = gf_malloc(sizeof(char) * (s->size+1));\n+\tif (!p->content_script_types) return GF_OUT_OF_MEM;\n+\tgf_bs_read_data(bs, p->content_script_types, s->size);\n+\tp->content_script_types[s->size] = 0;\n \treturn GF_OK;\n }",
     "original_vulnerable_label": 1,
     "project": "gpac"
   },
@@ -125,7 +125,7 @@
       "CWE-703"
     ],
     "cve_description": "TensorFlow is an open source platform for machine learning. Prior to versions 2.9.0, 2.8.1, 2.7.2, and 2.6.4, the implementation of `tf.raw_ops.StagePeek` does not fully validate the input arguments. This results in a `CHECK`-failure which can be used to trigger a denial of service attack. The code assumes `index` is a scalar but there is no validation for this before accessing its value. Versions 2.9.0, 2.8.1, 2.7.2, and 2.6.4 contain a patch for this issue.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -4,9 +4,7 @@\n     core::ScopedUnref scope(buf);\n     Buffer::Tuple tuple;\n \n-    std::size_t index = ctx->input(0).scalar<int>()();\n-\n-    OP_REQUIRES_OK(ctx, buf->Peek(index, &tuple));\n+    buf->Get(&tuple);\n \n     OP_REQUIRES(\n         ctx, tuple.size() == (size_t)ctx->num_outputs(),",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -138,7 +138,7 @@
       "CWE-703"
     ],
     "cve_description": "GPAC version before commit 71460d72ec07df766dab0a4d52687529f3efcf0a (version v1.0.1 onwards) contains loop with unreachable exit condition ('infinite loop') vulnerability in ISOBMFF reader filter, isoffin_read.c. Function isoffin_process() can result in DoS by infinite loop. To exploit, the victim must open a specially crafted mp4 file.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -327,6 +327,13 @@\n \t\t\t\t\tgf_filter_pid_set_eos(ch->pid);\n \t\t\t\t}\n \t\t\t\tbreak;\n+\t\t\t} else if (ch->last_state==GF_ISOM_INVALID_FILE) {\n+\t\t\t\tif (!ch->eos_sent) {\n+\t\t\t\t\tch->eos_sent = GF_TRUE;\n+\t\t\t\t\tread->eos_signaled = GF_TRUE;\n+\t\t\t\t\tgf_filter_pid_set_eos(ch->pid);\n+\t\t\t\t}\n+\t\t\t\treturn ch->last_state;\n \t\t\t} else {\n \t\t\t\tread->force_fetch = GF_TRUE;\n \t\t\t\tbreak;",
     "original_vulnerable_label": 1,
     "project": "gpac"
   },
@@ -151,7 +151,7 @@
       "CWE-703"
     ],
     "cve_description": "TensorFlow is an end-to-end open source platform for machine learning. In affected versions an attacker can read from outside of bounds of heap allocated data by sending specially crafted illegal arguments to `tf.raw_ops.SdcaOptimizerV2`. The [implementation](https://github.com/tensorflow/tensorflow/blob/460e000de3a83278fb00b61a16d161b1964f15f4/tensorflow/core/kernels/sdca_internal.cc#L320-L353) does not check that the length of `example_labels` is the same as the number of examples. We have patched the issue in GitHub commit a4e138660270e7599793fa438cd7b2fc2ce215a6. The fix will be included in TensorFlow 2.6.0. We will also cherrypick this commit on TensorFlow 2.5.1, TensorFlow 2.4.3, and TensorFlow 2.3.4, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -47,6 +47,11 @@\n   const Tensor* example_labels_t;\n   TF_RETURN_IF_ERROR(context->input(\"example_labels\", &example_labels_t));\n   auto example_labels = example_labels_t->flat<float>();\n+  if (example_labels.size() != num_examples) {\n+    return errors::InvalidArgument(\"Expected \", num_examples,\n+                                   \" example labels but got \",\n+                                   example_labels.size());\n+  }\n \n   OpInputList dense_features_inputs;\n   TF_RETURN_IF_ERROR(",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -164,7 +164,7 @@
       "CWE-703"
     ],
     "cve_description": "Segmentation fault vulnerability exists in Gpac through 1.0.1 via the gf_odf_size_descriptor function in desc_private.c when using mp4box, which causes a denial of service.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -106,7 +106,7 @@\n \t\tif (gf_isom_get_sample_count(file, sceneT)==1) {\n \t\t\tsamp = gf_isom_get_sample(file, sceneT, 1, &descIndex);\n \t\t\tif (samp && gf_hinter_can_embbed_data(samp->data, samp->dataLength, GF_STREAM_SCENE)) {\n-\n+\t\t\t\tInitSL_NULL(&slc);\n \t\t\t\tslc.timeScale = slc.timestampResolution = gf_isom_get_media_timescale(file, sceneT);\n \t\t\t\tslc.OCRResolution = 1000;\n \t\t\t\tslc.startCTS = samp->DTS+samp->CTS_Offset;",
     "original_vulnerable_label": 1,
     "project": "gpac"
   },
@@ -177,7 +177,7 @@
       "CWE-703"
     ],
     "cve_description": "A denial of service vulnerability was found in tildearrow Furnace. It has been classified as problematic. This is due to an incomplete fix of CVE-2022-1211. It is possible to initiate the attack remotely but it requires user interaction. The issue got fixed with the patch 0eb02422d5161767e9983bdaa5c429762d3477ce.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -195,27 +195,33 @@\n           sprintf(id,\"..##PE%d_%d_%d\",k,i,j);\n           ImGui::PushStyleColor(ImGuiCol_Text,inactiveColor);\n         } else {\n-          sprintf(id,\"%.2X##PE%d_%d_%d\",pat->data[i][index],k,i,j);\n-          if (pat->data[i][index]<0x10) {\n-            ImGui::PushStyleColor(ImGuiCol_Text,uiColors[fxColors[pat->data[i][index]]]);\n-          } else if (pat->data[i][index]<0x20) {\n-            ImGui::PushStyleColor(ImGuiCol_Text,uiColors[GUI_COLOR_PATTERN_EFFECT_SYS_PRIMARY]);\n-          } else if (pat->data[i][index]<0x30) {\n-            ImGui::PushStyleColor(ImGuiCol_Text,uiColors[GUI_COLOR_PATTERN_EFFECT_SYS_SECONDARY]);\n-          } else if (pat->data[i][index]<0x48) {\n-            ImGui::PushStyleColor(ImGuiCol_Text,uiColors[GUI_COLOR_PATTERN_EFFECT_SYS_PRIMARY]);\n-          } else if (pat->data[i][index]<0x90) {\n-            ImGui::PushStyleColor(ImGuiCol_Text,uiColors[GUI_COLOR_PATTERN_EFFECT_INVALID]);\n-          } else if (pat->data[i][index]<0xa0) {\n-            ImGui::PushStyleColor(ImGuiCol_Text,uiColors[GUI_COLOR_PATTERN_EFFECT_MISC]);\n-          } else if (pat->data[i][index]<0xc0) {\n-            ImGui::PushStyleColor(ImGuiCol_Text,uiColors[GUI_COLOR_PATTERN_EFFECT_INVALID]);\n-          } else if (pat->data[i][index]<0xd0) {\n-            ImGui::PushStyleColor(ImGuiCol_Text,uiColors[GUI_COLOR_PATTERN_EFFECT_SPEED]);\n-          } else if (pat->data[i][index]<0xe0) {\n+          if (pat->data[i][index]>0xff) {\n+            sprintf(id,\"??##PE%d_%d_%d\",k,i,j);\n             ImGui::PushStyleColor(ImGuiCol_Text,uiColors[GUI_COLOR_PATTERN_EFFECT_INVALID]);\n           } else {\n-            ImGui::PushStyleColor(ImGuiCol_Text,uiColors[extFxColors[pat->data[i][index]-0xe0]]);\n+            const unsigned char data=pat->data[i][index];\n+            sprintf(id,\"%.2X##PE%d_%d_%d\",data,k,i,j);\n+            if (data<0x10) {\n+              ImGui::PushStyleColor(ImGuiCol_Text,uiColors[fxColors[data]]);\n+            } else if (data<0x20) {\n+              ImGui::PushStyleColor(ImGuiCol_Text,uiColors[GUI_COLOR_PATTERN_EFFECT_SYS_PRIMARY]);\n+            } else if (data<0x30) {\n+              ImGui::PushStyleColor(ImGuiCol_Text,uiColors[GUI_COLOR_PATTERN_EFFECT_SYS_SECONDARY]);\n+            } else if (data<0x48) {\n+              ImGui::PushStyleColor(ImGuiCol_Text,uiColors[GUI_COLOR_PATTERN_EFFECT_SYS_PRIMARY]);\n+            } else if (data<0x90) {\n+              ImGui::PushStyleColor(ImGuiCol_Text,uiColors[GUI_COLOR_PATTERN_EFFECT_INVALID]);\n+            } else if (data<0xa0) {\n+              ImGui::PushStyleColor(ImGuiCol_Text,uiColors[GUI_COLOR_PATTERN_EFFECT_MISC]);\n+            } else if (data<0xc0) {\n+              ImGui::PushStyleColor(ImGuiCol_Text,uiColors[GUI_COLOR_PATTERN_EFFECT_INVALID]);\n+            } else if (data<0xd0) {\n+              ImGui::PushStyleColor(ImGuiCol_Text,uiColors[GUI_COLOR_PATTERN_EFFECT_SPEED]);\n+            } else if (data<0xe0) {\n+              ImGui::PushStyleColor(ImGuiCol_Text,uiColors[GUI_COLOR_PATTERN_EFFECT_INVALID]);\n+            } else {\n+              ImGui::PushStyleColor(ImGuiCol_Text,uiColors[extFxColors[data-0xe0]]);\n+            }\n           }\n         }\n         ImGui::SameLine(0.0f,0.0f);",
     "original_vulnerable_label": 1,
     "project": "furnace"
   },
@@ -190,7 +190,7 @@
       "CWE-703"
     ],
     "cve_description": "TensorFlow is an end-to-end open source platform for machine learning. In affected versions due to incomplete validation in MKL implementation of requantization, an attacker can trigger undefined behavior via binding a reference to a null pointer or can access data outside the bounds of heap allocated arrays. The [implementation](https://github.com/tensorflow/tensorflow/blob/460e000de3a83278fb00b61a16d161b1964f15f4/tensorflow/core/kernels/mkl/mkl_requantization_range_per_channel_op.cc) does not validate the dimensions of the `input` tensor. A similar issue occurs in `MklRequantizePerChannelOp`. The [implementation](https://github.com/tensorflow/tensorflow/blob/460e000de3a83278fb00b61a16d161b1964f15f4/tensorflow/core/kernels/mkl/mkl_requantize_per_channel_op.cc) does not perform full validation for all the input arguments. We have patched the issue in GitHub commit 9e62869465573cb2d9b5053f1fa02a81fce21d69 and in the Github commit 203214568f5bc237603dbab6e1fd389f1572f5c9. The fix will be included in TensorFlow 2.6.0. We will also cherrypick this commit on TensorFlow 2.5.1, TensorFlow 2.4.3, and TensorFlow 2.3.4, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -12,6 +12,20 @@\n         ctx, input_max.dim_size(0) == depth,\n         errors::InvalidArgument(\"input_max has incorrect size, expected \",\n                                 depth, \" was \", input_max.dim_size(0)));\n+    OP_REQUIRES(\n+        ctx, input_min.NumElements() == depth,\n+        errors::InvalidArgument(\"input_min must have the same number of \"\n+                                \"elements as input_max, got \",\n+                                input_min.NumElements(), \" and \", depth));\n+    OP_REQUIRES(ctx, input.NumElements() > 0,\n+                errors::InvalidArgument(\"input must not be empty\"));\n+    OP_REQUIRES(ctx, input.dims() == 4,\n+                errors::InvalidArgument(\"input must be in NHWC format\"));\n+    OP_REQUIRES(\n+        ctx, input.dim_size(3) == depth,\n+        errors::InvalidArgument(\n+            \"input must have same number of channels as length of input_min: \",\n+            input.dim_size(3), \" vs \", depth));\n \n     const float* input_min_data = input_min.flat<float>().data();\n     const float* input_max_data = input_max.flat<float>().data();",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -203,7 +203,7 @@
       "CWE-703"
     ],
     "cve_description": "A memory leak flaw was found in the Linux kernel in the ccp_run_aes_gcm_cmd() function in drivers/crypto/ccp/ccp-ops.c, which allows attackers to cause a denial of service (memory consumption). This vulnerability is similar with the older CVE-2019-18808.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -150,7 +150,7 @@\n \t\t\t\t    in_place ? DMA_BIDIRECTIONAL\n \t\t\t\t\t     : DMA_TO_DEVICE);\n \t\tif (ret)\n-\t\t\tgoto e_ctx;\n+\t\t\tgoto e_aad;\n \n \t\tif (in_place) {\n \t\t\tdst = src;\n@@ -235,7 +235,7 @@\n \top.u.aes.size = 0;\n \tret = cmd_q->ccp->vdata->perform->aes(&op);\n \tif (ret)\n-\t\tgoto e_dst;\n+\t\tgoto e_final_wa;\n \n \tif (aes->action == CCP_AES_ACTION_ENCRYPT) {\n \t\t/* Put the ciphered tag after the ciphertext. */\n@@ -245,17 +245,19 @@\n \t\tret = ccp_init_dm_workarea(&tag, cmd_q, authsize,\n \t\t\t\t\t   DMA_BIDIRECTIONAL);\n \t\tif (ret)\n-\t\t\tgoto e_tag;\n+\t\t\tgoto e_final_wa;\n \t\tret = ccp_set_dm_area(&tag, 0, p_tag, 0, authsize);\n-\t\tif (ret)\n-\t\t\tgoto e_tag;\n+\t\tif (ret) {\n+\t\t\tccp_dm_free(&tag);\n+\t\t\tgoto e_final_wa;\n+\t\t}\n \n \t\tret = crypto_memneq(tag.address, final_wa.address,\n \t\t\t\t    authsize) ? -EBADMSG : 0;\n \t\tccp_dm_free(&tag);\n \t}\n \n-e_tag:\n+e_final_wa:\n \tccp_dm_free(&final_wa);\n \n e_dst:",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -216,7 +216,7 @@
       "CWE-703"
     ],
     "cve_description": "TensorFlow is an open source platform for machine learning. Prior to versions 2.9.0, 2.8.1, 2.7.2, and 2.6.4, the implementation of `tf.raw_ops.DeleteSessionTensor` does not fully validate the input arguments. This results in a `CHECK`-failure which can be used to trigger a denial of service attack. Versions 2.9.0, 2.8.1, 2.7.2, and 2.6.4 contain a patch for this issue.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,5 +1,7 @@\n   void Compute(OpKernelContext* ctx) override {\n     const Tensor& handle = ctx->input(0);\n+    OP_REQUIRES(ctx, TensorShapeUtils::IsScalar(handle.shape()),\n+                errors::InvalidArgument(\"`handle` must be scalar\"));\n     const string& name = handle.scalar<tstring>()();\n     auto session_state = ctx->session_state();\n     OP_REQUIRES(ctx, session_state != nullptr,",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -229,7 +229,7 @@
       "CWE-703"
     ],
     "cve_description": "TensorFlow is an open source platform for machine learning. In affeced versions during execution, `EinsumHelper::ParseEquation()` is supposed to set the flags in `input_has_ellipsis` vector and `*output_has_ellipsis` boolean to indicate whether there is ellipsis in the corresponding inputs and output. However, the code only changes these flags to `true` and never assigns `false`. This results in unitialized variable access if callers assume that `EinsumHelper::ParseEquation()` always sets these flags. The fix will be included in TensorFlow 2.7.0. We will also cherrypick this commit on TensorFlow 2.6.1, TensorFlow 2.5.2, and TensorFlow 2.4.4, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -28,6 +28,7 @@\n     input_has_ellipsis->resize(num_inputs);\n     for (int i = 0; i < num_inputs; ++i) {\n       input_label_counts->at(i).resize(num_labels);\n+      input_has_ellipsis->at(i) = false;\n       for (const int label : input_labels->at(i)) {\n         if (label != kEllipsisLabel)\n           input_label_counts->at(i)[label] += 1;\n@@ -36,6 +37,7 @@\n       }\n     }\n     output_label_counts->resize(num_labels);\n+    *output_has_ellipsis = false;\n     for (const int label : *output_labels) {\n       if (label != kEllipsisLabel)\n         output_label_counts->at(label) += 1;",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -242,7 +242,7 @@
       "CWE-703"
     ],
     "cve_description": "TensorFlow is an open source platform for machine learning. In affected versions TensorFlow's Grappler optimizer has a use of unitialized variable. If the `train_nodes` vector (obtained from the saved model that gets optimized) does not contain a `Dequeue` node, then `dequeue_node` is left unitialized. The fix will be included in TensorFlow 2.7.0. We will also cherrypick this commit on TensorFlow 2.6.1, TensorFlow 2.5.2, and TensorFlow 2.4.4, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -76,7 +76,7 @@\n   TF_RETURN_IF_ERROR(ComputeTransitiveFanin(graph_, item.fetch, &train_nodes));\n   LOG(INFO) << \"Number of training nodes: \" << train_nodes.size();\n \n-  const NodeDef* dequeue_node;\n+  const NodeDef* dequeue_node = nullptr;\n   for (const auto& train_node : train_nodes) {\n     if (IsDequeueOp(*train_node)) {\n       dequeue_node = train_node;",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -255,7 +255,7 @@
       "CWE-703"
     ],
     "cve_description": "TensorFlow is an open source platform for machine learning. Prior to versions 2.9.0, 2.8.1, 2.7.2, and 2.6.4, the implementation of `tf.raw_ops.QuantizeAndDequantizeV4Grad` does not fully validate the input arguments. This results in a `CHECK`-failure which can be used to trigger a denial of service attack. Versions 2.9.0, 2.8.1, 2.7.2, and 2.6.4 contain a patch for this issue.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -20,13 +20,13 @@\n     OP_REQUIRES(ctx,\n                 input_min_tensor.dims() == 0 || input_min_tensor.dims() == 1,\n                 errors::InvalidArgument(\n-                    \"Input min tensor must have dimension 1. Recieved \",\n+                    \"Input min tensor must have dimension 0 or 1. Received \",\n                     input_min_tensor.dims(), \".\"));\n     const Tensor& input_max_tensor = ctx->input(3);\n     OP_REQUIRES(ctx,\n                 input_max_tensor.dims() == 0 || input_max_tensor.dims() == 1,\n                 errors::InvalidArgument(\n-                    \"Input max tensor must have dimension 1. Recieved \",\n+                    \"Input max tensor must have dimension 0 or 1. Received \",\n                     input_max_tensor.dims(), \".\"));\n     if (axis_ != -1) {\n       OP_REQUIRES(\n@@ -49,6 +49,12 @@\n                    ctx->allocate_output(2, min_max_shape, &input_max_backprop));\n \n     if (axis_ == -1) {\n+      OP_REQUIRES(ctx, TensorShapeUtils::IsScalar(input_min_tensor.shape()),\n+                  errors::InvalidArgument(\n+                      \"input_min must be a scalar if axis is unspecified\"));\n+      OP_REQUIRES(ctx, TensorShapeUtils::IsScalar(input_max_tensor.shape()),\n+                  errors::InvalidArgument(\n+                      \"input_max must be a scalar if axis is unspecified\"));\n       functor::QuantizeAndDequantizeOneScaleGradientFunctor<Device, T> f;\n       f(ctx->eigen_device<Device>(), gradient.template flat<T>(),\n         input.template flat<T>(), input_min_tensor.scalar<T>(),",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -268,7 +268,7 @@
       "CWE-703"
     ],
     "cve_description": "Nginx NJS v0.7.2 was discovered to contain a segmentation violation in the function njs_string_offset at src/njs_string.c.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -100,10 +100,13 @@\n         } else {\n             /* UTF-8 string. */\n \n-            p = njs_string_offset(string_prop.start, end, from);\n-            p = njs_utf8_next(p, end);\n+            p = NULL;\n+            i = from + 1;\n \n-            i = from + 1;\n+            if (i > to) {\n+                p = njs_string_offset(string_prop.start, end, from);\n+                p = njs_utf8_next(p, end);\n+            }\n \n             while (i-- > to) {\n                 pos = njs_utf8_prev(p);",
     "original_vulnerable_label": 1,
     "project": "njs"
   },
@@ -281,7 +281,7 @@
       "CWE-703"
     ],
     "cve_description": "TensorFlow is an open source platform for machine learning. In affected versions the shape inference function for `Transpose` is vulnerable to a heap buffer overflow. This occurs whenever `perm` contains negative elements. The shape inference function does not validate that the indices in `perm` are all valid. The fix will be included in TensorFlow 2.7.0. We will also cherrypick this commit on TensorFlow 2.6.1, TensorFlow 2.5.2, and TensorFlow 2.4.4, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -48,7 +48,7 @@\n \n     for (int32_t i = 0; i < rank; ++i) {\n       int64_t in_idx = data[i];\n-      if (in_idx >= rank) {\n+      if (in_idx >= rank || in_idx <= -rank) {\n         return errors::InvalidArgument(\"perm dim \", in_idx,\n                                        \" is out of range of input rank \", rank);\n       }",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -294,7 +294,7 @@
       "CWE-703"
     ],
     "cve_description": "TensorFlow is an end-to-end open source platform for machine learning. In affected versions TFLite's [`GatherNd` implementation](https://github.com/tensorflow/tensorflow/blob/149562d49faa709ea80df1d99fc41d005b81082a/tensorflow/lite/kernels/gather_nd.cc#L124) does not support negative indices but there are no checks for this situation. Hence, an attacker can read arbitrary data from the heap by carefully crafting a model with negative values in `indices`. Similar issue exists in [`Gather` implementation](https://github.com/tensorflow/tensorflow/blob/149562d49faa709ea80df1d99fc41d005b81082a/tensorflow/lite/kernels/gather.cc). We have patched the issue in GitHub commits bb6a0383ed553c286f87ca88c207f6774d5c4a8f and eb921122119a6b6e470ee98b89e65d721663179d. The fix will be included in TensorFlow 2.6.0. We will also cherrypick this commit on TensorFlow 2.5.1, TensorFlow 2.4.3, and TensorFlow 2.3.4, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -1,5 +1,17 @@\n-TfLiteStatus Gather(const TfLiteGatherParams& params, const TfLiteTensor* input,\n-                    const TfLiteTensor* positions, TfLiteTensor* output) {\n+TfLiteStatus Gather(TfLiteContext* context, const TfLiteGatherParams& params,\n+                    const TfLiteTensor* input, const TfLiteTensor* positions,\n+                    TfLiteTensor* output) {\n+  const PositionsT* indexes = GetTensorData<PositionsT>(positions);\n+  bool indices_has_only_positive_elements = true;\n+  const size_t num_indices = positions->bytes / sizeof(PositionsT);\n+  for (size_t i = 0; i < num_indices; i++) {\n+    if (indexes[i] < 0) {\n+      indices_has_only_positive_elements = false;\n+      break;\n+    }\n+  }\n+  TF_LITE_ENSURE(context, indices_has_only_positive_elements);\n+\n   tflite::GatherParams op_params;\n   op_params.axis = params.axis;\n   op_params.batch_dims = params.batch_dims;",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -307,7 +307,7 @@
       "CWE-703"
     ],
     "cve_description": "TensorFlow is an end-to-end open source platform for machine learning. An attacker can cause a denial of service by controlling the values of `num_segments` tensor argument for `UnsortedSegmentJoin`. This is because the implementation(https://github.com/tensorflow/tensorflow/blob/a2a607db15c7cd01d754d37e5448d72a13491bdb/tensorflow/core/kernels/unsorted_segment_join_op.cc#L92-L93) assumes that the `num_segments` tensor is a valid scalar. Since the tensor is empty the `CHECK` involved in `.scalar<T>()()` that checks that the number of elements is exactly 1 will be invalidated and this would result in process termination. The fix will be included in TensorFlow 2.5.0. We will also cherrypick this commit on TensorFlow 2.4.2, TensorFlow 2.3.3, TensorFlow 2.2.3 and TensorFlow 2.1.4, as these are also affected and still in supported range.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -8,6 +8,8 @@\n     const int32 segment_dims = segment_id_shape.dims();\n \n     const Tensor& num_segments_tensor = context->input(2);\n+    OP_REQUIRES(context, num_segments_tensor.NumElements() != 0,\n+                errors::InvalidArgument(\"Number of segments cannot be empty.\"));\n     auto num_segments = num_segments_tensor.scalar<NUM_SEGMENTS_TYPE>()();\n \n     OP_REQUIRES(context, segment_dims != 0,",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -320,7 +320,7 @@
       "CWE-703"
     ],
     "cve_description": "TensorFlow is an open source platform for machine learning. Prior to versions 2.9.0, 2.8.1, 2.7.2, and 2.6.4, the implementation of `tf.raw_ops.LoadAndRemapMatrix does not fully validate the input arguments. This results in a `CHECK`-failure which can be used to trigger a denial of service attack. The code assumes `initializing_values` is a vector but there is no validation for this before accessing its value. Versions 2.9.0, 2.8.1, 2.7.2, and 2.6.4 contain a patch for this issue.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -5,6 +5,11 @@\n     std::vector<bool> row_id_present;\n     const Tensor* row_remapping_t;\n     OP_REQUIRES_OK(context, context->input(\"row_remapping\", &row_remapping_t));\n+    OP_REQUIRES(\n+        context, row_remapping_t->dims() == 1,\n+        errors::InvalidArgument(\"The `row_remapping` tensor must be 1-D, got \"\n+                                \"a tensor of shape \",\n+                                row_remapping_t->shape().DebugString()));\n     const auto row_remapping = row_remapping_t->vec<int64_t>();\n     OP_REQUIRES(context, row_remapping.size() == num_rows_,\n                 errors::InvalidArgument(strings::StrCat(",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -333,7 +333,7 @@
       "CWE-703"
     ],
     "cve_description": "TensorFlow is an open source platform for machine learning. Prior to versions 2.9.0, 2.8.1, 2.7.2, and 2.6.4, the implementation of `tf.raw_ops.LSTMBlockCell` does not fully validate the input arguments. This results in a `CHECK`-failure which can be used to trigger a denial of service attack. The code does not validate the ranks of any of the arguments to this API call. This results in `CHECK`-failures when the elements of the tensor are accessed. Versions 2.9.0, 2.8.1, 2.7.2, and 2.6.4 contain a patch for this issue.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -111,6 +111,65 @@\n \n     const Device& device = ctx->eigen_device<Device>();\n \n+    // Sanity check that each of the tensors have the required NDIMS.\n+    OP_REQUIRES(ctx, x_tensor->dims() == 2,\n+                errors::InvalidArgument(\"x_tensor must be rank 2 but is rank \",\n+                                        x_tensor->dims(), \".\"));\n+    OP_REQUIRES(\n+        ctx, cs_prev_tensor->dims() == 2,\n+        errors::InvalidArgument(\"cs_prev_tensor must be rank 2 but is rank \",\n+                                cs_prev_tensor->dims(), \".\"));\n+    OP_REQUIRES(\n+        ctx, h_prev_tensor->dims() == 2,\n+        errors::InvalidArgument(\"h_prev_tensor must be rank 2 but is rank \",\n+                                h_prev_tensor->dims(), \".\"));\n+    OP_REQUIRES(ctx, w_tensor->dims() == 2,\n+                errors::InvalidArgument(\"w_tensor must be rank 2 but is rank \",\n+                                        w_tensor->dims(), \".\"));\n+    OP_REQUIRES(\n+        ctx, wci_tensor->dims() == 1,\n+        errors::InvalidArgument(\"wci_tensor must be rank 1 but is rank \",\n+                                wci_tensor->dims(), \".\"));\n+    OP_REQUIRES(\n+        ctx, wcf_tensor->dims() == 1,\n+        errors::InvalidArgument(\"wcf_tensor must be rank 1 but is rank \",\n+                                wci_tensor->dims(), \".\"));\n+    OP_REQUIRES(\n+        ctx, wco_tensor->dims() == 1,\n+        errors::InvalidArgument(\"wco_tensor must be rank 1 but is rank \",\n+                                wco_tensor->dims(), \".\"));\n+    OP_REQUIRES(ctx, b_tensor->dims() == 1,\n+                errors::InvalidArgument(\"b_tensor must be rank 1 but is rank \",\n+                                        b_tensor->dims(), \".\"));\n+    OP_REQUIRES(ctx, xh_tensor.dims() == 2,\n+                errors::InvalidArgument(\"xh_tensor must be rank 2 but is rank \",\n+                                        xh_tensor.dims(), \".\"));\n+    OP_REQUIRES(ctx, i_tensor->dims() == 2,\n+                errors::InvalidArgument(\"i_tensor must be rank 2 but is rank \",\n+                                        i_tensor->dims(), \".\"));\n+    OP_REQUIRES(ctx, cs_tensor->dims() == 2,\n+                errors::InvalidArgument(\"cs_tensor must be rank 2 but is rank \",\n+                                        cs_tensor->dims(), \".\"));\n+    OP_REQUIRES(ctx, f_tensor->dims() == 2,\n+                errors::InvalidArgument(\"f_tensor must be rank 2 but is rank \",\n+                                        f_tensor->dims(), \".\"));\n+    OP_REQUIRES(ctx, o_tensor->dims() == 2,\n+                errors::InvalidArgument(\"o_tensor must be rank 2 but is rank \",\n+                                        o_tensor->dims(), \".\"));\n+    OP_REQUIRES(ctx, ci_tensor->dims() == 2,\n+                errors::InvalidArgument(\"ci_tensor must be rank 2 but is rank \",\n+                                        ci_tensor->dims(), \".\"));\n+    OP_REQUIRES(ctx, co_tensor->dims() == 2,\n+                errors::InvalidArgument(\"co_tensor must be rank 2 but is rank \",\n+                                        co_tensor->dims(), \".\"));\n+    OP_REQUIRES(\n+        ctx, gates_tensor.dims() == 2,\n+        errors::InvalidArgument(\"gates_tensor must be rank 2 but is rank \",\n+                                gates_tensor.dims(), \".\"));\n+    OP_REQUIRES(ctx, h_tensor->dims() == 2,\n+                errors::InvalidArgument(\"h_tensor must be rank 2 but is rank \",\n+                                        h_tensor->dims(), \".\"));\n+\n     functor::LSTMBlockCellFprop<Device, T, USE_CUBLAS, gate_layout>(\n         batch_size, input_size, cell_size)(\n         ctx, device, forget_bias_, cell_clip_, use_peephole_,",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -346,7 +346,7 @@
       "CWE-703"
     ],
     "cve_description": "TensorFlow is an open source platform for machine learning. Prior to versions 2.9.0, 2.8.1, 2.7.2, and 2.6.4, certain TFLite models that were created using TFLite model converter would crash when loaded in the TFLite interpreter. The culprit is that during quantization the scale of values could be greater than 1 but code was always assuming sub-unit scaling. Thus, since code was calling `QuantizeMultiplierSmallerThanOneExp`, the `TFLITE_CHECK_LT` assertion would trigger and abort the process. Versions 2.9.0, 2.8.1, 2.7.2, and 2.6.4 contain a patch for this issue.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -6,13 +6,11 @@\n     const int left_shift = 8;\n \n     int32 input1_multiplier;\n+    int32 input2_multiplier;\n     int input1_shift;\n-    QuantizeMultiplierSmallerThanOneExp(input1->params.scale,\n-                                        &input1_multiplier, &input1_shift);\n-    int32 input2_multiplier;\n     int input2_shift;\n-    QuantizeMultiplierSmallerThanOneExp(input2->params.scale,\n-                                        &input2_multiplier, &input2_shift);\n+    QuantizeMultiplier(input1->params.scale, &input1_multiplier, &input1_shift);\n+    QuantizeMultiplier(input2->params.scale, &input2_multiplier, &input2_shift);\n \n     ComparisonParams op_params;\n     op_params.left_shift = left_shift;",
     "original_vulnerable_label": 1,
     "project": "tensorflow"
   },
@@ -359,7 +359,7 @@
       "CWE-703"
     ],
     "cve_description": "NULL Pointer Dereference in GitHub repository mruby/mruby prior to 3.2.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -32,14 +32,21 @@\n     if (!c->ci->proc) {\n       mrb_raise(mrb, E_FIBER_ERROR, \"double resume (current)\");\n     }\n-    mrb_stack_extend(mrb, len+2); /* for receiver and (optional) block */\n-    b = c->stbase+1;\n-    e = b + len;\n-    while (b<e) {\n-      *b++ = *a++;\n-    }\n     if (vmexec) {\n       c->ci--;                    /* pop dummy callinfo */\n+    }\n+    if (len >= 15) {\n+      mrb_stack_extend(mrb, 3);   /* for receiver, args and (optional) block */\n+      c->stbase[1] = mrb_ary_new_from_values(mrb, len, a);\n+      len = 15;\n+    }\n+    else {\n+      mrb_stack_extend(mrb, len+2); /* for receiver and (optional) block */\n+      b = c->stbase+1;\n+      e = b + len;\n+      while (b<e) {\n+        *b++ = *a++;\n+      }\n     }\n     c->cibase->n = len;\n     value = c->stbase[0] = MRB_PROC_ENV(c->cibase->proc)->stack[0];",
     "original_vulnerable_label": 1,
     "project": "mruby"
   },
@@ -372,7 +372,7 @@
       "CWE-703"
     ],
     "cve_description": "Use After Free in GitHub repository vim/vim prior to 9.0.0260.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -2,6 +2,11 @@\n {\n     callback_T\t*cb = &qftf_cb;\n     list_T\t*qftf_list = NULL;\n+    static int\trecursive = FALSE;\n+\n+    if (recursive)\n+\treturn NULL;  // this doesn't work properly recursively\n+    recursive = TRUE;\n \n     // If 'quickfixtextfunc' is set, then use the user-supplied function to get\n     // the text to display. Use the local value of 'quickfixtextfunc' if it is\n@@ -16,7 +21,10 @@\n \n \t// create the dict argument\n \tif ((d = dict_alloc_lock(VAR_FIXED)) == NULL)\n+\t{\n+\t    recursive = FALSE;\n \t    return NULL;\n+\t}\n \tdict_add_number(d, \"quickfix\", (long)IS_QF_LIST(qfl));\n \tdict_add_number(d, \"winid\", (long)qf_winid);\n \tdict_add_number(d, \"id\", (long)qfl->qf_id);\n@@ -39,5 +47,6 @@\n \tdict_unref(d);\n     }\n \n+    recursive = FALSE;\n     return qftf_list;\n }",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -385,7 +385,7 @@
       "CWE-703"
     ],
     "cve_description": "An issue was discovered in the Linux kernel before 5.19. In pxa3xx_gcu_write in drivers/video/fbdev/pxa3xx-gcu.c, the count parameter has a type conflict of size_t versus int, causing an integer overflow and bypassing the size check. After that, because it is used as the third argument to copy_from_user(), a heap overflow may occur. NOTE: the original discoverer disputes that the overflow can actually happen.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -6,7 +6,7 @@\n \tstruct pxa3xx_gcu_batch\t*buffer;\n \tstruct pxa3xx_gcu_priv *priv = to_pxa3xx_gcu_priv(file);\n \n-\tint words = count / 4;\n+\tsize_t words = count / 4;\n \n \t/* Does not need to be atomic. There's a lock in user space,\n \t * but anyhow, this is just for statistics. */",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -398,7 +398,7 @@
       "CWE-703"
     ],
     "cve_description": "Buffer Over-read in GitHub repository vim/vim prior to 8.2.4974.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -29,6 +29,7 @@\n \t\tbreak;\n \t    buf = (char_u *)ga.ga_data;\n \t    buf[ga.ga_len++] = NUL;\n+\t    len = ga.ga_len;\n \t}\n \telse\n \t{\n@@ -36,8 +37,8 @@\n \t    if (fgets((char *)buf + ga.ga_len, ga.ga_maxlen - ga.ga_len,\n \t\t\tsp->fp) == NULL)\n \t\tbreak;\n+\t    len = ga.ga_len + (int)STRLEN(buf + ga.ga_len);\n \t}\n-\tlen = ga.ga_len + (int)STRLEN(buf + ga.ga_len);\n #ifdef USE_CRNL\n \t// Ignore a trailing CTRL-Z, when in Dos mode.\tOnly recognize the\n \t// CTRL-Z by its own, or after a NL.",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -411,7 +411,7 @@
       "CWE-703"
     ],
     "cve_description": "A use-after-free vulnerabilitity was discovered in drivers/net/hamradio/6pack.c of linux that allows an attacker to crash linux kernel by simulating ax25 device using 6pack driver from user space.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -22,10 +22,10 @@\n \t */\n \tnetif_stop_queue(sp->dev);\n \n+\tunregister_netdev(sp->dev);\n+\n \tdel_timer_sync(&sp->tx_t);\n \tdel_timer_sync(&sp->resync_t);\n-\n-\tunregister_netdev(sp->dev);\n \n \t/* Free all 6pack frame buffers after unreg. */\n \tkfree(sp->rbuff);",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -424,7 +424,7 @@
       "CWE-703"
     ],
     "cve_description": "An issue was discovered in net/netfilter/nf_tables_api.c in the Linux kernel before 5.19.6. A denial of service can occur upon binding to an already bound chain.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -49,6 +49,8 @@\n \t\t\treturn PTR_ERR(chain);\n \t\tif (nft_is_base_chain(chain))\n \t\t\treturn -EOPNOTSUPP;\n+\t\tif (nft_chain_is_bound(chain))\n+\t\t\treturn -EINVAL;\n \t\tif (desc->flags & NFT_DATA_DESC_SETELEM &&\n \t\t    chain->flags & NFT_CHAIN_BINDING)\n \t\t\treturn -EINVAL;",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -437,7 +437,7 @@
       "CWE-703"
     ],
     "cve_description": "Use of Out-of-range Pointer Offset in GitHub repository vim/vim prior to 8.2.4418.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -57,7 +57,7 @@\n \telse if (path_end >= path + wildoff\n \t\t\t && (vim_strchr((char_u *)\"*?[{~$\", *path_end) != NULL\n \t\t\t     || (!p_fic && (flags & EW_ICASE)\n-\t\t\t\t\t     && isalpha(PTR2CHAR(path_end)))))\n+\t\t\t\t\t  && vim_isalpha(PTR2CHAR(path_end)))))\n \t    e = p;\n \tif (has_mbyte)\n \t{",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -450,7 +450,7 @@
       "CWE-703"
     ],
     "cve_description": "A vulnerability found in jasper. This security vulnerability happens because of a memory leak bug in function cmdopts_parse that can cause a crash or segmentation fault.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -142,6 +142,7 @@\n \t\t\tcmdopts->enable_all_formats = 1;\n \t\t\tbreak;\n \t\tdefault:\n+\t\t\tcmdopts_destroy(cmdopts);\n \t\t\tbadusage();\n \t\t\tbreak;\n \t\t}\n@@ -160,6 +161,7 @@\n \n \tif (!cmdopts->outfmt_str && !cmdopts->outfile) {\n \t\tfprintf(stderr, \"error: cannot determine output format\\n\");\n+\t\tcmdopts_destroy(cmdopts);\n \t\tbadusage();\n \t}\n ",
     "original_vulnerable_label": 1,
     "project": "jasper"
   },
@@ -463,7 +463,7 @@
       "CWE-703"
     ],
     "cve_description": "Heap-based buffer overflow in sqbaselib.cpp in SQUIRREL 3.2 due to lack of a certain sq_reservestack call.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -3,6 +3,7 @@\n     SQObjectPtr o = stack_get(v,1);\n     if(sq_type(o) == OT_THREAD) {\n         SQInteger nparams = sq_gettop(v);\n+        sq_reservestack(_thread(o), nparams + 3);\n         _thread(o)->Push(_thread(o)->_roottable);\n         for(SQInteger i = 2; i<(nparams+1); i++)\n             sq_move(_thread(o),v,i);",
     "original_vulnerable_label": 1,
     "project": "squirrel"
   },
@@ -476,7 +476,7 @@
       "CWE-703"
     ],
     "cve_description": "heap-buffer-overflow in GitHub repository radareorg/radare2 prior to 5.6.8. This vulnerability is capable of inducing denial of service.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -103,7 +103,8 @@\n \t\t\tif (deps && !deps[j]) {\n \t\t\t\tcontinue;\n \t\t\t}\n-\t\t\tut64 pa = va2pa (img[j].address, hdr->mappingCount, &cache->maps[maps_index], cache->buf, 0, NULL, NULL);\n+\t\t\t// ut64 pa = va2pa (img[j].address, hdr->mappingCount, &cache->maps[maps_index], cache->buf, 0, NULL, NULL);\n+\t\t\tut64 pa = va2pa (img[j].address, cache->n_maps, &cache->maps[maps_index], cache->buf, 0, NULL, NULL);\n \t\t\tif (pa == UT64_MAX) {\n \t\t\t\tcontinue;\n \t\t\t}",
     "original_vulnerable_label": 1,
     "project": "radare2"
   },
@@ -489,7 +489,7 @@
       "CWE-703"
     ],
     "cve_description": "An out-of-bounds read vulnerability was discovered in the PCRE2 library in the get_recurse_data_length() function of the pcre2_jit_compile.c file. This issue affects recursions in JIT-compiled regular expressions caused by duplicate data transfers.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -2,14 +2,15 @@\n   BOOL *needs_control_head, BOOL *has_quit, BOOL *has_accept)\n {\n int length = 1;\n-int size;\n+int size, offset;\n PCRE2_SPTR alternative;\n BOOL quit_found = FALSE;\n BOOL accept_found = FALSE;\n BOOL setsom_found = FALSE;\n BOOL setmark_found = FALSE;\n-BOOL capture_last_found = FALSE;\n BOOL control_head_found = FALSE;\n+\n+memset(common->recurse_bitset, 0, common->recurse_bitset_size);\n \n #if defined DEBUG_FORCE_CONTROL_HEAD && DEBUG_FORCE_CONTROL_HEAD\n SLJIT_ASSERT(common->control_head_ptr != 0);\n@@ -33,15 +34,17 @@\n       setsom_found = TRUE;\n     if (common->mark_ptr != 0)\n       setmark_found = TRUE;\n-    if (common->capture_last_ptr != 0)\n-      capture_last_found = TRUE;\n+    if (common->capture_last_ptr != 0 && recurse_check_bit(common, common->capture_last_ptr))\n+      length++;\n     cc += 1 + LINK_SIZE;\n     break;\n \n     case OP_KET:\n-    if (PRIVATE_DATA(cc) != 0)\n-      {\n-      length++;\n+    offset = PRIVATE_DATA(cc);\n+    if (offset != 0)\n+      {\n+      if (recurse_check_bit(common, offset))\n+        length++;\n       SLJIT_ASSERT(PRIVATE_DATA(cc + 1) != 0);\n       cc += PRIVATE_DATA(cc + 1);\n       }\n@@ -60,39 +63,55 @@\n     case OP_SBRA:\n     case OP_SBRAPOS:\n     case OP_SCOND:\n-    length++;\n     SLJIT_ASSERT(PRIVATE_DATA(cc) != 0);\n+    if (recurse_check_bit(common, PRIVATE_DATA(cc)))\n+      length++;\n     cc += 1 + LINK_SIZE;\n     break;\n \n     case OP_CBRA:\n     case OP_SCBRA:\n-    length += 2;\n-    if (common->capture_last_ptr != 0)\n-      capture_last_found = TRUE;\n-    if (common->optimized_cbracket[GET2(cc, 1 + LINK_SIZE)] == 0)\n+    offset = GET2(cc, 1 + LINK_SIZE);\n+    if (recurse_check_bit(common, OVECTOR(offset << 1)))\n+      {\n+      SLJIT_ASSERT(recurse_check_bit(common, OVECTOR((offset << 1) + 1)));\n+      length += 2;\n+      }\n+    if (common->optimized_cbracket[offset] == 0 && recurse_check_bit(common, OVECTOR_PRIV(offset)))\n+      length++;\n+    if (common->capture_last_ptr != 0 && recurse_check_bit(common, common->capture_last_ptr))\n       length++;\n     cc += 1 + LINK_SIZE + IMM2_SIZE;\n     break;\n \n     case OP_CBRAPOS:\n     case OP_SCBRAPOS:\n-    length += 2 + 2;\n-    if (common->capture_last_ptr != 0)\n-      capture_last_found = TRUE;\n+    offset = GET2(cc, 1 + LINK_SIZE);\n+    if (recurse_check_bit(common, OVECTOR(offset << 1)))\n+      {\n+      SLJIT_ASSERT(recurse_check_bit(common, OVECTOR((offset << 1) + 1)));\n+      length += 2;\n+      }\n+    if (recurse_check_bit(common, OVECTOR_PRIV(offset)))\n+      length++;\n+    if (recurse_check_bit(common, PRIVATE_DATA(cc)))\n+      length++;\n+    if (common->capture_last_ptr != 0 && recurse_check_bit(common, common->capture_last_ptr))\n+      length++;\n     cc += 1 + LINK_SIZE + IMM2_SIZE;\n     break;\n \n     case OP_COND:\n     /* Might be a hidden SCOND. */\n     alternative = cc + GET(cc, 1);\n-    if (*alternative == OP_KETRMAX || *alternative == OP_KETRMIN)\n+    if ((*alternative == OP_KETRMAX || *alternative == OP_KETRMIN) && recurse_check_bit(common, PRIVATE_DATA(cc)))\n       length++;\n     cc += 1 + LINK_SIZE;\n     break;\n \n     CASE_ITERATOR_PRIVATE_DATA_1\n-    if (PRIVATE_DATA(cc) != 0)\n+    offset = PRIVATE_DATA(cc);\n+    if (offset != 0 && recurse_check_bit(common, offset))\n       length++;\n     cc += 2;\n #ifdef SUPPORT_UNICODE\n@@ -101,8 +120,12 @@\n     break;\n \n     CASE_ITERATOR_PRIVATE_DATA_2A\n-    if (PRIVATE_DATA(cc) != 0)\n-      length += 2;\n+    offset = PRIVATE_DATA(cc);\n+    if (offset != 0 && recurse_check_bit(common, offset))\n+      {\n+      SLJIT_ASSERT(recurse_check_bit(common, offset + sizeof(sljit_sw)));\n+      length += 2;\n+      }\n     cc += 2;\n #ifdef SUPPORT_UNICODE\n     if (common->utf && HAS_EXTRALEN(cc[-1])) cc += GET_EXTRALEN(cc[-1]);\n@@ -110,8 +133,12 @@\n     break;\n \n     CASE_ITERATOR_PRIVATE_DATA_2B\n-    if (PRIVATE_DATA(cc) != 0)\n-      length += 2;\n+    offset = PRIVATE_DATA(cc);\n+    if (offset != 0 && recurse_check_bit(common, offset))\n+      {\n+      SLJIT_ASSERT(recurse_check_bit(common, offset + sizeof(sljit_sw)));\n+      length += 2;\n+      }\n     cc += 2 + IMM2_SIZE;\n #ifdef SUPPORT_UNICODE\n     if (common->utf && HAS_EXTRALEN(cc[-1])) cc += GET_EXTRALEN(cc[-1]);\n@@ -119,20 +146,29 @@\n     break;\n \n     CASE_ITERATOR_TYPE_PRIVATE_DATA_1\n-    if (PRIVATE_DATA(cc) != 0)\n+    offset = PRIVATE_DATA(cc);\n+    if (offset != 0 && recurse_check_bit(common, offset))\n       length++;\n     cc += 1;\n     break;\n \n     CASE_ITERATOR_TYPE_PRIVATE_DATA_2A\n-    if (PRIVATE_DATA(cc) != 0)\n-      length += 2;\n+    offset = PRIVATE_DATA(cc);\n+    if (offset != 0 && recurse_check_bit(common, offset))\n+      {\n+      SLJIT_ASSERT(recurse_check_bit(common, offset + sizeof(sljit_sw)));\n+      length += 2;\n+      }\n     cc += 1;\n     break;\n \n     CASE_ITERATOR_TYPE_PRIVATE_DATA_2B\n-    if (PRIVATE_DATA(cc) != 0)\n-      length += 2;\n+    offset = PRIVATE_DATA(cc);\n+    if (offset != 0 && recurse_check_bit(common, offset))\n+      {\n+      SLJIT_ASSERT(recurse_check_bit(common, offset + sizeof(sljit_sw)));\n+      length += 2;\n+      }\n     cc += 1 + IMM2_SIZE;\n     break;\n \n@@ -144,7 +180,9 @@\n #else\n     size = 1 + 32 / (int)sizeof(PCRE2_UCHAR);\n #endif\n-    if (PRIVATE_DATA(cc) != 0)\n+\n+    offset = PRIVATE_DATA(cc);\n+    if (offset != 0 && recurse_check_bit(common, offset))\n       length += get_class_iterator_size(cc + size);\n     cc += size;\n     break;\n@@ -179,8 +217,7 @@\n     case OP_THEN:\n     SLJIT_ASSERT(common->control_head_ptr != 0);\n     quit_found = TRUE;\n-    if (!control_head_found)\n-      control_head_found = TRUE;\n+    control_head_found = TRUE;\n     cc++;\n     break;\n \n@@ -199,8 +236,6 @@\n SLJIT_ASSERT(cc == ccend);\n \n if (control_head_found)\n-  length++;\n-if (capture_last_found)\n   length++;\n if (quit_found)\n   {",
     "original_vulnerable_label": 1,
     "project": "pcre2"
   },
@@ -502,7 +502,7 @@
       "CWE-703"
     ],
     "cve_description": "An issue was discovered in the Linux kernel through 5.18.14. xfrm_expand_policies in net/xfrm/xfrm_policy.c can cause a refcount to be dropped twice.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -9,8 +9,10 @@\n \t\t*num_xfrms = 0;\n \t\treturn 0;\n \t}\n-\tif (IS_ERR(pols[0]))\n+\tif (IS_ERR(pols[0])) {\n+\t\t*num_pols = 0;\n \t\treturn PTR_ERR(pols[0]);\n+\t}\n \n \t*num_xfrms = pols[0]->xfrm_nr;\n \n@@ -25,6 +27,7 @@\n \t\tif (pols[1]) {\n \t\t\tif (IS_ERR(pols[1])) {\n \t\t\t\txfrm_pols_put(pols, *num_pols);\n+\t\t\t\t*num_pols = 0;\n \t\t\t\treturn PTR_ERR(pols[1]);\n \t\t\t}\n \t\t\t(*num_pols)++;",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -515,7 +515,7 @@
       "CWE-703"
     ],
     "cve_description": "drivers/net/ethernet/xilinx/xilinx_emaclite.c in the Linux kernel before 5.13.3 makes it easier for attackers to defeat an ASLR protection mechanism because it prints a kernel pointer (i.e., the real IOMEM pointer).",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -78,9 +78,8 @@\n \t}\n \n \tdev_info(dev,\n-\t\t \"Xilinx EmacLite at 0x%08lX mapped to 0x%08lX, irq=%d\\n\",\n-\t\t (unsigned long __force)ndev->mem_start,\n-\t\t (unsigned long __force)lp->base_addr, ndev->irq);\n+\t\t \"Xilinx EmacLite at 0x%08lX mapped to 0x%p, irq=%d\\n\",\n+\t\t (unsigned long __force)ndev->mem_start, lp->base_addr, ndev->irq);\n \treturn 0;\n \n error:",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -528,7 +528,7 @@
       "CWE-703"
     ],
     "cve_description": "NULL Pointer Dereference in GitHub repository vim/vim prior to 9.0.0259.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -253,74 +253,77 @@\n \n     start_visual.lnum = 0;\n \n-    // Check for clicking in the tab page line.\n-    if (mouse_row == 0 && firstwin->w_winrow > 0)\n-    {\n-\tif (is_drag)\n-\t{\n-\t    if (in_tab_line)\n-\t    {\n+    if (TabPageIdxs != NULL)  // only when initialized\n+    {\n+\t// Check for clicking in the tab page line.\n+\tif (mouse_row == 0 && firstwin->w_winrow > 0)\n+\t{\n+\t    if (is_drag)\n+\t    {\n+\t\tif (in_tab_line)\n+\t\t{\n+\t\t    c1 = TabPageIdxs[mouse_col];\n+\t\t    tabpage_move(c1 <= 0 ? 9999 : c1 < tabpage_index(curtab)\n+\t\t\t\t\t\t\t\t    ? c1 - 1 : c1);\n+\t\t}\n+\t\treturn FALSE;\n+\t    }\n+\n+\t    // click in a tab selects that tab page\n+\t    if (is_click\n+# ifdef FEAT_CMDWIN\n+\t\t    && cmdwin_type == 0\n+# endif\n+\t\t    && mouse_col < Columns)\n+\t    {\n+\t\tin_tab_line = TRUE;\n \t\tc1 = TabPageIdxs[mouse_col];\n-\t\ttabpage_move(c1 <= 0 ? 9999 : c1 < tabpage_index(curtab)\n-\t\t\t\t\t\t\t\t? c1 - 1 : c1);\n-\t    }\n+\t\tif (c1 >= 0)\n+\t\t{\n+\t\t    if ((mod_mask & MOD_MASK_MULTI_CLICK) == MOD_MASK_2CLICK)\n+\t\t    {\n+\t\t\t// double click opens new page\n+\t\t\tend_visual_mode_keep_button();\n+\t\t\ttabpage_new();\n+\t\t\ttabpage_move(c1 == 0 ? 9999 : c1 - 1);\n+\t\t    }\n+\t\t    else\n+\t\t    {\n+\t\t\t// Go to specified tab page, or next one if not clicking\n+\t\t\t// on a label.\n+\t\t\tgoto_tabpage(c1);\n+\n+\t\t\t// It's like clicking on the status line of a window.\n+\t\t\tif (curwin != old_curwin)\n+\t\t\t    end_visual_mode_keep_button();\n+\t\t    }\n+\t\t}\n+\t\telse\n+\t\t{\n+\t\t    tabpage_T\t*tp;\n+\n+\t\t    // Close the current or specified tab page.\n+\t\t    if (c1 == -999)\n+\t\t\ttp = curtab;\n+\t\t    else\n+\t\t\ttp = find_tabpage(-c1);\n+\t\t    if (tp == curtab)\n+\t\t    {\n+\t\t\tif (first_tabpage->tp_next != NULL)\n+\t\t\t    tabpage_close(FALSE);\n+\t\t    }\n+\t\t    else if (tp != NULL)\n+\t\t\ttabpage_close_other(tp, FALSE);\n+\t\t}\n+\t    }\n+\t    return TRUE;\n+\t}\n+\telse if (is_drag && in_tab_line)\n+\t{\n+\t    c1 = TabPageIdxs[mouse_col];\n+\t    tabpage_move(c1 <= 0 ? 9999 : c1 - 1);\n \t    return FALSE;\n \t}\n-\n-\t// click in a tab selects that tab page\n-\tif (is_click\n-# ifdef FEAT_CMDWIN\n-\t\t&& cmdwin_type == 0\n-# endif\n-\t\t&& mouse_col < Columns)\n-\t{\n-\t    in_tab_line = TRUE;\n-\t    c1 = TabPageIdxs[mouse_col];\n-\t    if (c1 >= 0)\n-\t    {\n-\t\tif ((mod_mask & MOD_MASK_MULTI_CLICK) == MOD_MASK_2CLICK)\n-\t\t{\n-\t\t    // double click opens new page\n-\t\t    end_visual_mode_keep_button();\n-\t\t    tabpage_new();\n-\t\t    tabpage_move(c1 == 0 ? 9999 : c1 - 1);\n-\t\t}\n-\t\telse\n-\t\t{\n-\t\t    // Go to specified tab page, or next one if not clicking\n-\t\t    // on a label.\n-\t\t    goto_tabpage(c1);\n-\n-\t\t    // It's like clicking on the status line of a window.\n-\t\t    if (curwin != old_curwin)\n-\t\t\tend_visual_mode_keep_button();\n-\t\t}\n-\t    }\n-\t    else\n-\t    {\n-\t\ttabpage_T\t*tp;\n-\n-\t\t// Close the current or specified tab page.\n-\t\tif (c1 == -999)\n-\t\t    tp = curtab;\n-\t\telse\n-\t\t    tp = find_tabpage(-c1);\n-\t\tif (tp == curtab)\n-\t\t{\n-\t\t    if (first_tabpage->tp_next != NULL)\n-\t\t\ttabpage_close(FALSE);\n-\t\t}\n-\t\telse if (tp != NULL)\n-\t\t    tabpage_close_other(tp, FALSE);\n-\t    }\n-\t}\n-\treturn TRUE;\n-    }\n-    else if (is_drag && in_tab_line)\n-    {\n-\tc1 = TabPageIdxs[mouse_col];\n-\ttabpage_move(c1 <= 0 ? 9999 : c1 - 1);\n-\treturn FALSE;\n     }\n \n     // When 'mousemodel' is \"popup\" or \"popup_setpos\", translate mouse events:",
     "original_vulnerable_label": 1,
     "project": "vim"
   },
@@ -541,7 +541,7 @@
       "CWE-703"
     ],
     "cve_description": "A flaw was found in dpdk. This flaw allows a malicious vhost-user master to attach an unexpected number of fds as ancillary data to VHOST_USER_GET_INFLIGHT_FD / VHOST_USER_SET_INFLIGHT_FD messages that are not closed by the vhost-user slave. By sending such messages continuously, the vhost-user master exhausts available fd in the vhost-user slave process, leading to a denial of service.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -10,6 +10,9 @@\n \tvoid *addr;\n \tint fd, i;\n \tint numa_node = SOCKET_ID_ANY;\n+\n+\tif (validate_msg_fds(dev, ctx, 1) != 0)\n+\t\treturn RTE_VHOST_MSG_RESULT_ERR;\n \n \tfd = ctx->fds[0];\n \tif (ctx->msg.size != sizeof(ctx->msg.payload.inflight) || fd < 0) {",
     "original_vulnerable_label": 1,
     "project": "dpdk"
   },
@@ -554,7 +554,7 @@
       "CWE-703"
     ],
     "cve_description": "A flaw was found in dpdk. This flaw allows a malicious vhost-user master to attach an unexpected number of fds as ancillary data to VHOST_USER_GET_INFLIGHT_FD / VHOST_USER_SET_INFLIGHT_FD messages that are not closed by the vhost-user slave. By sending such messages continuously, the vhost-user master exhausts available fd in the vhost-user slave process, leading to a denial of service.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -9,6 +9,9 @@\n \tint fd, i, j;\n \tint numa_node = SOCKET_ID_ANY;\n \tvoid *addr;\n+\n+\tif (validate_msg_fds(dev, ctx, 0) != 0)\n+\t\treturn RTE_VHOST_MSG_RESULT_ERR;\n \n \tif (ctx->msg.size != sizeof(ctx->msg.payload.inflight)) {\n \t\tVHOST_LOG_CONFIG(ERR, \"(%s) invalid get_inflight_fd message size is %d\\n\",",
     "original_vulnerable_label": 1,
     "project": "dpdk"
   },
@@ -567,7 +567,7 @@
       "CWE-703"
     ],
     "cve_description": "A buffer overflow vulnerability was found in the Linux kernel Intel’s iSMT SMBus host controller driver in the way it handled the I2C_SMBUS_BLOCK_PROC_CALL case (via the ioctl I2C_SMBUS) with malicious input data. This flaw could allow a local user to crash the system.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -135,6 +135,9 @@\n \n \tcase I2C_SMBUS_BLOCK_PROC_CALL:\n \t\tdev_dbg(dev, \"I2C_SMBUS_BLOCK_PROC_CALL\\n\");\n+\t\tif (data->block[0] > I2C_SMBUS_BLOCK_MAX)\n+\t\t\treturn -EINVAL;\n+\n \t\tdma_size = I2C_SMBUS_BLOCK_MAX;\n \t\tdesc->tgtaddr_rw = ISMT_DESC_ADDR_RW(addr, 1);\n \t\tdesc->wr_len_cmd = data->block[0] + 1;",
     "original_vulnerable_label": 1,
     "project": "linux"
   },
@@ -580,7 +580,7 @@
       "CWE-703"
     ],
     "cve_description": "In Varnish Cache 7.0.0, 7.0.1, 7.0.2, and 7.1.0, it is possible to cause the Varnish Server to assert and automatically restart through forged HTTP/1 backend responses. An attack uses a crafted reason phrase of the backend response status line. This is fixed in 7.0.3 and 7.1.1.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -5,6 +5,8 @@\n \n \tif (fm->hdf[u] & HDF_FILTER)\n \t\treturn (1);\n+\tif (u < HTTP_HDR_FIRST)\n+\t\treturn (0);\n \te = strchr(fm->hd[u].b, ':');\n \tif (e == NULL)\n \t\treturn (0);",
     "original_vulnerable_label": 1,
     "project": "varnish-cache"
   },
@@ -593,7 +593,7 @@
       "CWE-703"
     ],
     "cve_description": "The package open62541/open62541 before 1.2.5, from 1.3-rc1 and before 1.3.1 are vulnerable to Denial of Service (DoS) due to a missing limitation on the number of received chunks - per single session or in total for all concurrent sessions. An attacker can exploit this vulnerability by sending an unlimited number of huge chunks (e.g. 2GB each) without sending the Final closing chunk.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -3,7 +3,8 @@\n     UA_SecureChannel_init(&testChannel, &UA_ConnectionConfig_default);\n     UA_SecureChannel_setSecurityPolicy(&testChannel, &dummyPolicy, &dummyCertificate);\n \n-    testingConnection = createDummyConnection(65535, &sentData);\n+    testingConnection =\n+        createDummyConnection(UA_ConnectionConfig_default.sendBufferSize, &sentData);\n     UA_Connection_attachSecureChannel(&testingConnection, &testChannel);\n     testChannel.connection = &testingConnection;\n ",
     "original_vulnerable_label": 1,
     "project": "open62541"
   }

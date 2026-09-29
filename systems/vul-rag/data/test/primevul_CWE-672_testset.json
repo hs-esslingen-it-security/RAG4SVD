@@ -8,7 +8,7 @@
       "CWE-672"
     ],
     "cve_description": "TigerVNC version prior to 1.10.1 is vulnerable to stack use-after-return, which occurs due to incorrect usage of stack memory in ZRLEDecoder. If decoding routine would throw an exception, ZRLEDecoder may try to access stack variable, which has been already freed during the process of stack unwinding. Exploitation of this vulnerability could potentially result into remote code execution. This attack appear to be exploitable via network connectivity.",
-    "patch": null,
+    "patch": "--- code before\n+++ code after\n@@ -126,5 +126,6 @@\n     }\n   }\n \n-  zis->removeUnderlying();\n+  zis->flushUnderlying();\n+  zis->setUnderlying(NULL, 0);\n }",
     "original_vulnerable_label": 1,
     "project": "tigervnc"
   }
