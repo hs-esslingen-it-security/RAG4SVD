@@ -61,7 +61,9 @@ If you use **this work**, please cite! 📚
 ```bibtex
 @preprint{kaniewskiRAG4SVD2026,
     title     = {{Retrieve, Reproduce, Reveal: Dissecting Retrieval-Augmented Software Vulnerability Detection}}, 
-    author    = {Kaniewski, Sabrina and Krämer, Tim and Bächle, Julius and Enzweiler, Markus and Menth, Michael and Heer, Tobias},
-    year      = {2026},
+    author={Sabrina Kaniewski and Tim Krämer and Julius Bächle and Markus Enzweiler and Michael Menth and Tobias Heer},
+    year={2026},
+    eprint={2609.37669},
+    archivePrefix={arXiv}
 }
 ```
