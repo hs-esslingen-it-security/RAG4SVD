@@ -163,16 +163,15 @@ df.head()
 <br>
 
 ## 3. Detection
-
-We evaluate how changes to the knowledge component affect the final vulnerability-detection performance.
+We evaluate how changes to the knowledge component affect the final vulnerability-detection performance of Vul-RAG.
 
 ### Knowledge Sensitivity
 
-`detection_knowledge_sensitivity_results.csv` contains the results of the experiment that varies the knowledge available to the detection pipeline to analyze how sensitive the final detection performance is to changes in the underlying knowledge base.
+`detection_knowledge_sensitivity_results.csv` contains the results of varying the knowledge base to analyze how sensitive the final detection performance is to changes in the provided knowledge.
 
 ### Oracle Knowledge
 
-`detection_oracle_results.csv` contains the results of the oracle-knowledge experiment to provide a controlled comparison in which the detection stage is supplied with oracle knowledge, allowing the influence of knowledge quality on downstream detection performance to be examined separately from retrieval errors.
+`detection_oracle_results.csv` contains the results of the oracle-knowledge experiment to provide a controlled comparison in which the detection stage is supplied with oracle knowledge, allowing the influence of detection capability to be examined separately from retrieval errors.
 
 Load via:
 

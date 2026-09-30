@@ -9,6 +9,7 @@
 
 <sup>1</sup> **Esslingen University of Applied Sciences** · <sup>2</sup> **University of Tübingen**
 
+[![arXiv](https://img.shields.io/badge/arXiv-2609.37669-b31b1b.svg?style=for-the-badge)](https://arxiv.org/abs/2609.37669)
 
 </div>
 
